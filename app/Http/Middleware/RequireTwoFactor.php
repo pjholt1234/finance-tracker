@@ -1,0 +1,54 @@
+<?php
+
+namespace App\Http\Middleware;
+
+use Closure;
+use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+
+class RequireTwoFactor
+{
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
+     */
+    public function handle(Request $request, Closure $next): Response
+    {
+        $user = $request->user();
+
+        // Skip if user is not authenticated
+        if (!$user) {
+            return $next($request);
+        }
+
+        // Skip if user already has 2FA enabled
+        if ($user->two_factor_confirmed_at) {
+            return $next($request);
+        }
+
+        // Allow access to 2FA setup routes
+        $allowedRoutes = [
+            'two-factor.show',
+            'logout',
+        ];
+
+        // Allow access to Fortify 2FA routes
+        $allowedPaths = [
+            '/user/two-factor-authentication',
+            '/user/confirmed-two-factor-authentication',
+            '/user/two-factor-recovery-codes',
+            '/settings/two-factor',
+            '/logout',
+        ];
+
+        if (in_array($request->route()?->getName(), $allowedRoutes) || 
+            in_array($request->path(), $allowedPaths) ||
+            str_starts_with($request->path(), 'user/')) {
+            return $next($request);
+        }
+
+        // Redirect to 2FA setup page
+        return redirect()->route('two-factor.show')->with('message', 'You must enable two-factor authentication to continue.');
+    }
+} 
