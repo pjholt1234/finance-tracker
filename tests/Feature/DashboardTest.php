@@ -17,8 +17,10 @@ class DashboardTest extends TestCase
 
     public function test_authenticated_users_can_visit_the_dashboard()
     {
-        $this->actingAs($user = User::factory()->create());
+        $user = User::factory()->create([
+            'two_factor_confirmed_at' => now(), // Enable 2FA to avoid middleware redirect
+        ]);
 
-        $this->get('/dashboard')->assertOk();
+        $this->actingAs($user)->get('/dashboard')->assertOk();
     }
 }
