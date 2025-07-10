@@ -1,0 +1,7 @@
+Date,Description,Amount,Balance
+2024-01-01,"Opening Balance",0.00,1000.00
+2024-01-02,"Grocery Store",-45.67,954.33
+2024-01-03,"Salary Deposit",2500.00,3454.33
+2024-01-04,"Electric Bill",-89.45,3364.88
+2024-01-05,"Coffee Shop",-4.50,3360.38
+2024-01-06,"ATM Withdrawal",-100.00,3260.38 

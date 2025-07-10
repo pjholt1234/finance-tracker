@@ -26,6 +26,12 @@ class CsvSchema extends Model
 
     protected $casts = [
         'transaction_data_start' => 'integer',
+        'date_column' => 'integer',
+        'balance_column' => 'integer',
+        'amount_column' => 'integer',
+        'paid_in_column' => 'integer',
+        'paid_out_column' => 'integer',
+        'description_column' => 'integer',
     ];
 
     /**
@@ -69,6 +75,16 @@ class CsvSchema extends Model
             throw ValidationException::withMessages([
                 'transaction_data_start' => 'Transaction data start row must be 1 or greater.'
             ]);
+        }
+
+        // Column numbers must be positive integers
+        $columns = ['date_column', 'balance_column', 'amount_column', 'paid_in_column', 'paid_out_column', 'description_column'];
+        foreach ($columns as $column) {
+            if (!empty($this->$column) && $this->$column < 1) {
+                throw ValidationException::withMessages([
+                    $column => 'Column number must be 1 or greater.'
+                ]);
+            }
         }
     }
 

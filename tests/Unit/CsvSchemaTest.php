@@ -26,17 +26,17 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 2,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
-            'description_column' => 'Description',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
+            'description_column' => 4,
             'date_format' => 'MM/DD/YYYY',
         ]);
 
         $this->assertDatabaseHas('csv_schemas', [
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
-            'amount_column' => 'Amount',
+            'amount_column' => 3,
         ]);
 
         $this->assertTrue($schema->usesSingleAmountColumn());
@@ -49,18 +49,18 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 2,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'paid_in_column' => 'Credit',
-            'paid_out_column' => 'Debit',
-            'description_column' => 'Description',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'paid_in_column' => 3,
+            'paid_out_column' => 4,
+            'description_column' => 5,
         ]);
 
         $this->assertDatabaseHas('csv_schemas', [
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
-            'paid_in_column' => 'Credit',
-            'paid_out_column' => 'Debit',
+            'paid_in_column' => 3,
+            'paid_out_column' => 4,
         ]);
 
         $this->assertFalse($schema->usesSingleAmountColumn());
@@ -73,9 +73,9 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 1,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
         ]);
 
         // Should not throw exception
@@ -89,10 +89,10 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 1,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'paid_in_column' => 'Credit',
-            'paid_out_column' => 'Debit',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'paid_in_column' => 3,
+            'paid_out_column' => 4,
         ]);
 
         // Should not throw exception
@@ -109,8 +109,8 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 1,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
+            'date_column' => 1,
+            'balance_column' => 2,
         ]);
 
         $schema->validateSchema();
@@ -125,8 +125,8 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 1,
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
+            'balance_column' => 2,
+            'amount_column' => 3,
         ]);
 
         $schema->validateSchema();
@@ -141,8 +141,8 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 1,
-            'date_column' => 'Date',
-            'amount_column' => 'Amount',
+            'date_column' => 1,
+            'amount_column' => 3,
         ]);
 
         $schema->validateSchema();
@@ -157,9 +157,9 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 0,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
         ]);
 
         $schema->validateSchema();
@@ -168,40 +168,40 @@ class CsvSchemaTest extends TestCase
     public function test_get_column_mapping_with_amount_column(): void
     {
         $schema = new CsvSchema([
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
-            'description_column' => 'Description',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
+            'description_column' => 4,
         ]);
 
         $mapping = $schema->getColumnMapping();
 
         $this->assertEquals([
-            'date' => 'Date',
-            'balance' => 'Balance',
-            'amount' => 'Amount',
-            'description' => 'Description',
+            'date' => 1,
+            'balance' => 2,
+            'amount' => 3,
+            'description' => 4,
         ], $mapping);
     }
 
     public function test_get_column_mapping_with_separate_columns(): void
     {
         $schema = new CsvSchema([
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'paid_in_column' => 'Credit',
-            'paid_out_column' => 'Debit',
-            'description_column' => 'Description',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'paid_in_column' => 3,
+            'paid_out_column' => 4,
+            'description_column' => 5,
         ]);
 
         $mapping = $schema->getColumnMapping();
 
         $this->assertEquals([
-            'date' => 'Date',
-            'balance' => 'Balance',
-            'paid_in' => 'Credit',
-            'paid_out' => 'Debit',
-            'description' => 'Description',
+            'date' => 1,
+            'balance' => 2,
+            'paid_in' => 3,
+            'paid_out' => 4,
+            'description' => 5,
         ], $mapping);
     }
 
@@ -220,9 +220,9 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema',
             'transaction_data_start' => 1,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
         ]);
 
         $this->expectException(\Illuminate\Database\QueryException::class);
@@ -231,9 +231,9 @@ class CsvSchemaTest extends TestCase
             'user_id' => $this->user->id,
             'name' => 'Test Schema', // Same name for same user
             'transaction_data_start' => 1,
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
         ]);
     }
 }

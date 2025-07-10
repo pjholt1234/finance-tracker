@@ -24,10 +24,10 @@ class CsvSchemaFactory extends Factory
             'user_id' => User::factory(),
             'name' => $this->faker->words(2, true) . ' Schema',
             'transaction_data_start' => $this->faker->numberBetween(1, 5),
-            'date_column' => 'Date',
-            'balance_column' => 'Balance',
-            'amount_column' => 'Amount',
-            'description_column' => 'Description',
+            'date_column' => 1, // Column 1
+            'balance_column' => 2, // Column 2
+            'amount_column' => 3, // Column 3
+            'description_column' => 4, // Column 4
             'date_format' => $this->faker->randomElement(['MM/DD/YYYY', 'YYYY-MM-DD', 'DD/MM/YYYY']),
         ];
     }
@@ -39,8 +39,8 @@ class CsvSchemaFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'amount_column' => null,
-            'paid_in_column' => 'Credit',
-            'paid_out_column' => 'Debit',
+            'paid_in_column' => 3, // Column 3
+            'paid_out_column' => 4, // Column 4
         ]);
     }
 
