@@ -60,6 +60,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the imports for the user.
+     */
+    public function imports(): HasMany
+    {
+        return $this->hasMany(Import::class);
+    }
+
+    /**
      * Get the transactions for the user.
      */
     public function transactions(): HasMany

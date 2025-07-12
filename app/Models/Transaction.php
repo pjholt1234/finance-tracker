@@ -18,6 +18,7 @@ class Transaction extends Model
         'paid_in',
         'paid_out',
         'description',
+        'reference',
         'import_id',
         'unique_hash',
     ];
@@ -28,6 +29,14 @@ class Transaction extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the import that created this transaction.
+     */
+    public function import(): BelongsTo
+    {
+        return $this->belongsTo(Import::class);
     }
 
     /**
@@ -76,7 +85,7 @@ class Transaction extends Model
     /**
      * Scope to filter transactions by import ID.
      */
-    public function scopeForImport($query, string $importId)
+    public function scopeForImport($query, int $importId)
     {
         return $query->where('import_id', $importId);
     }
