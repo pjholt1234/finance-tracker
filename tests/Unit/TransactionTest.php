@@ -5,6 +5,8 @@ namespace Tests\Unit;
 use App\Models\Transaction;
 use App\Models\User;
 use App\Models\Tag;
+use App\Models\Import;
+use App\Models\Account;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -13,42 +15,60 @@ class TransactionTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+    protected Account $account;
 
     protected function setUp(): void
     {
         parent::setUp();
         $this->user = User::factory()->create();
+        $this->account = Account::factory()->create(['user_id' => $this->user->id]);
     }
 
     public function test_transaction_can_be_created(): void
     {
+        $import = Import::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+        ]);
+
         $transaction = Transaction::create([
             'user_id' => $this->user->id,
-            'date' => 'encrypted_date_string',
-            'balance' => 'encrypted_balance_string',
-            'paid_in' => 'encrypted_paid_in_string',
-            'paid_out' => 'encrypted_paid_out_string',
-            'description' => 'encrypted_description_string',
-            'import_id' => 'import_123',
+            'account_id' => $this->account->id,
+            'date' => '2023-01-01',
+            'balance' => 100000, // £1000.00 in pennies
+            'paid_in' => 10000, // £100.00 in pennies
+            'paid_out' => null,
+            'description' => 'Test transaction',
+            'import_id' => $import->id,
         ]);
 
         $this->assertDatabaseHas('transactions', [
             'user_id' => $this->user->id,
-            'import_id' => 'import_123',
+            'account_id' => $this->account->id,
+            'import_id' => $import->id,
         ]);
 
+        // Check the date separately since it might include time component
+        $this->assertEquals('2023-01-01', $transaction->date->format('Y-m-d'));
         $this->assertNotNull($transaction->unique_hash);
     }
 
     public function test_unique_hash_is_generated_automatically(): void
     {
+        $import = Import::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+        ]);
+
         $transaction = new Transaction([
             'user_id' => $this->user->id,
-            'date' => 'encrypted_date_string',
-            'balance' => 'encrypted_balance_string',
-            'paid_in' => 'encrypted_paid_in_string',
-            'paid_out' => 'encrypted_paid_out_string',
-            'import_id' => 'import_123',
+            'account_id' => $this->account->id,
+            'date' => '2023-01-01',
+            'balance' => 100000, // £1000.00 in pennies
+            'paid_in' => 10000, // £100.00 in pennies
+            'paid_out' => null,
+            'description' => 'Test transaction',
+            'import_id' => $import->id,
         ]);
 
         $transaction->save();
@@ -57,57 +77,51 @@ class TransactionTest extends TestCase
         $this->assertNotEmpty($transaction->unique_hash);
     }
 
-    public function test_generate_unique_hash_creates_consistent_hash(): void
+    public function test_generate_unique_hash_creates_consistent_hash()
     {
-        $hash1 = Transaction::generateUniqueHash(
-            $this->user->id,
-            'encrypted_date',
-            'encrypted_balance',
-            'encrypted_paid_in',
-            'encrypted_paid_out'
-        );
+        $userId = 1;
+        $date = '2023-01-01';
+        $balance = 100000; // £1000.00 in pennies
+        $paidIn = 10000; // £100.00 in pennies
+        $paidOut = null;
 
-        $hash2 = Transaction::generateUniqueHash(
-            $this->user->id,
-            'encrypted_date',
-            'encrypted_balance',
-            'encrypted_paid_in',
-            'encrypted_paid_out'
-        );
+        $hash1 = Transaction::generateUniqueHash($userId, $date, $balance, $paidIn, $paidOut);
+        $hash2 = Transaction::generateUniqueHash($userId, $date, $balance, $paidIn, $paidOut);
 
         $this->assertEquals($hash1, $hash2);
     }
 
-    public function test_generate_unique_hash_creates_different_hash_for_different_data(): void
+    public function test_generate_unique_hash_creates_different_hash_for_different_data()
     {
-        $hash1 = Transaction::generateUniqueHash(
-            $this->user->id,
-            'encrypted_date_1',
-            'encrypted_balance',
-            'encrypted_paid_in',
-            'encrypted_paid_out'
-        );
+        $userId = 1;
+        $date = '2023-01-01';
+        $balance1 = 100000; // £1000.00 in pennies
+        $balance2 = 200000; // £2000.00 in pennies
+        $paidIn = 10000; // £100.00 in pennies
+        $paidOut = null;
 
-        $hash2 = Transaction::generateUniqueHash(
-            $this->user->id,
-            'encrypted_date_2',
-            'encrypted_balance',
-            'encrypted_paid_in',
-            'encrypted_paid_out'
-        );
+        $hash1 = Transaction::generateUniqueHash($userId, $date, $balance1, $paidIn, $paidOut);
+        $hash2 = Transaction::generateUniqueHash($userId, $date, $balance2, $paidIn, $paidOut);
 
         $this->assertNotEquals($hash1, $hash2);
     }
 
     public function test_exists_by_hash_returns_true_for_existing_transaction(): void
     {
+        $import = Import::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+        ]);
+
         $transaction = Transaction::create([
             'user_id' => $this->user->id,
-            'date' => 'encrypted_date_string',
-            'balance' => 'encrypted_balance_string',
-            'paid_in' => 'encrypted_paid_in_string',
-            'paid_out' => 'encrypted_paid_out_string',
-            'import_id' => 'import_123',
+            'account_id' => $this->account->id,
+            'date' => '2023-01-01',
+            'balance' => 100000, // £1000.00 in pennies
+            'paid_in' => 10000, // £100.00 in pennies
+            'paid_out' => null,
+            'description' => 'Test transaction',
+            'import_id' => $import->id,
         ]);
 
         $this->assertTrue(Transaction::existsByHash($transaction->unique_hash));
@@ -116,7 +130,7 @@ class TransactionTest extends TestCase
     public function test_exists_by_hash_returns_false_for_non_existing_hash(): void
     {
         $nonExistentHash = 'non_existent_hash_value';
-        
+
         $this->assertFalse(Transaction::existsByHash($nonExistentHash));
     }
 
@@ -124,6 +138,7 @@ class TransactionTest extends TestCase
     {
         $transaction = Transaction::factory()->create([
             'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
         ]);
 
         $this->assertTrue($transaction->user->is($this->user));
@@ -133,6 +148,7 @@ class TransactionTest extends TestCase
     {
         $transaction = Transaction::factory()->create([
             'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
         ]);
 
         $tag = Tag::factory()->create([
@@ -150,13 +166,16 @@ class TransactionTest extends TestCase
     public function test_for_user_scope(): void
     {
         $otherUser = User::factory()->create();
+        $otherAccount = Account::factory()->create(['user_id' => $otherUser->id]);
 
         $userTransaction = Transaction::factory()->create([
             'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
         ]);
 
         $otherUserTransaction = Transaction::factory()->create([
             'user_id' => $otherUser->id,
+            'account_id' => $otherAccount->id,
         ]);
 
         $userTransactions = Transaction::forUser($this->user->id)->get();
@@ -167,17 +186,28 @@ class TransactionTest extends TestCase
 
     public function test_for_import_scope(): void
     {
+        $import1 = Import::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+        ]);
+        $import2 = Import::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+        ]);
+
         $import1Transaction = Transaction::factory()->create([
             'user_id' => $this->user->id,
-            'import_id' => 'import_1',
+            'account_id' => $this->account->id,
+            'import_id' => $import1->id,
         ]);
 
         $import2Transaction = Transaction::factory()->create([
             'user_id' => $this->user->id,
-            'import_id' => 'import_2',
+            'account_id' => $this->account->id,
+            'import_id' => $import2->id,
         ]);
 
-        $import1Transactions = Transaction::forImport('import_1')->get();
+        $import1Transactions = Transaction::forImport($import1->id)->get();
 
         $this->assertTrue($import1Transactions->contains($import1Transaction));
         $this->assertFalse($import1Transactions->contains($import2Transaction));
@@ -185,20 +215,38 @@ class TransactionTest extends TestCase
 
     public function test_duplicate_unique_hash_throws_exception(): void
     {
+        $import = Import::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+        ]);
+
         $transactionData = [
             'user_id' => $this->user->id,
-            'date' => 'encrypted_date_string',
-            'balance' => 'encrypted_balance_string',
-            'paid_in' => 'encrypted_paid_in_string',
-            'paid_out' => 'encrypted_paid_out_string',
-            'import_id' => 'import_123',
+            'account_id' => $this->account->id,
+            'date' => '2023-01-01',
+            'balance' => 100000, // £1000.00 in pennies
+            'paid_in' => 10000, // £100.00 in pennies
+            'paid_out' => null,
+            'description' => 'Test transaction',
+            'import_id' => $import->id,
         ];
 
         // Create first transaction
         Transaction::create($transactionData);
 
-        // Attempt to create duplicate should fail
+        // Attempt to create second transaction with same data (should fail due to unique constraint)
         $this->expectException(\Illuminate\Database\QueryException::class);
         Transaction::create($transactionData);
+    }
+
+    public function test_formatted_date_attribute(): void
+    {
+        $transaction = Transaction::factory()->create([
+            'user_id' => $this->user->id,
+            'account_id' => $this->account->id,
+            'date' => '2023-01-15',
+        ]);
+
+        $this->assertEquals('15/01/2023', $transaction->formatted_date);
     }
 }

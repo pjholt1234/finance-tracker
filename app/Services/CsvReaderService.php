@@ -230,6 +230,11 @@ class CsvReaderService
         // Read file content and detect encoding
         $fileContent = file_get_contents($file->getPathname());
 
+        // Check if file is empty
+        if (empty(trim($fileContent))) {
+            throw new \Exception('The CSV file appears to be empty or invalid.');
+        }
+
         // Detect encoding and convert to UTF-8 if needed
         $encoding = mb_detect_encoding($fileContent, ['UTF-8', 'UTF-16', 'Windows-1252', 'ISO-8859-1'], true);
 
@@ -269,6 +274,11 @@ class CsvReaderService
         }
 
         fclose($tempFile);
+
+        // Check if we actually got any data
+        if (empty($headers) && empty($rows)) {
+            throw new \Exception('The CSV file appears to be empty or invalid.');
+        }
 
         return [
             'headers' => $headers,

@@ -18,6 +18,7 @@ class Import extends Model
 
     protected $fillable = [
         'user_id',
+        'account_id',
         'csv_schema_id',
         'filename',
         'status',
@@ -41,6 +42,14 @@ class Import extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the account that owns the import.
+     */
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 
     /**
@@ -92,14 +101,6 @@ class Import extends Model
     }
 
     /**
-     * Check if the import is still processing.
-     */
-    public function isProcessing(): bool
-    {
-        return $this->status === self::STATUS_PROCESSING;
-    }
-
-    /**
      * Mark the import as started.
      */
     public function markAsStarted(): void
@@ -134,7 +135,7 @@ class Import extends Model
     }
 
     /**
-     * Update import progress.
+     * Update the import progress.
      */
     public function updateProgress(int $processedRows, int $importedRows, int $duplicateRows): void
     {

@@ -14,7 +14,10 @@ import {
     Calendar,
     DollarSign,
     Hash,
-    CheckCircle
+    CheckCircle,
+    Plus,
+    Building2,
+    CreditCard
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
@@ -33,39 +36,58 @@ interface CsvSchema {
     created_at: string;
 }
 
+interface Account {
+    id: number;
+    name: string;
+    number: number;
+    sort_code: string;
+    description?: string;
+    balance: number;
+}
+
 interface ImportForm {
     csv_file: File | null;
     csv_schema_id: string;
+    account_id: string;
     [key: string]: any;
 }
 
 interface Props {
     schemas: CsvSchema[];
+    accounts: Account[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Transaction Imports',
-        href: '/transaction-imports',
+        title: 'Imports',
+        href: '/imports',
     },
     {
         title: 'Import Transactions',
-        href: '/transaction-imports/create',
+        href: '/imports/create',
     },
 ];
 
-export default function Import({ schemas }: Props) {
+export default function Import({ schemas, accounts }: Props) {
     const [selectedSchema, setSelectedSchema] = useState<CsvSchema | null>(null);
+    const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
     const { data, setData, post, processing, errors } = useForm<ImportForm>({
         csv_file: null,
         csv_schema_id: '',
+        account_id: '',
     });
 
     const handleSchemaChange = (schemaId: string) => {
         setData('csv_schema_id', schemaId);
         const schema = schemas.find(s => s.id.toString() === schemaId);
         setSelectedSchema(schema || null);
+    };
+
+    const handleAccountChange = (accountId: string) => {
+        setData('account_id', accountId);
+        const account = accounts.find(a => a.id.toString() === accountId);
+        setSelectedAccount(account || null);
     };
 
     const handleFileUpload = (file: File) => {
@@ -75,13 +97,14 @@ export default function Import({ schemas }: Props) {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        if (!data.csv_file || !data.csv_schema_id) {
+        if (!data.csv_file || !data.csv_schema_id || !data.account_id) {
             return;
         }
 
         const formData = new FormData();
         formData.append('csv_file', data.csv_file);
         formData.append('csv_schema_id', data.csv_schema_id);
+        formData.append('account_id', data.account_id);
 
         router.post(route('transaction-imports.store'), formData);
     };
@@ -98,176 +121,239 @@ export default function Import({ schemas }: Props) {
         return { type: 'split', column: columns.join(', ') };
     };
 
-    const canSubmit = data.csv_file && data.csv_schema_id;
+    const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2,
+        }).format(amount / 100);
+    };
+
+    const canSubmit = data.csv_file && data.csv_schema_id && data.account_id;
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Import Transactions" />
 
-            <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
-                <div className="flex items-center gap-4">
-                    <Link href={route('transaction-imports.index')}>
-                        <Button variant="outline" size="sm">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
-                            Back to Imports
-                        </Button>
-                    </Link>
+            <div className="space-y-6">
+                <div className="flex items-center space-x-4">
+                    <Button variant="outline" size="icon" asChild>
+                        <Link href={route('transaction-imports.index')}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Link>
+                    </Button>
                     <div>
-                        <h2 className="text-2xl font-bold">Import Transactions</h2>
-                        <p className="text-muted-foreground mt-1">
-                            Upload a CSV file to import transaction data
+                        <h1 className="text-2xl font-bold tracking-tight">Import Transactions</h1>
+                        <p className="text-muted-foreground">
+                            Upload a CSV file and map it to your account using a schema.
                         </p>
                     </div>
                 </div>
 
-                {schemas.length === 0 ? (
-                    <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No CSV schemas available</h3>
-                            <p className="text-muted-foreground text-center mb-6">
-                                You need to create a CSV schema first before you can import transactions.
-                            </p>
-                            <Link href={route('csv-schemas.create')}>
-                                <Button>
-                                    Create CSV Schema
-                                </Button>
-                            </Link>
-                        </CardContent>
-                    </Card>
-                ) : (
+                <div className="space-y-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Schema Selection */}
+                        {/* Configuration and Import */}
                         <Card>
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <FileText className="h-5 w-5" />
-                                    Select CSV Schema
+                                <CardTitle className="flex items-center space-x-2">
+                                    <Upload className="h-5 w-5" />
+                                    <span>Configuration and Import</span>
                                 </CardTitle>
                                 <CardDescription>
-                                    Choose the schema that matches your CSV file format
+                                    Configure your import settings and upload your CSV file.
                                 </CardDescription>
                             </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="csv_schema_id">CSV Schema</Label>
-                                    <Select
-                                        value={data.csv_schema_id}
-                                        onValueChange={handleSchemaChange}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a CSV schema" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {schemas.map((schema) => (
-                                                <SelectItem key={schema.id} value={schema.id.toString()}>
-                                                    {schema.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.csv_schema_id && (
-                                        <p className="text-sm text-destructive">{errors.csv_schema_id}</p>
+                            <CardContent className="space-y-6">
+                                {/* Configuration Grid */}
+                                <div className="grid gap-6 md:grid-cols-2">
+                                    {/* Account Selection */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-2">
+                                            <Building2 className="h-4 w-4 text-muted-foreground" />
+                                            <Label htmlFor="account" className="text-sm font-medium">Account *</Label>
+                                        </div>
+                                        <Select value={data.account_id} onValueChange={handleAccountChange}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select an account" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {accounts.map((account) => (
+                                                    <SelectItem key={account.id} value={account.id.toString()}>
+                                                        <div className="flex items-center space-x-2">
+                                                            <CreditCard className="h-4 w-4" />
+                                                            <span>{account.name}</span>
+                                                            <span className="text-sm text-muted-foreground">
+                                                                ({account.number})
+                                                            </span>
+                                                        </div>
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.account_id && (
+                                            <p className="text-sm text-destructive">{errors.account_id}</p>
+                                        )}
+                                        {accounts.length === 0 && (
+                                            <Alert>
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    You need to create an account first.
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={route('accounts.create')}>
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Create New Account
+                                            </Link>
+                                        </Button>
+                                    </div>
+
+                                    {/* CSV Schema Selection */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center space-x-2">
+                                            <FileText className="h-4 w-4 text-muted-foreground" />
+                                            <Label htmlFor="schema" className="text-sm font-medium">CSV Schema *</Label>
+                                        </div>
+                                        <Select value={data.csv_schema_id} onValueChange={handleSchemaChange}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select a schema" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {schemas.map((schema) => (
+                                                    <SelectItem key={schema.id} value={schema.id.toString()}>
+                                                        {schema.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.csv_schema_id && (
+                                            <p className="text-sm text-destructive">{errors.csv_schema_id}</p>
+                                        )}
+                                        {schemas.length === 0 && (
+                                            <Alert>
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>
+                                                    You need to create a CSV schema first.
+                                                </AlertDescription>
+                                            </Alert>
+                                        )}
+                                        <Button variant="outline" size="sm" asChild>
+                                            <Link href={route('csv-schemas.create')}>
+                                                <Plus className="mr-2 h-4 w-4" />
+                                                Create New Schema
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                {/* File Upload */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center space-x-2">
+                                        <Upload className="h-4 w-4 text-muted-foreground" />
+                                        <Label htmlFor="csv_file" className="text-sm font-medium">CSV File *</Label>
+                                    </div>
+                                    <Input
+                                        id="csv_file"
+                                        type="file"
+                                        accept=".csv,.txt"
+                                        onChange={(e) => {
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                handleFileUpload(file);
+                                            }
+                                        }}
+                                        className={errors.csv_file ? 'border-destructive' : ''}
+                                    />
+                                    {errors.csv_file && (
+                                        <p className="text-sm text-destructive">{errors.csv_file}</p>
+                                    )}
+                                    {data.csv_file && (
+                                        <div className="flex items-center space-x-2 text-sm text-muted-foreground">
+                                            <FileText className="h-4 w-4" />
+                                            <span>Selected: {data.csv_file.name}</span>
+                                            <span>({(data.csv_file.size / 1024).toFixed(1)} KB)</span>
+                                        </div>
                                     )}
                                 </div>
 
-                                {selectedSchema && (
-                                    <div className="mt-4 p-4 bg-muted rounded-lg">
-                                        <h4 className="font-medium mb-3">Schema Configuration</h4>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                                            <div className="flex items-center">
-                                                <Hash className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                <span>Data starts at row {selectedSchema.transaction_data_start}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                <span>Date: Column {selectedSchema.date_column}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                <span>Balance: Column {selectedSchema.balance_column}</span>
-                                            </div>
-                                            <div className="flex items-center">
-                                                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                <span>Amount: {getAmountConfiguration(selectedSchema).column}</span>
-                                            </div>
-                                            {selectedSchema.description_column && (
-                                                <div className="flex items-center">
-                                                    <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
-                                                    <span>Description: Column {selectedSchema.description_column}</span>
+                                {/* Configuration Preview */}
+                                {(selectedAccount || selectedSchema) && (
+                                    <div className="rounded-lg border bg-muted/50 p-4">
+                                        <h4 className="font-medium mb-3">Configuration Preview</h4>
+                                        <div className="grid gap-4 md:grid-cols-2">
+                                            {selectedAccount && (
+                                                <div className="space-y-2">
+                                                    <h5 className="text-sm font-medium text-muted-foreground">Selected Account</h5>
+                                                    <div className="space-y-1 text-sm">
+                                                        <div className="flex justify-between">
+                                                            <span>Name:</span>
+                                                            <span className="font-medium">{selectedAccount.name}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>Number:</span>
+                                                            <span className="font-medium">{selectedAccount.number}</span>
+                                                        </div>
+                                                        <div className="flex justify-between">
+                                                            <span>Balance:</span>
+                                                            <span className="font-medium">{formatCurrency(selectedAccount.balance)}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {selectedSchema && (
+                                                <div className="space-y-2">
+                                                    <h5 className="text-sm font-medium text-muted-foreground">Schema Configuration</h5>
+                                                    <div className="space-y-1 text-sm">
+                                                        <div className="flex items-center space-x-2">
+                                                            <Hash className="h-3 w-3 text-muted-foreground" />
+                                                            <span>Data starts at row {selectedSchema.transaction_data_start}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                                                            <span>Date: Column {selectedSchema.date_column}</span>
+                                                        </div>
+                                                        <div className="flex items-center space-x-2">
+                                                            <DollarSign className="h-3 w-3 text-muted-foreground" />
+                                                            <span>Amount: {getAmountConfiguration(selectedSchema).column}</span>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
                                 )}
-                            </CardContent>
-                        </Card>
 
-                        {/* File Upload */}
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Upload className="h-5 w-5" />
-                                    Upload CSV File
-                                </CardTitle>
-                                <CardDescription>
-                                    Select the CSV file containing your transaction data
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="space-y-4">
-                                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                        <div className="space-y-2">
-                                            <p className="text-sm text-muted-foreground">
-                                                Drop your CSV file here or click to browse
-                                            </p>
-                                            <Input
-                                                type="file"
-                                                accept=".csv,.txt"
-                                                onChange={(e) => {
-                                                    const file = e.target.files?.[0];
-                                                    if (file) {
-                                                        handleFileUpload(file);
-                                                    }
-                                                }}
-                                                className="max-w-xs mx-auto"
-                                                disabled={processing}
-                                            />
-                                        </div>
+                                {/* Import Action */}
+                                <div className="flex items-center justify-between pt-4 border-t">
+                                    <div className="space-y-1">
+                                        <h4 className="font-medium">Ready to Import</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                            {canSubmit
+                                                ? "All configurations are set. Click import to continue."
+                                                : "Please complete all required fields above."
+                                            }
+                                        </p>
                                     </div>
-
-                                    {data.csv_file && (
-                                        <Alert>
-                                            <CheckCircle className="h-4 w-4" />
-                                            <AlertDescription>
-                                                File selected: {data.csv_file.name} ({(data.csv_file.size / 1024).toFixed(1)} KB)
-                                            </AlertDescription>
-                                        </Alert>
-                                    )}
-
-                                    {errors.csv_file && (
-                                        <Alert variant="destructive">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <AlertDescription>{errors.csv_file}</AlertDescription>
-                                        </Alert>
-                                    )}
+                                    <Button
+                                        type="submit"
+                                        disabled={!canSubmit || processing}
+                                        className="min-w-[120px]"
+                                    >
+                                        {processing ? (
+                                            <>Processing...</>
+                                        ) : (
+                                            <>
+                                                <CheckCircle className="mr-2 h-4 w-4" />
+                                                Import
+                                            </>
+                                        )}
+                                    </Button>
                                 </div>
                             </CardContent>
                         </Card>
-
-                        {/* Submit */}
-                        <div className="flex justify-end">
-                            <Button
-                                type="submit"
-                                disabled={!canSubmit || processing}
-                                className="min-w-32"
-                            >
-                                {processing ? 'Importing...' : 'Import Transactions'}
-                            </Button>
-                        </div>
                     </form>
-                )}
+                </div>
             </div>
         </AppLayout>
     );

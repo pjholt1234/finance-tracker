@@ -11,9 +11,9 @@ Route::middleware('auth')->group(function () {
 
     // Allow access to 2FA setup without requiring 2FA
     Route::get('settings/two-factor', [TwoFactorController::class, 'show'])->name('two-factor.show');
-    
+
     // Require 2FA for other settings
-    Route::middleware('require.2fa')->group(function () {
+    Route::middleware('two-factor')->group(function () {
         Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('settings/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('settings/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

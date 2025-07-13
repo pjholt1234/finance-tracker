@@ -22,7 +22,7 @@ class TagFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'name' => $this->faker->word(),
+            'name' => $this->faker->unique()->word(),
             'color' => $this->faker->hexColor(),
             'description' => $this->faker->sentence(),
         ];
@@ -33,7 +33,7 @@ class TagFactory extends Factory
      */
     public function withoutColor(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'color' => null,
         ]);
     }
@@ -43,7 +43,7 @@ class TagFactory extends Factory
      */
     public function withoutDescription(): static
     {
-        return $this->state(fn (array $attributes) => [
+        return $this->state(fn(array $attributes) => [
             'description' => null,
         ]);
     }

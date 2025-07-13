@@ -26,12 +26,6 @@ class CsvSchema extends Model
 
     protected $casts = [
         'transaction_data_start' => 'integer',
-        'date_column' => 'integer',
-        'balance_column' => 'integer',
-        'amount_column' => 'integer',
-        'paid_in_column' => 'integer',
-        'paid_out_column' => 'integer',
-        'description_column' => 'integer',
     ];
 
     /**
@@ -77,13 +71,23 @@ class CsvSchema extends Model
             ]);
         }
 
-        // Column numbers must be positive integers
+        // Column numbers must be positive integers or valid letters
         $columns = ['date_column', 'balance_column', 'amount_column', 'paid_in_column', 'paid_out_column', 'description_column'];
         foreach ($columns as $column) {
-            if (!empty($this->$column) && $this->$column < 1) {
-                throw ValidationException::withMessages([
-                    $column => 'Column number must be 1 or greater.'
-                ]);
+            if (!empty($this->$column)) {
+                $value = $this->$column;
+                // Check if it's a valid numeric column (1 or greater)
+                if (is_numeric($value) && $value < 1) {
+                    throw ValidationException::withMessages([
+                        $column => 'Column number must be 1 or greater.'
+                    ]);
+                }
+                // Check if it's a valid letter column (A-Z)
+                if (is_string($value) && !preg_match('/^[A-Z]$/i', $value)) {
+                    throw ValidationException::withMessages([
+                        $column => 'Column must be a valid letter (A-Z) or number (1 or greater).'
+                    ]);
+                }
             }
         }
     }

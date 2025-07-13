@@ -103,9 +103,9 @@ export default function Edit({ schema, available_columns, available_date_formats
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`Edit CSV Schema: ${schema.name}`} />
+            <Head title={`Edit Schema: ${schema.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl overflow-x-auto">
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold">Edit CSV Schema</h2>

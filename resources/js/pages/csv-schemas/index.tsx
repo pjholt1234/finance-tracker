@@ -11,6 +11,7 @@ import {
 import { MoreHorizontal, Plus, FileText, Calendar, DollarSign, Hash } from 'lucide-react';
 import { type BreadcrumbItem, type SharedData } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { formatDate } from '@/utils/date';
 
 interface CsvSchema {
     id: number;
@@ -47,50 +48,61 @@ export default function Index({ schemas }: Props) {
 
     const getAmountConfiguration = (schema: CsvSchema) => {
         if (schema.amount_column) {
-            return { type: 'single', column: schema.amount_column };
+            return {
+                type: 'Single Amount',
+                details: `Column ${schema.amount_column}`,
+            };
+        } else if (schema.paid_in_column || schema.paid_out_column) {
+            const details = [];
+            if (schema.paid_in_column) details.push(`In: ${schema.paid_in_column}`);
+            if (schema.paid_out_column) details.push(`Out: ${schema.paid_out_column}`);
+            return {
+                type: 'Split Amount',
+                details: details.join(', '),
+            };
         }
-
-        const columns = [];
-        if (schema.paid_in_column) columns.push(`In: ${schema.paid_in_column}`);
-        if (schema.paid_out_column) columns.push(`Out: ${schema.paid_out_column}`);
-
-        return { type: 'split', column: columns.join(', ') };
+        return {
+            type: 'Not configured',
+            details: 'No amount columns',
+        };
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="CSV Schemas" />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
-                <div className="flex justify-between items-center">
+            <div className="space-y-6">
+                {/* Page Header */}
+                <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-2xl font-bold">CSV Schemas</h2>
-                        <p className="text-muted-foreground mt-1">
+                        <h1 className="text-2xl font-bold tracking-tight">CSV Schemas</h1>
+                        <p className="text-muted-foreground">
                             Manage your CSV import configurations
                         </p>
                     </div>
-                    <Link href={route('csv-schemas.create')}>
-                        <Button>
-                            <Plus className="h-4 w-4 mr-2" />
+                    <Button asChild>
+                        <Link href={route('csv-schemas.create')}>
+                            <Plus className="mr-2 h-4 w-4" />
                             Create Schema
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </div>
 
+                {/* Schema Cards */}
                 {schemas.length === 0 ? (
                     <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-12">
+                        <CardContent className="flex flex-col items-center justify-center py-16">
                             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
                             <h3 className="text-lg font-semibold mb-2">No CSV schemas yet</h3>
                             <p className="text-muted-foreground text-center mb-6">
-                                Create your first CSV schema to start importing transaction data.
+                                Create your first CSV schema to define how your transaction files should be imported.
                             </p>
-                            <Link href={route('csv-schemas.create')}>
-                                <Button>
-                                    <Plus className="h-4 w-4 mr-2" />
-                                    Create Your First Schema
-                                </Button>
-                            </Link>
+                            <Button asChild>
+                                <Link href={route('csv-schemas.create')}>
+                                    <Plus className="mr-2 h-4 w-4" />
+                                    Create Schema
+                                </Link>
+                            </Button>
                         </CardContent>
                     </Card>
                 ) : (
@@ -105,36 +117,37 @@ export default function Index({ schemas }: Props) {
                                             <div className="flex-1">
                                                 <CardTitle className="text-lg">{schema.name}</CardTitle>
                                                 <CardDescription className="mt-1">
-                                                    Created {new Date(schema.created_at).toLocaleDateString()}
+                                                    Created {formatDate(schema.created_at)}
                                                 </CardDescription>
                                             </div>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="sm">
+                                                    <Button variant="ghost" size="icon">
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem asChild>
                                                         <Link href={route('csv-schemas.show', schema.id)}>
-                                                            View
+                                                            View Schema
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
                                                         <Link href={route('csv-schemas.edit', schema.id)}>
-                                                            Edit
+                                                            Edit Schema
                                                         </Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem
                                                         onClick={() => handleDelete(schema)}
                                                         className="text-destructive"
                                                     >
-                                                        Delete
+                                                        Delete Schema
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
                                     </CardHeader>
+
                                     <CardContent className="pt-0">
                                         <div className="space-y-3">
                                             <div className="flex items-center text-sm">
@@ -157,19 +170,11 @@ export default function Index({ schemas }: Props) {
                                                 <span>Balance: {schema.balance_column}</span>
                                             </div>
 
-                                            <div className="flex items-start text-sm">
-                                                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground mt-0.5" />
-                                                <div>
-                                                    <span>Amount: </span>
-                                                    <Badge
-                                                        variant={amountConfig.type === 'single' ? 'default' : 'outline'}
-                                                        className="text-xs"
-                                                    >
-                                                        {amountConfig.type === 'single' ? 'Single' : 'Split'}
-                                                    </Badge>
-                                                    <div className="text-xs text-muted-foreground mt-1">
-                                                        {amountConfig.column}
-                                                    </div>
+                                            <div className="flex items-center text-sm">
+                                                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                <div className="flex-1">
+                                                    <div className="font-medium">{amountConfig.type}</div>
+                                                    <div className="text-xs text-muted-foreground">{amountConfig.details}</div>
                                                 </div>
                                             </div>
 

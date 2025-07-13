@@ -24,10 +24,20 @@ import {
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { formatDate } from '@/utils/date';
 
 interface CsvSchema {
     id: number;
     name: string;
+}
+
+interface Account {
+    id: number;
+    name: string;
+    number: number;
+    sort_code: string;
+    description?: string;
+    balance: number;
 }
 
 interface Tag {
@@ -39,9 +49,9 @@ interface Tag {
 interface PreviewTransaction {
     row_number: number;
     date: string;
-    balance: string;
-    paid_in?: string;
-    paid_out?: string;
+    balance: number; // Balance in pennies
+    paid_in?: number; // Paid in amount in pennies
+    paid_out?: number; // Paid out amount in pennies
     description?: string;
     reference?: string;
     unique_hash: string;
@@ -65,6 +75,7 @@ interface TransactionPreview {
 interface Props {
     preview: TransactionPreview;
     schema: CsvSchema;
+    account: Account;
     filename: string;
     temp_path: string;
     tags: Tag[];
@@ -72,8 +83,8 @@ interface Props {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Transaction Imports',
-        href: '/transaction-imports',
+        title: 'Imports',
+        href: '/imports',
     },
     {
         title: 'Review Import',
@@ -81,7 +92,7 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function ImportReview({ preview, schema, filename, temp_path, tags }: Props) {
+export default function ImportReview({ preview, schema, account, filename, temp_path, tags }: Props) {
     const [transactions, setTransactions] = useState<PreviewTransaction[]>(
         preview.transactions.map(t => ({
             ...t,
@@ -113,25 +124,14 @@ export default function ImportReview({ preview, schema, filename, temp_path, tag
         setAvailableTags(prev => [...prev, newTag]);
     };
 
-    const formatCurrency = (amount: string | undefined) => {
+    const formatCurrency = (amount: number | undefined) => {
         if (!amount) return '-';
-
-        const cleanAmount = amount.toString().replace(/[^0-9.-]/g, '');
-        const numericAmount = parseFloat(cleanAmount);
-
-        if (isNaN(numericAmount)) {
-            return `Invalid: ${amount}`;
-        }
 
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2,
-        }).format(numericAmount);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString();
+        }).format(amount / 100);
     };
 
     const updateCurrentTransaction = (updates: Partial<PreviewTransaction>) => {
@@ -271,6 +271,7 @@ export default function ImportReview({ preview, schema, filename, temp_path, tag
             schema_id: schema.id,
             filename: filename,
             temp_path: temp_path,
+            account_id: account.id,
         });
     };
 

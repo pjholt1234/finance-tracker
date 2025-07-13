@@ -11,7 +11,7 @@ import { useInitials } from '@/hooks/use-initials';
 import { cn } from '@/lib/utils';
 import { type BreadcrumbItem, type NavItem, type SharedData } from '@/types';
 import { Link, usePage } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, Menu, Search, FileSpreadsheet, Upload } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, Menu, Search, FileSpreadsheet, Upload, History, Building2 } from 'lucide-react';
 import AppLogo from './app-logo';
 import AppLogoIcon from './app-logo-icon';
 
@@ -22,13 +22,23 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Accounts',
+        href: '/accounts',
+        icon: Building2,
+    },
+    {
         title: 'CSV Schemas',
         href: '/csv-schemas',
         icon: FileSpreadsheet,
     },
     {
-        title: 'Transaction Imports',
-        href: '/transaction-imports',
+        title: 'Imports',
+        href: '/imports',
+        icon: History,
+    },
+    {
+        title: 'Import Statement',
+        href: '/imports/create',
         icon: Upload,
     },
 ];

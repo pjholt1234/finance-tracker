@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Carbon\Carbon;
 
 class Transaction extends Model
 {
@@ -13,6 +14,7 @@ class Transaction extends Model
 
     protected $fillable = [
         'user_id',
+        'account_id',
         'date',
         'balance',
         'paid_in',
@@ -23,12 +25,27 @@ class Transaction extends Model
         'unique_hash',
     ];
 
+    protected $casts = [
+        'date' => 'date',
+        'balance' => 'integer',
+        'paid_in' => 'integer',
+        'paid_out' => 'integer',
+    ];
+
     /**
      * Get the user that owns the transaction.
      */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /**
+     * Get the account that owns the transaction.
+     */
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 
     /**
@@ -50,17 +67,82 @@ class Transaction extends Model
     }
 
     /**
+     * Convert currency string to pennies.
+     */
+    public static function currencyToPennies(?string $amount): ?int
+    {
+        if (empty($amount)) {
+            return null;
+        }
+
+        // Extract numeric value from currency-formatted strings
+        // This handles formats like "£507.15", "$507.15", "507.15", "-£20.00", etc.
+        $numericMatch = preg_match('/-?\d+\.?\d*/', $amount, $matches);
+
+        if ($numericMatch && isset($matches[0])) {
+            $numericValue = floatval($matches[0]);
+            return (int) round($numericValue * 100);
+        }
+
+        return null;
+    }
+
+    /**
+     * Convert pennies to formatted currency string.
+     */
+    public static function penniesToCurrency(?int $pennies): string
+    {
+        if ($pennies === null) {
+            return '';
+        }
+
+        return number_format($pennies / 100, 2);
+    }
+
+    /**
+     * Get the formatted balance.
+     */
+    public function getFormattedBalanceAttribute(): string
+    {
+        return self::penniesToCurrency($this->balance);
+    }
+
+    /**
+     * Get the formatted paid in amount.
+     */
+    public function getFormattedPaidInAttribute(): string
+    {
+        return self::penniesToCurrency($this->paid_in);
+    }
+
+    /**
+     * Get the formatted paid out amount.
+     */
+    public function getFormattedPaidOutAttribute(): string
+    {
+        return self::penniesToCurrency($this->paid_out);
+    }
+
+    /**
+     * Get the formatted date in d/m/Y format.
+     */
+    public function getFormattedDateAttribute(): string
+    {
+        return $this->date ? $this->date->format('d/m/Y') : '';
+    }
+
+    /**
      * Generate a unique hash for the transaction.
      * This is used to prevent duplicate imports.
      */
-    public static function generateUniqueHash(int $userId, string $date, string $balance, ?string $paidIn = null, ?string $paidOut = null): string
+    public static function generateUniqueHash(int $userId, string $date, ?int $balance, ?int $paidIn = null, ?int $paidOut = null): string
     {
         $data = [
             'user_id' => $userId,
             'date' => $date,
-            'balance' => $balance,
-            'paid_in' => $paidIn ?? '',
-            'paid_out' => $paidOut ?? '',
+            'balance' => $balance ?? 0,
+            'paid_in' => $paidIn ?? 0,
+            'paid_out' => $paidOut ?? 0,
         ];
 
         return hash('sha256', json_encode($data));
@@ -88,5 +170,33 @@ class Transaction extends Model
     public function scopeForImport($query, int $importId)
     {
         return $query->where('import_id', $importId);
+    }
+
+    /**
+     * Scope to filter transactions by account ID.
+     */
+    public function scopeForAccount($query, int $accountId)
+    {
+        return $query->where('account_id', $accountId);
+    }
+
+    /**
+     * Boot the model to automatically generate unique hash.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($transaction) {
+            if (!$transaction->unique_hash) {
+                $transaction->unique_hash = self::generateUniqueHash(
+                    $transaction->user_id,
+                    $transaction->date,
+                    $transaction->balance,
+                    $transaction->paid_in,
+                    $transaction->paid_out
+                );
+            }
+        });
     }
 }

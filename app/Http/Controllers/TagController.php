@@ -23,8 +23,27 @@ class TagController extends Controller
             'description' => 'nullable|string|max:500',
         ]);
 
+        // Trim whitespace from name and description
+        $validated['name'] = trim($validated['name']);
+        if (isset($validated['description'])) {
+            $validated['description'] = trim($validated['description']);
+            // Convert empty string to null
+            if ($validated['description'] === '') {
+                $validated['description'] = null;
+            }
+        }
+
         // Check for duplicate tag name for this user
         if (Auth::user()->tags()->where('name', $validated['name'])->exists()) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'The given data was invalid.',
+                    'errors' => [
+                        'name' => ['You already have a tag with this name.']
+                    ]
+                ], 422);
+            }
+
             throw ValidationException::withMessages([
                 'name' => 'You already have a tag with this name.',
             ]);
@@ -33,18 +52,14 @@ class TagController extends Controller
         $tagData = [
             'name' => $validated['name'],
             'color' => $validated['color'] ?? $this->generateRandomColor(),
+            'description' => $validated['description'] ?? null,
         ];
-
-        // Only add description if it's provided
-        if (!empty($validated['description'])) {
-            $tagData['description'] = $validated['description'];
-        }
 
         $tag = Auth::user()->tags()->create($tagData);
 
         // Return JSON for AJAX requests, redirect for form submissions
         if ($request->expectsJson() || $request->header('X-Inertia')) {
-            return response()->json($tag);
+            return response()->json($tag, 201);
         }
 
         return back()->with('success', 'Tag created successfully.');

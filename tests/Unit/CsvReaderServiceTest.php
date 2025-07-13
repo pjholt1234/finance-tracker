@@ -21,9 +21,9 @@ class CsvReaderServiceTest extends TestCase
     {
         // Create a test CSV file
         $csvContent = "Date,Description,Amount,Balance\n" .
-                     "2024-01-01,Opening Balance,0.00,1000.00\n" .
-                     "2024-01-02,Grocery Store,-45.67,954.33\n" .
-                     "2024-01-03,Salary Deposit,2500.00,3454.33\n";
+            "2024-01-01,Opening Balance,0.00,1000.00\n" .
+            "2024-01-02,Grocery Store,-45.67,954.33\n" .
+            "2024-01-03,Salary Deposit,2500.00,3454.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
 
@@ -43,8 +43,8 @@ class CsvReaderServiceTest extends TestCase
     {
         // Create a test CSV file
         $csvContent = "Date,Description,Amount,Balance\n" .
-                     "2024-01-01,Opening Balance,0.00,1000.00\n" .
-                     "2024-01-02,Grocery Store,-45.67,954.33\n";
+            "2024-01-01,Opening Balance,0.00,1000.00\n" .
+            "2024-01-02,Grocery Store,-45.67,954.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
 
@@ -59,7 +59,7 @@ class CsvReaderServiceTest extends TestCase
         $result = $this->csvReaderService->parseWithSchema($file, $schema);
 
         $this->assertCount(2, $result);
-        
+
         $firstRow = $result->first();
         $this->assertEquals('2024-01-01', $firstRow['date']);
         $this->assertEquals('Opening Balance', $firstRow['description']);
@@ -71,8 +71,8 @@ class CsvReaderServiceTest extends TestCase
     {
         // Create a test CSV file with separate paid in/out columns
         $csvContent = "Date,Description,Paid In,Paid Out,Balance\n" .
-                     "2024-01-01,Opening Balance,1000.00,,1000.00\n" .
-                     "2024-01-02,Grocery Store,,45.67,954.33\n";
+            "2024-01-01,Opening Balance,1000.00,,1000.00\n" .
+            "2024-01-02,Grocery Store,,45.67,954.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
 
@@ -88,11 +88,11 @@ class CsvReaderServiceTest extends TestCase
         $result = $this->csvReaderService->parseWithSchema($file, $schema);
 
         $this->assertCount(2, $result);
-        
+
         $firstRow = $result->first();
         $this->assertEquals('1000', $firstRow['paid_in']);
         $this->assertArrayNotHasKey('paid_out', $firstRow);
-        
+
         $secondRow = $result->skip(1)->first();
         $this->assertEquals('45.67', $secondRow['paid_out']);
         $this->assertArrayNotHasKey('paid_in', $secondRow);
@@ -102,7 +102,7 @@ class CsvReaderServiceTest extends TestCase
     {
         // Create a test CSV file without headers
         $csvContent = "2024-01-01,Opening Balance,0.00,1000.00\n" .
-                     "2024-01-02,Grocery Store,-45.67,954.33\n";
+            "2024-01-02,Grocery Store,-45.67,954.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
 
@@ -117,7 +117,7 @@ class CsvReaderServiceTest extends TestCase
         $result = $this->csvReaderService->parseWithSchema($file, $schema);
 
         $this->assertCount(2, $result);
-        
+
         $firstRow = $result->first();
         $this->assertEquals('2024-01-01', $firstRow['date']);
         $this->assertEquals('Opening Balance', $firstRow['description']);
@@ -129,16 +129,16 @@ class CsvReaderServiceTest extends TestCase
     {
         // Create a test CSV file with various date formats
         $csvContent = "Date,Amount\n" .
-                     "2024-01-15,100.00\n" .
-                     "15/01/2024,200.00\n" .
-                     "01/15/2024,300.00\n";
+            "2024-01-15,100.00\n" .
+            "15/01/2024,200.00\n" .
+            "01/15/2024,300.00\n";
 
         $file = $this->createTempCsvFile($csvContent);
 
         $result = $this->csvReaderService->parseForPreview($file, 10);
 
         $this->assertNotEmpty($result['detected_date_formats']);
-        
+
         // Should detect multiple date formats
         $formats = array_column($result['detected_date_formats'], 'format');
         $this->assertContains('Y-m-d', $formats);
@@ -149,8 +149,7 @@ class CsvReaderServiceTest extends TestCase
         $file = $this->createTempCsvFile('');
 
         $this->expectException(\Exception::class);
-        // Laravel Excel throws a different exception for invalid files
-        $this->expectExceptionMessageMatches('/Invalid Spreadsheet file/');
+        $this->expectExceptionMessage('The CSV file appears to be empty or invalid.');
 
         $this->csvReaderService->parseForPreview($file, 10);
     }
@@ -159,9 +158,9 @@ class CsvReaderServiceTest extends TestCase
     {
         // Create a test CSV file with empty rows
         $csvContent = "Date,Amount\n" .
-                     "2024-01-01,100.00\n" .
-                     ",,\n" .  // Empty row
-                     "2024-01-02,200.00\n";
+            "2024-01-01,100.00\n" .
+            ",,\n" .  // Empty row
+            "2024-01-02,200.00\n";
 
         $file = $this->createTempCsvFile($csvContent);
 
@@ -194,4 +193,4 @@ class CsvReaderServiceTest extends TestCase
             true
         );
     }
-} 
+}

@@ -52,6 +52,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Get the accounts for the user.
+     */
+    public function accounts(): HasMany
+    {
+        return $this->hasMany(Account::class);
+    }
+
+    /**
      * Get the CSV schemas for the user.
      */
     public function csvSchemas(): HasMany

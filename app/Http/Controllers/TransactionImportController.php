@@ -28,9 +28,11 @@ class TransactionImportController extends Controller
     public function create(): Response
     {
         $schemas = Auth::user()->csvSchemas()->latest()->get();
+        $accounts = Auth::user()->accounts()->orderBy('name')->get();
 
         return Inertia::render('transactions/import', [
             'schemas' => $schemas,
+            'accounts' => $accounts,
         ]);
     }
 
@@ -42,10 +44,13 @@ class TransactionImportController extends Controller
         $request->validate([
             'csv_file' => 'required|file|mimes:csv,txt|max:10240', // 10MB max
             'csv_schema_id' => 'required|exists:csv_schemas,id',
+            'account_id' => 'required|exists:accounts,id',
         ]);
 
         $schema = CsvSchema::findOrFail($request->csv_schema_id);
         $this->authorize('view', $schema);
+
+        $account = Auth::user()->accounts()->findOrFail($request->account_id);
 
         $file = $request->file('csv_file');
 
@@ -64,6 +69,7 @@ class TransactionImportController extends Controller
             return Inertia::render('transactions/import-review', [
                 'preview' => $preview,
                 'schema' => $schema,
+                'account' => $account,
                 'filename' => $filename,
                 'temp_path' => $tempPath,
                 'tags' => Auth::user()->tags()->orderBy('name')->get(),
@@ -82,6 +88,7 @@ class TransactionImportController extends Controller
             Log::error('CSV Preview failed', [
                 'user_id' => Auth::id(),
                 'schema_id' => $schema->id,
+                'account_id' => $account->id,
                 'filename' => $file->getClientOriginalName(),
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -101,6 +108,7 @@ class TransactionImportController extends Controller
         $request->validate([
             'transactions' => 'required|string',
             'schema_id' => 'required|exists:csv_schemas,id',
+            'account_id' => 'required|exists:accounts,id',
             'filename' => 'required|string',
             'temp_path' => 'required|string',
         ]);
@@ -130,6 +138,8 @@ class TransactionImportController extends Controller
         $schema = CsvSchema::findOrFail($request->schema_id);
         $this->authorize('view', $schema);
 
+        $account = Auth::user()->accounts()->findOrFail($request->account_id);
+
         // Verify all tags belong to the user
         $userTagIds = Auth::user()->tags()->pluck('id')->toArray();
         foreach ($transactions as $transaction) {
@@ -146,8 +156,9 @@ class TransactionImportController extends Controller
             $import = $this->csvImportService->importReviewedTransactions(
                 $transactions,
                 $schema,
+                $request->filename,
                 Auth::id(),
-                $request->filename
+                $account->id
             );
 
             // Clean up temporary file
@@ -159,6 +170,7 @@ class TransactionImportController extends Controller
             Log::error('CSV Import finalization failed', [
                 'user_id' => Auth::id(),
                 'schema_id' => $schema->id,
+                'account_id' => $account->id,
                 'filename' => $request->filename,
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString()
@@ -180,7 +192,7 @@ class TransactionImportController extends Controller
             abort(403);
         }
 
-        $import->load(['csvSchema', 'transactions' => function ($query) {
+        $import->load(['csvSchema', 'account', 'transactions' => function ($query) {
             $query->latest()->limit(10); // Show latest 10 transactions as preview
         }]);
 
@@ -198,7 +210,7 @@ class TransactionImportController extends Controller
     public function index(): Response
     {
         $imports = Auth::user()->imports()
-            ->with('csvSchema')
+            ->with(['csvSchema', 'account'])
             ->latest()
             ->paginate(20);
 

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { formatDate, formatDateTime } from '@/utils/date';
 
 interface CsvSchema {
     id: number;
@@ -26,11 +27,13 @@ interface CsvSchema {
 interface Transaction {
     id: number;
     date: string;
-    balance: string;
-    paid_in?: string;
-    paid_out?: string;
+    balance: number; // Balance in pennies
+    paid_in?: number; // Paid in amount in pennies
+    paid_out?: number; // Paid out amount in pennies
     description?: string;
+    reference?: string;
     created_at: string;
+    updated_at: string;
 }
 
 interface Import {
@@ -65,8 +68,8 @@ interface Props {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Transaction Imports',
-        href: '/transaction-imports',
+        title: 'Imports',
+        href: '/imports',
     },
     {
         title: 'Import Results',
@@ -96,31 +99,14 @@ export default function ImportResults({ import: importData, stats }: Props) {
         }
     };
 
-    const formatCurrency = (amount: string | undefined) => {
+    const formatCurrency = (amount: number | undefined) => {
         if (!amount) return '-';
-
-        // Clean the amount string - remove any non-numeric characters except decimal point and negative sign
-        const cleanAmount = amount.toString().replace(/[^0-9.-]/g, '');
-
-        const numericAmount = parseFloat(cleanAmount);
-
-        if (isNaN(numericAmount)) {
-            return `Invalid: ${amount}`;
-        }
 
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: 'USD',
             minimumFractionDigits: 2,
-        }).format(numericAmount);
-    };
-
-    const formatDate = (dateString: string) => {
-        return new Date(dateString).toLocaleDateString();
-    };
-
-    const formatDateTime = (dateString: string) => {
-        return new Date(dateString).toLocaleString();
+        }).format(amount / 100);
     };
 
     return (
@@ -128,6 +114,14 @@ export default function ImportResults({ import: importData, stats }: Props) {
             <Head title={`Import Results - ${importData.filename}`} />
 
             <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
+                {/* Page Heading */}
+                <div>
+                    <h1 className="text-3xl font-bold">
+                        Import Results - <span className="text-muted-foreground">{importData.filename}</span>
+                    </h1>
+                </div>
+
+                {/* Action Bar */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <Link href={route('transaction-imports.index')}>
@@ -136,12 +130,6 @@ export default function ImportResults({ import: importData, stats }: Props) {
                                 Back to Imports
                             </Button>
                         </Link>
-                        <div>
-                            <h2 className="text-2xl font-bold">Import Results</h2>
-                            <p className="text-muted-foreground mt-1">
-                                {importData.filename}
-                            </p>
-                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                         {getStatusBadge(importData.status)}
@@ -243,7 +231,7 @@ export default function ImportResults({ import: importData, stats }: Props) {
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <FileText className="h-5 w-5" />
-                                Sample Transactions
+                                Transactions
                             </CardTitle>
                             <CardDescription>
                                 Preview of the latest imported transactions

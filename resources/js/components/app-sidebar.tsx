@@ -4,7 +4,7 @@ import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
-import { BookOpen, Folder, LayoutGrid, FileSpreadsheet, Upload } from 'lucide-react';
+import { BookOpen, Folder, LayoutGrid, FileSpreadsheet, Upload, History, Building2 } from 'lucide-react';
 import AppLogo from './app-logo';
 
 const mainNavItems: NavItem[] = [
@@ -14,13 +14,23 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Accounts',
+        href: '/accounts',
+        icon: Building2,
+    },
+    {
         title: 'CSV Schemas',
         href: '/csv-schemas',
         icon: FileSpreadsheet,
     },
     {
-        title: 'Transaction Imports',
-        href: '/transaction-imports',
+        title: 'Imports',
+        href: '/imports',
+        icon: History,
+    },
+    {
+        title: 'Import Statement',
+        href: '/imports/create',
         icon: Upload,
     },
 ];

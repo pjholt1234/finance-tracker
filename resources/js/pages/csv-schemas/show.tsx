@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { formatDateTime } from '@/utils/date';
 
 interface CsvSchema {
     id: number;
@@ -47,21 +48,30 @@ export default function Show({ schema }: Props) {
         },
     ];
 
+    const handleDelete = () => {
+        if (confirm('Are you sure you want to delete this schema?')) {
+            router.delete(route('csv-schemas.destroy', schema.id));
+        }
+    };
+
     const getAmountConfiguration = () => {
         if (schema.amount_column) {
             return {
                 type: 'Single Amount Column',
-                details: schema.amount_column,
+                details: `Column ${schema.amount_column}`,
+            };
+        } else if (schema.paid_in_column || schema.paid_out_column) {
+            const details = [];
+            if (schema.paid_in_column) details.push(`Paid In: Column ${schema.paid_in_column}`);
+            if (schema.paid_out_column) details.push(`Paid Out: Column ${schema.paid_out_column}`);
+            return {
+                type: 'Separate Amount Columns',
+                details: details.join(', '),
             };
         }
-
-        const columns = [];
-        if (schema.paid_in_column) columns.push(`In: ${schema.paid_in_column}`);
-        if (schema.paid_out_column) columns.push(`Out: ${schema.paid_out_column}`);
-
         return {
-            type: 'Split Amount Columns',
-            details: columns.join(', '),
+            type: 'Not configured',
+            details: 'No amount columns specified',
         };
     };
 
@@ -69,36 +79,34 @@ export default function Show({ schema }: Props) {
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title={`CSV Schema: ${schema.name}`} />
+            <Head title={schema.name} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl p-4 overflow-x-auto">
+            <div className="space-y-6">
+                {/* Page Header */}
                 <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-2xl font-bold">{schema.name}</h2>
-                        <p className="text-muted-foreground mt-1">
-                            CSV schema configuration details
-                        </p>
-                    </div>
-                    <div className="flex gap-3">
-                        <Link href={route('csv-schemas.edit', schema.id)}>
-                            <Button>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit Schema
-                            </Button>
-                        </Link>
-                        <Button
-                            onClick={() => router.post(route('csv-schemas.clone', schema.id))}
-                            variant="outline"
-                        >
-                            <Copy className="h-4 w-4 mr-2" />
-                            Clone Schema
+                    <div className="flex items-center space-x-4">
+                        <Button variant="outline" size="icon" asChild>
+                            <Link href={route('csv-schemas.index')}>
+                                <ArrowLeft className="h-4 w-4" />
+                            </Link>
                         </Button>
-                        <Link href={route('csv-schemas.index')}>
-                            <Button variant="outline">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
-                                Back to Schemas
-                            </Button>
-                        </Link>
+                        <div>
+                            <h1 className="text-2xl font-bold tracking-tight">{schema.name}</h1>
+                            <p className="text-muted-foreground">
+                                CSV Schema Configuration
+                            </p>
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Button variant="outline" asChild>
+                            <Link href={route('csv-schemas.edit', schema.id)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit Schema
+                            </Link>
+                        </Button>
+                        <Button variant="destructive" onClick={handleDelete}>
+                            Delete Schema
+                        </Button>
                     </div>
                 </div>
 
@@ -130,13 +138,7 @@ export default function Show({ schema }: Props) {
                                 <span className="text-sm font-medium">Created</span>
                                 <div className="flex items-center gap-2 text-sm">
                                     <Clock className="h-4 w-4 text-muted-foreground" />
-                                    {new Date(schema.created_at).toLocaleDateString('en-US', {
-                                        year: 'numeric',
-                                        month: 'long',
-                                        day: 'numeric',
-                                        hour: '2-digit',
-                                        minute: '2-digit'
-                                    })}
+                                    {formatDateTime(schema.created_at)}
                                 </div>
                             </div>
 
@@ -147,13 +149,7 @@ export default function Show({ schema }: Props) {
                                         <span className="text-sm font-medium">Last Updated</span>
                                         <div className="flex items-center gap-2 text-sm">
                                             <Clock className="h-4 w-4 text-muted-foreground" />
-                                            {new Date(schema.updated_at).toLocaleDateString('en-US', {
-                                                year: 'numeric',
-                                                month: 'long',
-                                                day: 'numeric',
-                                                hour: '2-digit',
-                                                minute: '2-digit'
-                                            })}
+                                            {formatDateTime(schema.updated_at)}
                                         </div>
                                     </div>
                                 </>
@@ -197,18 +193,14 @@ export default function Show({ schema }: Props) {
 
                             <Separator />
 
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                        <span className="text-sm font-medium">Amount Configuration</span>
-                                    </div>
-                                    <Badge variant={schema.amount_column ? 'default' : 'outline'}>
-                                        {amountConfig.type}
-                                    </Badge>
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-sm font-medium">Amount Configuration</span>
                                 </div>
-                                <div className="text-sm text-muted-foreground pl-6">
-                                    {amountConfig.details}
+                                <div className="text-right">
+                                    <div className="text-sm font-medium">{amountConfig.type}</div>
+                                    <div className="text-xs text-muted-foreground">{amountConfig.details}</div>
                                 </div>
                             </div>
 
