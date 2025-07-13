@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTagRequest;
+use App\Http\Requests\UpdateTagRequest;
 use App\Models\Tag;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -39,39 +41,9 @@ class TagController extends Controller
     /**
      * Store a newly created tag.
      */
-    public function store(Request $request)
+    public function store(StoreTagRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'color' => 'nullable|string|max:7', // Hex color
-            'description' => 'nullable|string|max:500',
-        ]);
-
-        // Trim whitespace from name and description
-        $validated['name'] = trim($validated['name']);
-        if (isset($validated['description'])) {
-            $validated['description'] = trim($validated['description']);
-            // Convert empty string to null
-            if ($validated['description'] === '') {
-                $validated['description'] = null;
-            }
-        }
-
-        // Check for duplicate tag name for this user
-        if (Auth::user()->tags()->where('name', $validated['name'])->exists()) {
-            if ($request->expectsJson()) {
-                return response()->json([
-                    'message' => 'The given data was invalid.',
-                    'errors' => [
-                        'name' => ['You already have a tag with this name.']
-                    ]
-                ], 422);
-            }
-
-            throw ValidationException::withMessages([
-                'name' => 'You already have a tag with this name.',
-            ]);
-        }
+        $validated = $request->validated();
 
         $tagData = [
             'name' => $validated['name'],
@@ -120,32 +92,11 @@ class TagController extends Controller
     /**
      * Update the specified tag.
      */
-    public function update(Request $request, Tag $tag)
+    public function update(UpdateTagRequest $request, Tag $tag)
     {
         $this->authorize('update', $tag);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'color' => 'nullable|string|max:7', // Hex color
-            'description' => 'nullable|string|max:500',
-        ]);
-
-        // Trim whitespace from name and description
-        $validated['name'] = trim($validated['name']);
-        if (isset($validated['description'])) {
-            $validated['description'] = trim($validated['description']);
-            // Convert empty string to null
-            if ($validated['description'] === '') {
-                $validated['description'] = null;
-            }
-        }
-
-        // Check for duplicate tag name for this user (excluding current tag)
-        if (Auth::user()->tags()->where('name', $validated['name'])->where('id', '!=', $tag->id)->exists()) {
-            throw ValidationException::withMessages([
-                'name' => 'You already have a tag with this name.',
-            ]);
-        }
+        $validated = $request->validated();
 
         $tag->update($validated);
 

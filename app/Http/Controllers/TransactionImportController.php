@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\FinalizeTransactionImportRequest;
+use App\Http\Requests\StoreTransactionImportRequest;
 use App\Models\CsvSchema;
 use App\Models\Import;
 use App\Services\CsvImportService;
@@ -39,14 +41,8 @@ class TransactionImportController extends Controller
     /**
      * Store a new import.
      */
-    public function store(Request $request)
+    public function store(StoreTransactionImportRequest $request)
     {
-        $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:10240', // 10MB max
-            'csv_schema_id' => 'required|exists:csv_schemas,id',
-            'account_id' => 'required|exists:accounts,id',
-        ]);
-
         $schema = CsvSchema::findOrFail($request->csv_schema_id);
         $this->authorize('view', $schema);
 
@@ -103,54 +99,15 @@ class TransactionImportController extends Controller
     /**
      * Finalize the import after review.
      */
-    public function finalize(Request $request)
+    public function finalize(FinalizeTransactionImportRequest $request)
     {
-        $request->validate([
-            'transactions' => 'required|string',
-            'schema_id' => 'required|exists:csv_schemas,id',
-            'account_id' => 'required|exists:accounts,id',
-            'filename' => 'required|string',
-            'temp_path' => 'required|string',
-        ]);
-
         // Decode the JSON transactions data
         $transactions = json_decode($request->transactions, true);
-
-        if (!$transactions || !is_array($transactions)) {
-            return back()->withErrors(['transactions' => 'Invalid transactions data.']);
-        }
-
-        // Validate each transaction
-        foreach ($transactions as $index => $transaction) {
-            if (!isset($transaction['status']) || !in_array($transaction['status'], ['approved', 'discarded', 'pending', 'duplicate'])) {
-                return back()->withErrors(['transactions' => "Invalid status for transaction {$index}."]);
-            }
-
-            if (!empty($transaction['tags'])) {
-                foreach ($transaction['tags'] as $tag) {
-                    if (!isset($tag['id']) || !is_numeric($tag['id'])) {
-                        return back()->withErrors(['transactions' => "Invalid tag for transaction {$index}."]);
-                    }
-                }
-            }
-        }
 
         $schema = CsvSchema::findOrFail($request->schema_id);
         $this->authorize('view', $schema);
 
         $account = Auth::user()->accounts()->findOrFail($request->account_id);
-
-        // Verify all tags belong to the user
-        $userTagIds = Auth::user()->tags()->pluck('id')->toArray();
-        foreach ($transactions as $transaction) {
-            if (!empty($transaction['tags'])) {
-                foreach ($transaction['tags'] as $tag) {
-                    if (!in_array($tag['id'], $userTagIds)) {
-                        return back()->withErrors(['transactions' => 'Invalid tag selected.']);
-                    }
-                }
-            }
-        }
 
         try {
             $import = $this->csvImportService->importReviewedTransactions(

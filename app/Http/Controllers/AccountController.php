@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAccountRequest;
+use App\Http\Requests\UpdateAccountRequest;
 use App\Models\Account;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -38,24 +40,18 @@ class AccountController extends Controller
     /**
      * Store a newly created account in storage.
      */
-    public function store(Request $request)
+    public function store(StoreAccountRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'number' => 'required|integer|unique:accounts,number,NULL,id,user_id,' . Auth::id(),
-            'sort_code' => 'nullable|string|max:20',
-            'description' => 'nullable|string',
-            'balance_at_start' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $account = Account::create([
             'user_id' => Auth::id(),
-            'name' => $request->name,
-            'number' => $request->number,
-            'sort_code' => $request->sort_code,
-            'description' => $request->description,
-            'balance_at_start' => $request->balance_at_start ?? 0,
-            'balance' => $request->balance_at_start ?? 0,
+            'name' => $validated['name'],
+            'number' => $validated['number'],
+            'sort_code' => $validated['sort_code'],
+            'description' => $validated['description'],
+            'balance_at_start' => $validated['balance_at_start'] ?? 0,
+            'balance' => $validated['balance_at_start'] ?? 0,
         ]);
 
         return redirect()->route('accounts.index')
@@ -120,27 +116,21 @@ class AccountController extends Controller
     /**
      * Update the specified account in storage.
      */
-    public function update(Request $request, Account $account)
+    public function update(UpdateAccountRequest $request, Account $account)
     {
         // Verify ownership
         if ($account->user_id !== Auth::id()) {
             abort(403);
         }
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'number' => 'required|integer|unique:accounts,number,' . $account->id . ',id,user_id,' . Auth::id(),
-            'sort_code' => 'nullable|string|max:20',
-            'description' => 'nullable|string',
-            'balance_at_start' => 'nullable|integer|min:0',
-        ]);
+        $validated = $request->validated();
 
         $account->update([
-            'name' => $request->name,
-            'number' => $request->number,
-            'sort_code' => $request->sort_code,
-            'description' => $request->description,
-            'balance_at_start' => $request->balance_at_start ?? 0,
+            'name' => $validated['name'],
+            'number' => $validated['number'],
+            'sort_code' => $validated['sort_code'],
+            'description' => $validated['description'],
+            'balance_at_start' => $validated['balance_at_start'] ?? 0,
         ]);
 
         return redirect()->route('accounts.index')

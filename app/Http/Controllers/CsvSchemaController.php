@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\PreviewCsvSchemaRequest;
+use App\Http\Requests\StoreCsvSchemaRequest;
+use App\Http\Requests\UpdateCsvSchemaRequest;
 use App\Models\CsvSchema;
 use App\Services\CsvReaderService;
 use Illuminate\Http\Request;
@@ -42,12 +45,8 @@ class CsvSchemaController extends Controller
     /**
      * Preview CSV file and return parsed data for column mapping.
      */
-    public function preview(Request $request)
+    public function preview(PreviewCsvSchemaRequest $request)
     {
-        $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt|max:10240', // 10MB max
-        ]);
-
         try {
             $file = $request->file('csv_file');
             $previewData = $this->csvReaderService->parseForPreview($file, 20);
@@ -55,7 +54,6 @@ class CsvSchemaController extends Controller
             return Inertia::render('csv-schemas/create', [
                 'preview' => $previewData,
             ]);
-
         } catch (\Exception $e) {
             return back()->withErrors([
                 'csv_file' => 'Error reading CSV file: ' . $e->getMessage(),
@@ -66,35 +64,9 @@ class CsvSchemaController extends Controller
     /**
      * Store a newly created CSV schema.
      */
-    public function store(Request $request)
+    public function store(StoreCsvSchemaRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'transaction_data_start' => 'required|integer|min:1',
-            'date_column' => 'required|integer|min:1',
-            'balance_column' => 'required|integer|min:1',
-            'amount_column' => 'nullable|integer|min:1',
-            'paid_in_column' => 'nullable|integer|min:1',
-            'paid_out_column' => 'nullable|integer|min:1',
-            'description_column' => 'nullable|integer|min:1',
-            'date_format' => 'nullable|string|max:50',
-        ]);
-
-        // Validate that either amount column OR paid_in/paid_out columns are provided
-        if (empty($validated['amount_column']) && 
-            empty($validated['paid_in_column']) && 
-            empty($validated['paid_out_column'])) {
-            throw ValidationException::withMessages([
-                'amount_configuration' => 'Either amount column or paid_in/paid_out columns must be specified.',
-            ]);
-        }
-
-        // Check for duplicate schema name for this user
-        if (Auth::user()->csvSchemas()->where('name', $validated['name'])->exists()) {
-            throw ValidationException::withMessages([
-                'name' => 'You already have a schema with this name.',
-            ]);
-        }
+        $validated = $request->validated();
 
         $schema = Auth::user()->csvSchemas()->create($validated);
 
@@ -156,40 +128,11 @@ class CsvSchemaController extends Controller
     /**
      * Update the specified CSV schema.
      */
-    public function update(Request $request, CsvSchema $csvSchema)
+    public function update(UpdateCsvSchemaRequest $request, CsvSchema $csvSchema)
     {
         $this->authorize('update', $csvSchema);
 
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'transaction_data_start' => 'required|integer|min:1',
-            'date_column' => 'required|integer|min:1',
-            'balance_column' => 'required|integer|min:1',
-            'amount_column' => 'nullable|integer|min:1',
-            'paid_in_column' => 'nullable|integer|min:1',
-            'paid_out_column' => 'nullable|integer|min:1',
-            'description_column' => 'nullable|integer|min:1',
-            'date_format' => 'nullable|string|max:50',
-        ]);
-
-        // Validate that either amount column OR paid_in/paid_out columns are provided
-        if (empty($validated['amount_column']) && 
-            empty($validated['paid_in_column']) && 
-            empty($validated['paid_out_column'])) {
-            throw ValidationException::withMessages([
-                'amount_configuration' => 'Either amount column or paid_in/paid_out columns must be specified.',
-            ]);
-        }
-
-        // Check for duplicate schema name for this user (excluding current schema)
-        if (Auth::user()->csvSchemas()
-            ->where('name', $validated['name'])
-            ->where('id', '!=', $csvSchema->id)
-            ->exists()) {
-            throw ValidationException::withMessages([
-                'name' => 'You already have a schema with this name.',
-            ]);
-        }
+        $validated = $request->validated();
 
         $csvSchema->update($validated);
 
@@ -251,4 +194,4 @@ class CsvSchemaController extends Controller
         return redirect()->route('csv-schemas.show', $clonedSchema)
             ->with('success', 'CSV schema cloned successfully.');
     }
-} 
+}
