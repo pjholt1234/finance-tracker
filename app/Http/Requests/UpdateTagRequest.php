@@ -39,20 +39,19 @@ class UpdateTagRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Trim whitespace from name and description
             $this->merge([
                 'name' => trim($this->name),
                 'description' => isset($this->description) ? trim($this->description) : null,
             ]);
 
-            // Convert empty string to null for description
             if ($this->description === '') {
                 $this->merge(['description' => null]);
             }
 
-            // Check for duplicate tag name for this user (excluding current tag)
+            /** @var User $user */
+            $user = Auth::user();
             $tag = $this->route('tag');
-            if (Auth::user()->tags()->where('name', $this->name)->where('id', '!=', $tag->id)->exists()) {
+            if ($user->tags()->where('name', $this->name)->where('id', '!=', $tag->id)->exists()) {
                 $validator->errors()->add('name', 'You already have a tag with this name.');
             }
         });

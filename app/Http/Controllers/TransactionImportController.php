@@ -30,8 +30,11 @@ class TransactionImportController extends Controller
     public function create(): Response
     {
         $this->authorize('create', Import::class);
-        $schemas = Auth::user()->csvSchemas()->latest()->get();
-        $accounts = Auth::user()->accounts()->orderBy('name')->get();
+
+        /** @var User $user */
+        $user = Auth::user();
+        $schemas = $user->csvSchemas()->latest()->get();
+        $accounts = $user->accounts()->orderBy('name')->get();
 
         return Inertia::render('transactions/import', [
             'schemas' => $schemas,
@@ -48,7 +51,9 @@ class TransactionImportController extends Controller
         $schema = CsvSchema::findOrFail($request->csv_schema_id);
         $this->authorize('view', $schema);
 
-        $account = Auth::user()->accounts()->findOrFail($request->account_id);
+        /** @var User $user */
+        $user = Auth::user();
+        $account = $user->accounts()->findOrFail($request->account_id);
 
         $file = $request->file('csv_file');
 
@@ -60,15 +65,13 @@ class TransactionImportController extends Controller
             );
 
             $filename = $file->getClientOriginalName();
-            $tempPath = $file->store('temp-imports', 'local');
 
             return Inertia::render('transactions/import-review', [
                 'preview' => $preview,
                 'schema' => $schema,
                 'account' => $account,
                 'filename' => $filename,
-                'temp_path' => $tempPath,
-                'tags' => Auth::user()->tags()->orderBy('name')->get(),
+                'file_content' => base64_encode(file_get_contents($file->getRealPath())),
             ]);
         } catch (\InvalidArgumentException $e) {
             if (str_contains($e->getMessage(), 'UTF-8') || str_contains($e->getMessage(), 'encoding')) {
@@ -107,7 +110,9 @@ class TransactionImportController extends Controller
         $schema = CsvSchema::findOrFail($request->schema_id);
         $this->authorize('view', $schema);
 
-        $account = Auth::user()->accounts()->findOrFail($request->account_id);
+        /** @var User $user */
+        $user = Auth::user();
+        $account = $user->accounts()->findOrFail($request->account_id);
 
         try {
             $import = $this->csvImportService->importReviewedTransactions(
@@ -117,8 +122,6 @@ class TransactionImportController extends Controller
                 Auth::id(),
                 $account->id
             );
-
-            Storage::disk('local')->delete($request->temp_path);
 
             return redirect()->route('transaction-imports.show', $import)
                 ->with('success', 'Transactions imported successfully.');
@@ -162,7 +165,10 @@ class TransactionImportController extends Controller
      */
     public function index(): Response
     {
-        $imports = Auth::user()->imports()
+        /** @var User $user */
+        $user = Auth::user();
+
+        $imports = $user->imports()
             ->with(['csvSchema', 'account'])
             ->latest()
             ->paginate(20);

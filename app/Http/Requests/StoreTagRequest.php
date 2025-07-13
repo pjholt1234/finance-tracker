@@ -39,19 +39,18 @@ class StoreTagRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Trim whitespace from name and description
             $this->merge([
                 'name' => trim($this->name),
                 'description' => isset($this->description) ? trim($this->description) : null,
             ]);
 
-            // Convert empty string to null for description
             if ($this->description === '') {
                 $this->merge(['description' => null]);
             }
 
-            // Check for duplicate tag name for this user
-            if (Auth::user()->tags()->where('name', $this->name)->exists()) {
+            /** @var User $user */
+            $user = Auth::user();
+            if ($user->tags()->where('name', $this->name)->exists()) {
                 $validator->errors()->add('name', 'You already have a tag with this name.');
             }
         });

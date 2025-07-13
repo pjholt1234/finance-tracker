@@ -82,12 +82,18 @@ class AccountController extends Controller
         $accountData = $account->toArray();
         $accountData['total_transaction_count'] = $totalTransactionCount;
 
-        if (isset($accountData['imports'])) {
-            foreach ($accountData['imports'] as $index => $import) {
-                if (isset($account->imports[$index]->csvSchema)) {
-                    $accountData['imports'][$index]['csv_schema'] = $account->imports[$index]->csvSchema->toArray();
-                }
+        if (!isset($accountData['imports'])) {
+            return Inertia::render('accounts/show', [
+                'account' => $accountData,
+            ]);
+        }
+
+        foreach ($accountData['imports'] as $index => $import) {
+            if (!isset($account->imports[$index]->csvSchema)) {
+                continue;
             }
+
+            $accountData['imports'][$index]['csv_schema'] = $account->imports[$index]->csvSchema->toArray();
         }
 
         return Inertia::render('accounts/show', [

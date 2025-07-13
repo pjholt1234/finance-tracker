@@ -13,6 +13,7 @@ use Illuminate\Validation\ValidationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\User;
 
 class CsvSchemaController extends Controller
 {
@@ -27,7 +28,10 @@ class CsvSchemaController extends Controller
      */
     public function index(): Response
     {
-        $schemas = Auth::user()->csvSchemas()->latest()->get();
+        /** @var User $user */
+        $user = Auth::user();
+
+        $schemas = $user->csvSchemas()->latest()->get();
 
         return Inertia::render('csv-schemas/index', [
             'schemas' => $schemas,
@@ -71,7 +75,9 @@ class CsvSchemaController extends Controller
         $this->authorize('create', CsvSchema::class);
         $validated = $request->validated();
 
-        $schema = Auth::user()->csvSchemas()->create($validated);
+        /** @var User $user */
+        $user = Auth::user();
+        $schema = $user->csvSchemas()->create($validated);
 
         try {
             $schema->validateSchema();
@@ -170,12 +176,15 @@ class CsvSchemaController extends Controller
         $uniqueName = $baseName;
         $counter = 1;
 
-        while (Auth::user()->csvSchemas()->where('name', $uniqueName)->exists()) {
+        /** @var User $user */
+        $user = Auth::user();
+
+        while ($user->csvSchemas()->where('name', $uniqueName)->exists()) {
             $counter++;
             $uniqueName = $csvSchema->name . ' (copy ' . $counter . ')';
         }
 
-        $clonedSchema = Auth::user()->csvSchemas()->create([
+        $clonedSchema = $user->csvSchemas()->create([
             'name' => $uniqueName,
             'transaction_data_start' => $csvSchema->transaction_data_start,
             'date_column' => $csvSchema->date_column,

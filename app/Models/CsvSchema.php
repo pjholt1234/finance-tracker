@@ -41,7 +41,6 @@ class CsvSchema extends Model
      */
     public function validateSchema(): void
     {
-        // Either amount column OR both paid_in/paid_out must be defined
         $hasAmount = !empty($this->amount_column);
         $hasPaidInOut = !empty($this->paid_in_column) || !empty($this->paid_out_column);
 
@@ -51,7 +50,6 @@ class CsvSchema extends Model
             ]);
         }
 
-        // Date and balance are required
         if (empty($this->date_column)) {
             throw ValidationException::withMessages([
                 'date_column' => 'Date column is required.'
@@ -64,25 +62,21 @@ class CsvSchema extends Model
             ]);
         }
 
-        // Transaction data start must be positive
         if ($this->transaction_data_start < 1) {
             throw ValidationException::withMessages([
                 'transaction_data_start' => 'Transaction data start row must be 1 or greater.'
             ]);
         }
 
-        // Column numbers must be positive integers or valid letters
         $columns = ['date_column', 'balance_column', 'amount_column', 'paid_in_column', 'paid_out_column', 'description_column'];
         foreach ($columns as $column) {
             if (!empty($this->$column)) {
                 $value = $this->$column;
-                // Check if it's a valid numeric column (1 or greater)
                 if (is_numeric($value) && $value < 1) {
                     throw ValidationException::withMessages([
                         $column => 'Column number must be 1 or greater.'
                     ]);
                 }
-                // Check if it's a valid letter column (A-Z)
                 if (is_string($value) && !preg_match('/^[A-Z]$/i', $value)) {
                     throw ValidationException::withMessages([
                         $column => 'Column must be a valid letter (A-Z) or number (1 or greater).'

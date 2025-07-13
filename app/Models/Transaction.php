@@ -6,7 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
-use Carbon\Carbon;
 
 class Transaction extends Model
 {
@@ -75,8 +74,6 @@ class Transaction extends Model
             return null;
         }
 
-        // Extract numeric value from currency-formatted strings
-        // This handles formats like "£507.15", "$507.15", "507.15", "-£20.00", etc.
         $numericMatch = preg_match('/-?\d+\.?\d*/', $amount, $matches);
 
         if ($numericMatch && isset($matches[0])) {
@@ -178,25 +175,5 @@ class Transaction extends Model
     public function scopeForAccount($query, int $accountId)
     {
         return $query->where('account_id', $accountId);
-    }
-
-    /**
-     * Boot the model to automatically generate unique hash.
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($transaction) {
-            if (!$transaction->unique_hash) {
-                $transaction->unique_hash = self::generateUniqueHash(
-                    $transaction->user_id,
-                    $transaction->date,
-                    $transaction->balance,
-                    $transaction->paid_in,
-                    $transaction->paid_out
-                );
-            }
-        });
     }
 }

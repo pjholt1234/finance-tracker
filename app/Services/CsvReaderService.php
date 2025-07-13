@@ -20,12 +20,10 @@ class CsvReaderService
      */
     public function parseForPreview(UploadedFile $file, int $previewRows = 20): array
     {
-        // Set heading row formatter to return original values
         HeadingRowFormatter::default('none');
 
         try {
-            // Read the CSV file with encoding detection
-            $collection = Excel::toCollection(new CsvImport(), $file)->first();
+            $collection = $this->parseWithExcel($file);
         } catch (\Exception $e) {
             // If Excel fails, try manual CSV parsing with encoding detection
             return $this->fallbackCsvParsing($file, $previewRows);
@@ -35,27 +33,11 @@ class CsvReaderService
             throw new \Exception('The CSV file appears to be empty or invalid.');
         }
 
-        // Get headers from first row and clean encoding
-        $headers = $collection->first()->map(function ($cell) {
-            return $this->cleanCell((string) $cell);
-        })->toArray();
-
-        // Get data rows (excluding header) and convert each row to array
-        $dataRows = $collection->skip(1)->take($previewRows - 1)->map(function ($row) {
-            return $row->map(function ($cell) {
-                return $this->cleanCell((string) $cell);
-            })->toArray();
-        })->values()->toArray(); // Add values() to reset array keys
-
-        // Detect potential date formats in the data
+        $headers = $this->extractHeaders($collection);
+        $dataRows = $this->extractDataRows($collection, $previewRows);
         $dateFormats = $this->detectDateFormats($dataRows, $headers);
 
-        return [
-            'headers' => $headers,
-            'rows' => $dataRows,
-            'total_rows' => $collection->count() - 1, // Exclude header
-            'detected_date_formats' => $dateFormats,
-        ];
+        return $this->buildPreviewResult($headers, $dataRows, $collection, $dateFormats);
     }
 
     /**
@@ -67,28 +49,18 @@ class CsvReaderService
      */
     public function parseWithSchema(UploadedFile $file, array $schemaConfig): Collection
     {
-        // Set heading row formatter to return original values
         HeadingRowFormatter::default('none');
 
-        // Read the CSV file
-        $collection = Excel::toCollection(new CsvImport(), $file)->first();
+        $collection = $this->parseWithExcel($file);
 
         if ($collection->isEmpty()) {
             throw new \Exception('The CSV file appears to be empty or invalid.');
         }
 
-        // Get headers
-        $headers = $collection->first()->toArray();
+        $headers = $this->extractRawHeaders($collection);
+        $dataRows = $this->extractSchemaDataRows($collection, $schemaConfig);
 
-        // Skip to transaction data start row
-        $dataStartIndex = $schemaConfig['transaction_data_start'] - 1; // Convert to 0-based index
-        $dataRows = $collection->skip($dataStartIndex);
-
-        // Map columns according to schema
-        return $dataRows->map(function ($row) use ($headers, $schemaConfig) {
-            $rowArray = $row->toArray();
-            return $this->mapRowToSchema($rowArray, $headers, $schemaConfig);
-        })->filter(); // Remove empty rows
+        return $this->processSchemaRows($dataRows, $headers, $schemaConfig);
     }
 
     /**
@@ -101,41 +73,69 @@ class CsvReaderService
      */
     private function mapRowToSchema(array $row, array $headers, array $schema): ?array
     {
-        // Skip empty rows
-        if (empty(array_filter($row))) {
+        if ($this->isEmptyRow($row)) {
             return null;
         }
 
         $mapped = [];
 
-        // Map required fields
         $mapped['date'] = $this->getColumnValue($row, $headers, $schema['date_column']);
         $mapped['balance'] = $this->getColumnValue($row, $headers, $schema['balance_column']);
 
-        // Map amount fields
+        $this->mapAmountFields($mapped, $row, $headers, $schema);
+        $this->mapOptionalFields($mapped, $row, $headers, $schema);
+
+        return $mapped;
+    }
+
+    /**
+     * Check if a row is empty.
+     */
+    private function isEmptyRow(array $row): bool
+    {
+        return empty(array_filter($row));
+    }
+
+    /**
+     * Map amount fields based on schema configuration.
+     */
+    private function mapAmountFields(array &$mapped, array $row, array $headers, array $schema): void
+    {
         if (!empty($schema['amount_column'])) {
             $mapped['amount'] = $this->getColumnValue($row, $headers, $schema['amount_column']);
         } else {
-            if (!empty($schema['paid_in_column'])) {
-                $paidInValue = $this->getColumnValue($row, $headers, $schema['paid_in_column']);
-                if (!empty($paidInValue)) {
-                    $mapped['paid_in'] = $paidInValue;
-                }
-            }
-            if (!empty($schema['paid_out_column'])) {
-                $paidOutValue = $this->getColumnValue($row, $headers, $schema['paid_out_column']);
-                if (!empty($paidOutValue)) {
-                    $mapped['paid_out'] = $paidOutValue;
-                }
+            $this->mapSeparateAmountFields($mapped, $row, $headers, $schema);
+        }
+    }
+
+    /**
+     * Map separate paid_in/paid_out fields.
+     */
+    private function mapSeparateAmountFields(array &$mapped, array $row, array $headers, array $schema): void
+    {
+        if (!empty($schema['paid_in_column'])) {
+            $paidInValue = $this->getColumnValue($row, $headers, $schema['paid_in_column']);
+            if (!empty($paidInValue)) {
+                $mapped['paid_in'] = $paidInValue;
             }
         }
 
-        // Map optional fields
+        if (!empty($schema['paid_out_column'])) {
+            $paidOutValue = $this->getColumnValue($row, $headers, $schema['paid_out_column']);
+            if (!empty($paidOutValue)) {
+                $mapped['paid_out'] = $paidOutValue;
+            }
+        }
+    }
+
+    /**
+     * Map optional fields like description.
+     */
+    private function mapOptionalFields(array &$mapped, array $row, array $headers, array $schema): void
+    {
         if (!empty($schema['description_column'])) {
             $mapped['description'] = $this->getColumnValue($row, $headers, $schema['description_column']);
         }
-
-        return $mapped;
     }
 
     /**
@@ -167,7 +167,20 @@ class CsvReaderService
      */
     private function detectDateFormats(array $csvData, array $headers): array
     {
-        $dateFormats = [
+        $dateFormats = $this->getSupportedDateFormats();
+        $detectedFormats = [];
+
+        $this->analyzeDateFormats($csvData, $dateFormats, $detectedFormats);
+
+        return array_values($detectedFormats);
+    }
+
+    /**
+     * Get supported date formats with descriptions.
+     */
+    private function getSupportedDateFormats(): array
+    {
+        return [
             'Y-m-d' => 'YYYY-MM-DD (2024-01-15)',
             'd/m/Y' => 'DD/MM/YYYY (15/01/2024)',
             'm/d/Y' => 'MM/DD/YYYY (01/15/2024)',
@@ -178,30 +191,56 @@ class CsvReaderService
             'j/n/Y' => 'D/M/YYYY (5/1/2024)',
             'j-n-Y' => 'D-M-YYYY (5-1-2024)',
         ];
+    }
 
-        $detectedFormats = [];
+    /**
+     * Analyze CSV data for date formats.
+     */
+    private function analyzeDateFormats(array $csvData, array $dateFormats, array &$detectedFormats): void
+    {
+        $sampleRows = array_slice($csvData, 0, 5);
 
-        // Look through first few rows to detect date patterns
-        foreach (array_slice($csvData, 0, 5) as $row) {
-            foreach ($row as $cell) {
-                if (empty($cell)) continue;
+        foreach ($sampleRows as $row) {
+            $this->analyzeRowForDateFormats($row, $dateFormats, $detectedFormats);
+        }
+    }
 
-                foreach ($dateFormats as $format => $description) {
-                    if ($this->isValidDateFormat((string) $cell, $format)) {
-                        $formatKey = $format;
-                        if (!isset($detectedFormats[$formatKey])) {
-                            $detectedFormats[$formatKey] = [
-                                'format' => $format,
-                                'description' => $description,
-                                'example' => $cell,
-                            ];
-                        }
-                    }
-                }
+    /**
+     * Analyze a single row for date formats.
+     */
+    private function analyzeRowForDateFormats(array $row, array $dateFormats, array &$detectedFormats): void
+    {
+        foreach ($row as $cell) {
+            if (empty($cell)) continue;
+
+            $this->checkCellForDateFormats($cell, $dateFormats, $detectedFormats);
+        }
+    }
+
+    /**
+     * Check a single cell for date formats.
+     */
+    private function checkCellForDateFormats(string $cell, array $dateFormats, array &$detectedFormats): void
+    {
+        foreach ($dateFormats as $format => $description) {
+            if ($this->isValidDateFormat((string) $cell, $format)) {
+                $this->addDetectedFormat($format, $description, $cell, $detectedFormats);
             }
         }
+    }
 
-        return array_values($detectedFormats);
+    /**
+     * Add a detected date format to the results.
+     */
+    private function addDetectedFormat(string $format, string $description, string $cell, array &$detectedFormats): void
+    {
+        if (!isset($detectedFormats[$format])) {
+            $detectedFormats[$format] = [
+                'format' => $format,
+                'description' => $description,
+                'example' => $cell,
+            ];
+        }
     }
 
     /**
@@ -227,15 +266,35 @@ class CsvReaderService
      */
     private function fallbackCsvParsing(UploadedFile $file, int $previewRows): array
     {
-        // Read file content and detect encoding
+        $fileContent = $this->prepareFileContent($file);
+        $tempFile = $this->createTempFile($fileContent);
+
+        $result = $this->parseCsvFile($tempFile, $previewRows);
+
+        fclose($tempFile);
+
+        return $result;
+    }
+
+    /**
+     * Prepare file content with proper encoding.
+     */
+    private function prepareFileContent(UploadedFile $file): string
+    {
         $fileContent = file_get_contents($file->getPathname());
 
-        // Check if file is empty
         if (empty(trim($fileContent))) {
             throw new \Exception('The CSV file appears to be empty or invalid.');
         }
 
-        // Detect encoding and convert to UTF-8 if needed
+        return $this->convertToUtf8($fileContent);
+    }
+
+    /**
+     * Convert file content to UTF-8 encoding.
+     */
+    private function convertToUtf8(string $fileContent): string
+    {
         $encoding = mb_detect_encoding($fileContent, ['UTF-8', 'UTF-16', 'Windows-1252', 'ISO-8859-1'], true);
 
         if ($encoding && $encoding !== 'UTF-8') {
@@ -245,24 +304,49 @@ class CsvReaderService
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', 'Windows-1252');
         }
 
-        // Create a temporary file with UTF-8 content
+        return $fileContent;
+    }
+
+    /**
+     * Create a temporary file for processing.
+     */
+    private function createTempFile(string $fileContent)
+    {
         $tempFile = tmpfile();
         fwrite($tempFile, $fileContent);
         rewind($tempFile);
+        return $tempFile;
+    }
 
+    /**
+     * Parse CSV file and return results.
+     */
+    private function parseCsvFile($tempFile, int $previewRows): array
+    {
         $headers = [];
         $rows = [];
         $rowCount = 0;
+        $totalRows = $this->countTotalRows($tempFile, $previewRows, $rowCount, $headers, $rows);
+
+        $this->validateParsedData($headers, $rows);
+
+        return $this->buildFallbackResult($headers, $rows, $totalRows);
+    }
+
+    /**
+     * Count total rows and extract preview data.
+     */
+    private function countTotalRows($tempFile, int $previewRows, int &$rowCount, array &$headers, array &$rows): int
+    {
         $totalRows = 0;
 
         while (($row = fgetcsv($tempFile)) !== false && $rowCount < $previewRows) {
-            // Clean up encoding issues in individual cells
-            $row = array_map([$this, 'cleanCell'], $row);
+            $cleanRow = array_map([$this, 'cleanCell'], $row);
 
             if ($rowCount === 0) {
-                $headers = $row;
+                $headers = $cleanRow;
             } else {
-                $rows[] = $row;
+                $rows[] = $cleanRow;
             }
             $rowCount++;
             $totalRows++;
@@ -273,13 +357,24 @@ class CsvReaderService
             $totalRows++;
         }
 
-        fclose($tempFile);
+        return $totalRows;
+    }
 
-        // Check if we actually got any data
+    /**
+     * Validate that we actually got data from the CSV.
+     */
+    private function validateParsedData(array $headers, array $rows): void
+    {
         if (empty($headers) && empty($rows)) {
             throw new \Exception('The CSV file appears to be empty or invalid.');
         }
+    }
 
+    /**
+     * Build fallback parsing result.
+     */
+    private function buildFallbackResult(array $headers, array $rows, int $totalRows): array
+    {
         return [
             'headers' => $headers,
             'rows' => $rows,
@@ -303,6 +398,77 @@ class CsvReaderService
         $cell = str_replace("\0", '', $cell);
 
         return trim($cell);
+    }
+
+    /**
+     * Parse file using Excel library.
+     */
+    private function parseWithExcel(UploadedFile $file): \Illuminate\Support\Collection
+    {
+        return Excel::toCollection(new CsvImport(), $file)->first();
+    }
+
+    /**
+     * Extract headers from collection.
+     */
+    private function extractHeaders(\Illuminate\Support\Collection $collection): array
+    {
+        return $collection->first()->map(function ($cell) {
+            return $this->cleanCell((string) $cell);
+        })->toArray();
+    }
+
+    /**
+     * Extract data rows from collection.
+     */
+    private function extractDataRows(\Illuminate\Support\Collection $collection, int $previewRows): array
+    {
+        return $collection->skip(1)->take($previewRows - 1)->map(function ($row) {
+            return $row->map(function ($cell) {
+                return $this->cleanCell((string) $cell);
+            })->toArray();
+        })->values()->toArray();
+    }
+
+    /**
+     * Build preview result array.
+     */
+    private function buildPreviewResult(array $headers, array $dataRows, \Illuminate\Support\Collection $collection, array $dateFormats): array
+    {
+        return [
+            'headers' => $headers,
+            'rows' => $dataRows,
+            'total_rows' => $collection->count() - 1, // Exclude header
+            'detected_date_formats' => $dateFormats,
+        ];
+    }
+
+    /**
+     * Extract raw headers from collection.
+     */
+    private function extractRawHeaders(\Illuminate\Support\Collection $collection): array
+    {
+        return $collection->first()->toArray();
+    }
+
+    /**
+     * Extract data rows based on schema configuration.
+     */
+    private function extractSchemaDataRows(\Illuminate\Support\Collection $collection, array $schemaConfig): \Illuminate\Support\Collection
+    {
+        $dataStartIndex = $schemaConfig['transaction_data_start'] - 1;
+        return $collection->skip($dataStartIndex);
+    }
+
+    /**
+     * Process rows according to schema configuration.
+     */
+    private function processSchemaRows(\Illuminate\Support\Collection $dataRows, array $headers, array $schemaConfig): Collection
+    {
+        return $dataRows->map(function ($row) use ($headers, $schemaConfig) {
+            $rowArray = $row->toArray();
+            return $this->mapRowToSchema($rowArray, $headers, $schemaConfig);
+        })->filter(); // Remove empty rows
     }
 }
 

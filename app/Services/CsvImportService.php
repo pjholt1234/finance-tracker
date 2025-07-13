@@ -25,7 +25,6 @@ class CsvImportService
      */
     public function importFromCsv(UploadedFile $file, CsvSchema $schema, int $userId, int $accountId): Import
     {
-        // Create import record
         $import = Import::create([
             'user_id' => $userId,
             'account_id' => $accountId,
@@ -35,16 +34,12 @@ class CsvImportService
         ]);
 
         try {
-            // Mark import as started
             $import->markAsStarted();
 
-            // Parse CSV and import transactions
             $this->processImport($file, $schema, $import);
 
-            // Mark as completed
             $import->markAsCompleted();
         } catch (\Exception $e) {
-            // Mark as failed
             $import->markAsFailed($e->getMessage());
             Log::error('CSV Import failed', [
                 'import_id' => $import->id,
@@ -58,103 +53,160 @@ class CsvImportService
     }
 
     /**
-     * Process the import by parsing CSV and creating transactions.
+     * Process the import file and create transactions.
      */
     private function processImport(UploadedFile $file, CsvSchema $schema, Import $import): void
     {
-        // Read file content and detect encoding
+        $fileContent = $this->prepareFileContent($file);
+        $tempFile = $this->createTempFile($fileContent);
+
+        $stats = $this->processCsvRows($tempFile, $schema, $import);
+
+        fclose($tempFile);
+
+        $import->updateProgress($stats['processed'], $stats['imported'], $stats['duplicates']);
+    }
+
+    /**
+     * Prepare file content with proper encoding.
+     */
+    private function prepareFileContent(UploadedFile $file): string
+    {
         $fileContent = file_get_contents($file->getPathname());
 
-        // Detect encoding and convert to UTF-8 if needed
         $encoding = mb_detect_encoding($fileContent, ['UTF-8', 'UTF-16', 'Windows-1252', 'ISO-8859-1'], true);
 
         if ($encoding && $encoding !== 'UTF-8') {
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', $encoding);
         } elseif (!$encoding) {
-            // If encoding detection fails, try to convert from common encodings
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', 'Windows-1252');
         }
 
-        // Remove BOM if present
-        $fileContent = preg_replace('/^\x{FEFF}/u', '', $fileContent);
+        return preg_replace('/^\x{FEFF}/u', '', $fileContent);
+    }
 
-        // Create a temporary file with UTF-8 content
+    /**
+     * Create a temporary file for processing.
+     */
+    private function createTempFile(string $fileContent)
+    {
         $tempFile = tmpfile();
         fwrite($tempFile, $fileContent);
         rewind($tempFile);
+        return $tempFile;
+    }
 
+    /**
+     * Process CSV rows and return statistics.
+     */
+    private function processCsvRows($tempFile, CsvSchema $schema, Import $import): array
+    {
         $rowNumber = 0;
         $processedRows = 0;
         $importedRows = 0;
         $duplicateRows = 0;
 
-        try {
-            while (($row = fgetcsv($tempFile)) !== false) {
-                $rowNumber++;
+        while (($row = fgetcsv($tempFile)) !== false) {
+            $rowNumber++;
 
-                // Skip rows before transaction data starts
-                if ($rowNumber < $schema->transaction_data_start) {
-                    continue;
-                }
-
-                // Skip empty rows
-                if (empty(array_filter($row))) {
-                    continue;
-                }
-
-                // Clean up any remaining encoding issues in individual cells
-                $row = array_map(function ($cell) {
-                    // Remove BOM if present
-                    $cell = preg_replace('/^\x{FEFF}/u', '', $cell);
-                    // Ensure valid UTF-8
-                    return mb_convert_encoding($cell, 'UTF-8', 'UTF-8');
-                }, $row);
-
-                $processedRows++;
-
-                try {
-                    // Extract transaction data from row
-                    $transactionData = $this->extractTransactionData($row, $schema, $import->user_id);
-
-                    // Generate unique hash
-                    $uniqueHash = $transactionData['unique_hash'];
-
-                    // Check for duplicates
-                    if (Transaction::existsByHash($uniqueHash)) {
-                        $duplicateRows++;
-                        continue;
-                    }
-
-                    // Create transaction
-                    Transaction::create([
-                        'user_id' => $import->user_id,
-                        'account_id' => $import->account_id,
-                        'import_id' => $import->id,
-                        'date' => $transactionData['date'],
-                        'balance' => $transactionData['balance'],
-                        'paid_in' => $transactionData['paid_in'],
-                        'paid_out' => $transactionData['paid_out'],
-                        'description' => $transactionData['description'],
-                        'unique_hash' => $uniqueHash,
-                    ]);
-
-                    $importedRows++;
-                } catch (\Exception $e) {
-                    Log::warning('Failed to process row', [
-                        'import_id' => $import->id,
-                        'row_number' => $rowNumber,
-                        'error' => $e->getMessage(),
-                        'row_data' => $row
-                    ]);
-                    // Continue processing other rows
-                }
+            if ($this->shouldSkipRow($rowNumber, $row, $schema)) {
+                continue;
             }
-        } finally {
-            fclose($tempFile);
+
+            $processedRows++;
+            $result = $this->processRow($row, $schema, $import, $rowNumber);
+
+            if ($result === 'imported') {
+                $importedRows++;
+            } elseif ($result === 'duplicate') {
+                $duplicateRows++;
+            }
         }
 
-        // Update import statistics
-        $import->updateProgress($processedRows, $importedRows, $duplicateRows);
+        return [
+            'processed' => $processedRows,
+            'imported' => $importedRows,
+            'duplicates' => $duplicateRows,
+        ];
+    }
+
+    /**
+     * Determine if a row should be skipped.
+     */
+    private function shouldSkipRow(int $rowNumber, array $row, CsvSchema $schema): bool
+    {
+        if ($rowNumber < $schema->transaction_data_start) {
+            return true;
+        }
+
+        if (empty(array_filter($row))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Process a single CSV row.
+     */
+    private function processRow(array $row, CsvSchema $schema, Import $import, int $rowNumber): string
+    {
+        try {
+            $cleanRow = $this->cleanRowData($row);
+            $transactionData = $this->extractTransactionData($cleanRow, $schema, $import->user_id);
+
+            if (Transaction::existsByHash($transactionData['unique_hash'])) {
+                return 'duplicate';
+            }
+
+            $this->createTransaction($transactionData, $import);
+            return 'imported';
+        } catch (\Exception $e) {
+            $this->logRowError($e, $import, $rowNumber, $row);
+            return 'error';
+        }
+    }
+
+    /**
+     * Clean row data and ensure proper encoding.
+     */
+    private function cleanRowData(array $row): array
+    {
+        return array_map(function ($cell) {
+            $cell = preg_replace('/^\x{FEFF}/u', '', $cell);
+            return mb_convert_encoding($cell, 'UTF-8', 'UTF-8');
+        }, $row);
+    }
+
+    /**
+     * Create a transaction record.
+     */
+    private function createTransaction(array $transactionData, Import $import): void
+    {
+        Transaction::create([
+            'user_id' => $import->user_id,
+            'account_id' => $import->account_id,
+            'import_id' => $import->id,
+            'date' => $transactionData['date'],
+            'balance' => $transactionData['balance'],
+            'paid_in' => $transactionData['paid_in'],
+            'paid_out' => $transactionData['paid_out'],
+            'description' => $transactionData['description'],
+            'unique_hash' => $transactionData['unique_hash'],
+        ]);
+    }
+
+    /**
+     * Log row processing errors.
+     */
+    private function logRowError(\Exception $e, Import $import, int $rowNumber, array $row): void
+    {
+        Log::warning('Failed to process row', [
+            'import_id' => $import->id,
+            'row_number' => $rowNumber,
+            'error' => $e->getMessage(),
+            'row_data' => $row
+        ]);
     }
 
     /**
@@ -164,69 +216,14 @@ class CsvImportService
     {
         $data = [];
 
-        // Extract date and parse it
-        $dateColumnIndex = $this->getColumnIndex($schema->date_column);
-        $dateString = $row[$dateColumnIndex] ?? '';
+        $data['date'] = $this->extractDate($row, $schema);
+        $data['balance'] = $this->extractBalance($row, $schema);
 
-        try {
-            $data['date'] = $this->dateParsingService->parseDate($dateString, $schema->date_format);
-        } catch (\Exception $e) {
-            throw new \Exception("Invalid date format: {$dateString}");
-        }
+        $amountData = $this->extractAmounts($row, $schema);
+        $data['paid_in'] = $amountData['paid_in'];
+        $data['paid_out'] = $amountData['paid_out'];
 
-        // Extract balance and convert to pennies
-        $balanceColumnIndex = $this->getColumnIndex($schema->balance_column);
-        $balanceValue = $row[$balanceColumnIndex] ?? '';
-        $data['balance'] = Transaction::currencyToPennies($balanceValue);
-
-        // Extract amount fields and convert to pennies
-        if (!empty($schema->amount_column)) {
-            // Single amount column
-            $amountColumnIndex = $this->getColumnIndex($schema->amount_column);
-            $amount = $row[$amountColumnIndex] ?? '';
-
-            $amountInPennies = Transaction::currencyToPennies($amount);
-
-            if ($amountInPennies !== null) {
-                if ($amountInPennies >= 0) {
-                    $data['paid_in'] = $amountInPennies;
-                    $data['paid_out'] = null;
-                } else {
-                    $data['paid_in'] = null;
-                    $data['paid_out'] = abs($amountInPennies);
-                }
-            } else {
-                $data['paid_in'] = null;
-                $data['paid_out'] = null;
-            }
-        } else {
-            // Separate paid in/out columns
-            $data['paid_in'] = null;
-            $data['paid_out'] = null;
-
-            if (!empty($schema->paid_in_column)) {
-                $paidInColumnIndex = $this->getColumnIndex($schema->paid_in_column);
-                $paidInValue = $row[$paidInColumnIndex] ?? '';
-                if (!empty($paidInValue)) {
-                    $data['paid_in'] = Transaction::currencyToPennies($paidInValue);
-                }
-            }
-
-            if (!empty($schema->paid_out_column)) {
-                $paidOutColumnIndex = $this->getColumnIndex($schema->paid_out_column);
-                $paidOutValue = $row[$paidOutColumnIndex] ?? '';
-                if (!empty($paidOutValue)) {
-                    $data['paid_out'] = Transaction::currencyToPennies($paidOutValue);
-                }
-            }
-        }
-
-        // Extract description
-        $data['description'] = '';
-        if (!empty($schema->description_column)) {
-            $descriptionColumnIndex = $this->getColumnIndex($schema->description_column);
-            $data['description'] = $row[$descriptionColumnIndex] ?? '';
-        }
+        $data['description'] = $this->extractDescription($row, $schema);
 
         // Generate unique hash
         $data['unique_hash'] = Transaction::generateUniqueHash(
@@ -238,6 +235,103 @@ class CsvImportService
         );
 
         return $data;
+    }
+
+    /**
+     * Extract and parse date from row.
+     */
+    private function extractDate(array $row, CsvSchema $schema): string
+    {
+        $dateColumnIndex = $this->getColumnIndex($schema->date_column);
+        $dateString = $row[$dateColumnIndex] ?? '';
+
+        try {
+            return $this->dateParsingService->parseDate($dateString, $schema->date_format);
+        } catch (\Exception $e) {
+            throw new \Exception("Invalid date format: {$dateString}");
+        }
+    }
+
+    /**
+     * Extract balance from row and convert to pennies.
+     */
+    private function extractBalance(array $row, CsvSchema $schema): ?int
+    {
+        $balanceColumnIndex = $this->getColumnIndex($schema->balance_column);
+        $balanceValue = $row[$balanceColumnIndex] ?? '';
+        return Transaction::currencyToPennies($balanceValue);
+    }
+
+    /**
+     * Extract amounts (paid_in/paid_out) from row.
+     */
+    private function extractAmounts(array $row, CsvSchema $schema): array
+    {
+        if (!empty($schema->amount_column)) {
+            return $this->extractSingleAmount($row, $schema);
+        } else {
+            return $this->extractSeparateAmounts($row, $schema);
+        }
+    }
+
+    /**
+     * Extract amounts from a single amount column.
+     */
+    private function extractSingleAmount(array $row, CsvSchema $schema): array
+    {
+        $amountColumnIndex = $this->getColumnIndex($schema->amount_column);
+        $amount = $row[$amountColumnIndex] ?? '';
+        $amountInPennies = Transaction::currencyToPennies($amount);
+
+        if ($amountInPennies !== null) {
+            if ($amountInPennies >= 0) {
+                return ['paid_in' => $amountInPennies, 'paid_out' => null];
+            } else {
+                return ['paid_in' => null, 'paid_out' => abs($amountInPennies)];
+            }
+        }
+
+        return ['paid_in' => null, 'paid_out' => null];
+    }
+
+    /**
+     * Extract amounts from separate paid_in/paid_out columns.
+     */
+    private function extractSeparateAmounts(array $row, CsvSchema $schema): array
+    {
+        $paidIn = null;
+        $paidOut = null;
+
+        if (!empty($schema->paid_in_column)) {
+            $paidInColumnIndex = $this->getColumnIndex($schema->paid_in_column);
+            $paidInValue = $row[$paidInColumnIndex] ?? '';
+            if (!empty($paidInValue)) {
+                $paidIn = Transaction::currencyToPennies($paidInValue);
+            }
+        }
+
+        if (!empty($schema->paid_out_column)) {
+            $paidOutColumnIndex = $this->getColumnIndex($schema->paid_out_column);
+            $paidOutValue = $row[$paidOutColumnIndex] ?? '';
+            if (!empty($paidOutValue)) {
+                $paidOut = Transaction::currencyToPennies($paidOutValue);
+            }
+        }
+
+        return ['paid_in' => $paidIn, 'paid_out' => $paidOut];
+    }
+
+    /**
+     * Extract description from row.
+     */
+    private function extractDescription(array $row, CsvSchema $schema): string
+    {
+        if (empty($schema->description_column)) {
+            return '';
+        }
+
+        $descriptionColumnIndex = $this->getColumnIndex($schema->description_column);
+        return $row[$descriptionColumnIndex] ?? '';
     }
 
     /**
@@ -259,94 +353,47 @@ class CsvImportService
      */
     public function previewTransactions(UploadedFile $file, CsvSchema $schema, int $userId): array
     {
-        // Read file content and detect encoding
-        $fileContent = file_get_contents($file->getPathname());
+        $fileContent = $this->prepareFileContent($file);
+        $tempFile = $this->createTempFile($fileContent);
 
-        // Detect encoding and convert to UTF-8 if needed
-        $encoding = mb_detect_encoding($fileContent, ['UTF-8', 'UTF-16', 'Windows-1252', 'ISO-8859-1'], true);
+        $result = $this->processPreviewRows($tempFile, $schema, $userId);
 
-        if ($encoding && $encoding !== 'UTF-8') {
-            $fileContent = mb_convert_encoding($fileContent, 'UTF-8', $encoding);
-        } elseif (!$encoding) {
-            // If encoding detection fails, try to convert from common encodings
-            $fileContent = mb_convert_encoding($fileContent, 'UTF-8', 'Windows-1252');
-        }
+        fclose($tempFile);
 
-        // Remove BOM if present
-        $fileContent = preg_replace('/^\x{FEFF}/u', '', $fileContent);
+        return $result;
+    }
 
-        // Create a temporary file with UTF-8 content
-        $tempFile = tmpfile();
-        fwrite($tempFile, $fileContent);
-        rewind($tempFile);
-
+    /**
+     * Process rows for preview and return results.
+     */
+    private function processPreviewRows($tempFile, CsvSchema $schema, int $userId): array
+    {
         $rowNumber = 0;
         $transactions = [];
         $errors = [];
         $duplicateCount = 0;
         $validCount = 0;
 
-        try {
-            while (($row = fgetcsv($tempFile)) !== false) {
-                $rowNumber++;
+        while (($row = fgetcsv($tempFile)) !== false) {
+            $rowNumber++;
 
-                // Skip rows before transaction data starts
-                if ($rowNumber < $schema->transaction_data_start) {
-                    continue;
-                }
-
-                // Skip empty rows
-                if (empty(array_filter($row))) {
-                    continue;
-                }
-
-                // Clean up any remaining encoding issues in individual cells
-                $row = array_map(function ($cell) {
-                    // Remove BOM if present
-                    $cell = preg_replace('/^\x{FEFF}/u', '', $cell);
-                    // Ensure valid UTF-8
-                    return mb_convert_encoding($cell, 'UTF-8', 'UTF-8');
-                }, $row);
-
-                try {
-                    // Extract transaction data from row
-                    $transactionData = $this->extractTransactionData($row, $schema, $userId);
-
-                    // Generate unique hash
-                    $uniqueHash = $transactionData['unique_hash'];
-
-                    // Check for duplicates
-                    $isDuplicate = Transaction::existsByHash($uniqueHash);
-
-                    $transactions[] = [
-                        'row_number' => $rowNumber,
-                        'date' => $transactionData['date'],
-                        'balance' => $transactionData['balance'],
-                        'paid_in' => $transactionData['paid_in'],
-                        'paid_out' => $transactionData['paid_out'],
-                        'description' => $transactionData['description'],
-                        'reference' => '',
-                        'unique_hash' => $uniqueHash,
-                        'is_duplicate' => $isDuplicate,
-                        'status' => $isDuplicate ? 'duplicate' : 'pending',
-                        'tags' => [],
-                    ];
-
-                    if ($isDuplicate) {
-                        $duplicateCount++;
-                    } else {
-                        $validCount++;
-                    }
-                } catch (\Exception $e) {
-                    $errors[] = [
-                        'row_number' => $rowNumber,
-                        'error' => $e->getMessage(),
-                        'row_data' => $row
-                    ];
-                }
+            if ($this->shouldSkipRow($rowNumber, $row, $schema)) {
+                continue;
             }
-        } finally {
-            fclose($tempFile);
+
+            $cleanRow = $this->cleanRowData($row);
+            $result = $this->processPreviewRow($cleanRow, $schema, $userId, $rowNumber);
+
+            if (isset($result['transaction'])) {
+                $transactions[] = $result['transaction'];
+                if ($result['transaction']['is_duplicate']) {
+                    $duplicateCount++;
+                } else {
+                    $validCount++;
+                }
+            } elseif (isset($result['error'])) {
+                $errors[] = $result['error'];
+            }
         }
 
         return [
@@ -359,102 +406,202 @@ class CsvImportService
     }
 
     /**
+     * Process a single row for preview.
+     */
+    private function processPreviewRow(array $row, CsvSchema $schema, int $userId, int $rowNumber): array
+    {
+        try {
+            $transactionData = $this->extractTransactionData($row, $schema, $userId);
+            $uniqueHash = $transactionData['unique_hash'];
+            $isDuplicate = Transaction::existsByHash($uniqueHash);
+
+            return [
+                'transaction' => [
+                    'row_number' => $rowNumber,
+                    'date' => $transactionData['date'],
+                    'balance' => $transactionData['balance'],
+                    'paid_in' => $transactionData['paid_in'],
+                    'paid_out' => $transactionData['paid_out'],
+                    'description' => $transactionData['description'],
+                    'reference' => '',
+                    'unique_hash' => $uniqueHash,
+                    'is_duplicate' => $isDuplicate,
+                    'status' => $isDuplicate ? 'duplicate' : 'pending',
+                    'tags' => [],
+                ]
+            ];
+        } catch (\Exception $e) {
+            return [
+                'error' => [
+                    'row_number' => $rowNumber,
+                    'error' => $e->getMessage(),
+                    'row_data' => $row
+                ]
+            ];
+        }
+    }
+
+    /**
      * Import reviewed transactions.
      */
     public function importReviewedTransactions(array $transactions, CsvSchema $schema, string $filename, $user, int $accountId): Import
     {
         $userId = is_object($user) ? $user->id : $user;
 
-        // Create import record
-        $import = Import::create([
+        $import = $this->createImportRecord($userId, $accountId, $schema, $filename);
+
+        try {
+            $import->markAsStarted();
+
+            $stats = $this->processReviewedTransactions($transactions, $import, $userId, $accountId);
+
+            $import->updateProgress(count($transactions), $stats['imported'], $stats['duplicates']);
+            $import->markAsCompleted();
+        } catch (\Exception $e) {
+            $this->handleImportFailure($import, $e, $userId, $schema, $accountId, $filename);
+            throw $e;
+        }
+
+        return $import;
+    }
+
+    /**
+     * Create an import record.
+     */
+    private function createImportRecord(int $userId, int $accountId, CsvSchema $schema, string $filename): Import
+    {
+        return Import::create([
             'user_id' => $userId,
             'account_id' => $accountId,
             'csv_schema_id' => $schema->id,
             'filename' => $filename,
             'status' => Import::STATUS_PENDING,
         ]);
+    }
 
-        try {
-            // Mark import as started
-            $import->markAsStarted();
+    /**
+     * Process reviewed transactions and return statistics.
+     */
+    private function processReviewedTransactions(array $transactions, Import $import, int $userId, int $accountId): array
+    {
+        $importedRows = 0;
+        $duplicateRows = 0;
 
-            $importedRows = 0;
-            $duplicateRows = 0;
+        $approvedTransactions = $this->filterApprovedTransactions($transactions);
 
-            // Filter transactions to only include approved ones
-            $approvedTransactions = array_filter($transactions, fn($t) => $t['status'] === 'approved');
-
-            foreach ($approvedTransactions as $transactionData) {
-                // Skip duplicates
-                if (isset($transactionData['is_duplicate']) && $transactionData['is_duplicate']) {
-                    $duplicateRows++;
-                    continue;
-                }
-
-                // Double-check for duplicates in real-time (in case database state changed)
-                if (Transaction::existsByHash($transactionData['unique_hash'])) {
-                    $duplicateRows++;
-                    continue;
-                }
-
-                try {
-                    // Create transaction
-                    $transaction = Transaction::create([
-                        'user_id' => $userId,
-                        'account_id' => $accountId,
-                        'import_id' => $import->id,
-                        'date' => $transactionData['date'],
-                        'balance' => $transactionData['balance'],
-                        'paid_in' => $transactionData['paid_in'],
-                        'paid_out' => $transactionData['paid_out'],
-                        'description' => $transactionData['description'],
-                        'reference' => $transactionData['reference'] ?? null,
-                        'unique_hash' => $transactionData['unique_hash'],
-                    ]);
-
-                    // Apply tags if any
-                    if (!empty($transactionData['tags'])) {
-                        $tagIds = array_column($transactionData['tags'], 'id');
-                        $transaction->tags()->attach($tagIds);
-                    }
-
-                    $importedRows++;
-                } catch (\Illuminate\Database\QueryException $e) {
-                    // Handle unique constraint violations gracefully
-                    if (str_contains($e->getMessage(), 'UNIQUE constraint failed: transactions.unique_hash')) {
-                        Log::warning('Duplicate transaction detected during import', [
-                            'unique_hash' => $transactionData['unique_hash'],
-                            'import_id' => $import->id,
-                        ]);
-                        $duplicateRows++;
-                        continue;
-                    }
-
-                    // Re-throw other database errors
-                    throw $e;
-                }
+        foreach ($approvedTransactions as $transactionData) {
+            if ($this->isDuplicateTransaction($transactionData)) {
+                $duplicateRows++;
+                continue;
             }
 
-            // Update import statistics
-            $import->updateProgress(count($transactions), $importedRows, $duplicateRows);
-
-            // Mark as completed
-            $import->markAsCompleted();
-        } catch (\Exception $e) {
-            // Mark as failed
-            $import->markAsFailed($e->getMessage());
-            Log::error('CSV Import finalization failed', [
-                'user_id' => $userId,
-                'schema_id' => $schema->id,
-                'account_id' => $accountId,
-                'filename' => $filename,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            throw $e;
+            if ($this->createTransactionWithTags($transactionData, $import, $userId, $accountId)) {
+                $importedRows++;
+            } else {
+                $duplicateRows++;
+            }
         }
 
-        return $import;
+        return [
+            'imported' => $importedRows,
+            'duplicates' => $duplicateRows,
+        ];
+    }
+
+    /**
+     * Filter transactions to only include approved ones.
+     */
+    private function filterApprovedTransactions(array $transactions): array
+    {
+        return array_filter($transactions, fn($t) => $t['status'] === 'approved');
+    }
+
+    /**
+     * Check if a transaction is a duplicate.
+     */
+    private function isDuplicateTransaction(array $transactionData): bool
+    {
+        if (isset($transactionData['is_duplicate']) && $transactionData['is_duplicate']) {
+            return true;
+        }
+
+        return Transaction::existsByHash($transactionData['unique_hash']);
+    }
+
+    /**
+     * Create a transaction with tags and return success status.
+     */
+    private function createTransactionWithTags(array $transactionData, Import $import, int $userId, int $accountId): bool
+    {
+        try {
+            $transaction = $this->createTransactionFromData($transactionData, $import, $userId, $accountId);
+            $this->attachTagsToTransaction($transaction, $transactionData);
+            return true;
+        } catch (\Illuminate\Database\QueryException $e) {
+            return $this->handleTransactionCreationError($e, $transactionData, $import);
+        }
+    }
+
+    /**
+     * Create a transaction from transaction data.
+     */
+    private function createTransactionFromData(array $transactionData, Import $import, int $userId, int $accountId): Transaction
+    {
+        return Transaction::create([
+            'user_id' => $userId,
+            'account_id' => $accountId,
+            'import_id' => $import->id,
+            'date' => $transactionData['date'],
+            'balance' => $transactionData['balance'],
+            'paid_in' => $transactionData['paid_in'],
+            'paid_out' => $transactionData['paid_out'],
+            'description' => $transactionData['description'],
+            'reference' => $transactionData['reference'] ?? null,
+            'unique_hash' => $transactionData['unique_hash'],
+        ]);
+    }
+
+    /**
+     * Attach tags to a transaction if any exist.
+     */
+    private function attachTagsToTransaction(Transaction $transaction, array $transactionData): void
+    {
+        if (!empty($transactionData['tags'])) {
+            $tagIds = array_column($transactionData['tags'], 'id');
+            $transaction->tags()->attach($tagIds);
+        }
+    }
+
+    /**
+     * Handle transaction creation errors.
+     */
+    private function handleTransactionCreationError(\Illuminate\Database\QueryException $e, array $transactionData, Import $import): bool
+    {
+        if (str_contains($e->getMessage(), 'UNIQUE constraint failed: transactions.unique_hash')) {
+            Log::warning('Duplicate transaction detected during import', [
+                'unique_hash' => $transactionData['unique_hash'],
+                'import_id' => $import->id,
+            ]);
+            return false;
+        }
+
+        throw $e;
+    }
+
+    /**
+     * Handle import failure.
+     */
+    private function handleImportFailure(Import $import, \Exception $e, int $userId, CsvSchema $schema, int $accountId, string $filename): void
+    {
+        $import->markAsFailed($e->getMessage());
+        Log::error('CSV Import finalization failed', [
+            'user_id' => $userId,
+            'schema_id' => $schema->id,
+            'account_id' => $accountId,
+            'filename' => $filename,
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString()
+        ]);
     }
 
     /**

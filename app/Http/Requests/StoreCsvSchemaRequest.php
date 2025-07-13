@@ -45,7 +45,6 @@ class StoreCsvSchemaRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            // Validate that either amount column OR paid_in/paid_out columns are provided
             if (
                 empty($this->amount_column) &&
                 empty($this->paid_in_column) &&
@@ -54,8 +53,9 @@ class StoreCsvSchemaRequest extends FormRequest
                 $validator->errors()->add('amount_configuration', 'Either amount column or paid_in/paid_out columns must be specified.');
             }
 
-            // Check for duplicate schema name for this user
-            if (Auth::user()->csvSchemas()->where('name', $this->name)->exists()) {
+            /** @var User $user */
+            $user = Auth::user();
+            if ($user->csvSchemas()->where('name', $this->name)->exists()) {
                 $validator->errors()->add('name', 'You already have a schema with this name.');
             }
         });

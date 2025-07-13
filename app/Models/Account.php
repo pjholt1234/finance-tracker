@@ -65,19 +65,16 @@ class Account extends Model
      */
     public function updateBalance(): void
     {
-        // Get the most recent transaction for this account
         $latestTransaction = $this->transactions()
             ->orderBy('date', 'desc')
             ->orderBy('id', 'desc')
             ->first();
 
         if ($latestTransaction && $latestTransaction->balance !== null) {
-            // Transaction balance is already in pennies
             $this->update([
                 'balance' => $latestTransaction->balance
             ]);
         } else {
-            // If no transactions exist, use the starting balance
             $this->update([
                 'balance' => $this->balance_at_start
             ]);
