@@ -22,7 +22,7 @@ class PreviewCsvSchemaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'csv_file' => 'required|file|mimes:csv,txt|max:10240', // 10MB max
+            'csv_file' => 'required|file|mimes:csv,txt|max:10240',
         ];
     }
 }

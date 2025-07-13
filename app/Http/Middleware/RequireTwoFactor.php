@@ -17,23 +17,19 @@ class RequireTwoFactor
     {
         $user = $request->user();
 
-        // Skip if user is not authenticated
         if (!$user) {
             return $next($request);
         }
 
-        // Skip if user already has 2FA enabled
         if ($user->two_factor_confirmed_at) {
             return $next($request);
         }
 
-        // Allow access to 2FA setup routes
         $allowedRoutes = [
             'two-factor.show',
             'logout',
         ];
 
-        // Allow access to Fortify 2FA routes
         $allowedPaths = [
             '/user/two-factor-authentication',
             '/user/confirmed-two-factor-authentication',
@@ -42,13 +38,14 @@ class RequireTwoFactor
             '/logout',
         ];
 
-        if (in_array($request->route()?->getName(), $allowedRoutes) || 
+        if (
+            in_array($request->route()?->getName(), $allowedRoutes) ||
             in_array($request->path(), $allowedPaths) ||
-            str_starts_with($request->path(), 'user/')) {
+            str_starts_with($request->path(), 'user/')
+        ) {
             return $next($request);
         }
 
-        // Redirect to 2FA setup page
         return redirect()->route('two-factor.show')->with('message', 'You must enable two-factor authentication to continue.');
     }
-} 
+}
