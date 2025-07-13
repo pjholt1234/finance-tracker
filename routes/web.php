@@ -24,7 +24,7 @@ Route::middleware(['auth', 'verified', 'two-factor'])->group(function () {
     Route::post('csv-schemas/{csv_schema}/clone', [CsvSchemaController::class, 'clone'])->name('csv-schemas.clone');
 
     // Tag routes
-    Route::post('tags', [TagController::class, 'store'])->name('tags.store');
+    Route::resource('tags', TagController::class);
 
     // Transaction Import routes
     Route::get('imports', [TransactionImportController::class, 'index'])->name('transaction-imports.index');
