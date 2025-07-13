@@ -65,6 +65,15 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function ImportHistory({ imports }: Props) {
+    if (!imports || !Array.isArray(imports.data)) {
+        return (
+            <AppLayout>
+                <Head title="Import History" />
+                <div className="p-8 text-red-600">Error: imports data is missing or invalid.</div>
+            </AppLayout>
+        );
+    }
+
     const handleDelete = (importData: Import) => {
         if (confirm(`Are you sure you want to delete the import "${importData.filename}" and all ${importData.imported_rows} associated transactions?`)) {
             router.delete(route('transaction-imports.destroy', importData.id));
@@ -128,7 +137,7 @@ export default function ImportHistory({ imports }: Props) {
                 </div>
 
                 {/* Import Cards */}
-                {imports.data.length === 0 ? (
+                {(imports.data || []).length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-16">
                             <Upload className="h-12 w-12 text-muted-foreground mb-4" />
@@ -146,7 +155,7 @@ export default function ImportHistory({ imports }: Props) {
                     </Card>
                 ) : (
                     <div className="space-y-4">
-                        {imports.data.map((importData) => (
+                        {(imports.data || []).map((importData) => (
                             <Card key={importData.id} className="hover:shadow-md transition-shadow">
                                 <CardHeader className="pb-3">
                                     <div className="flex items-start justify-between">
@@ -230,9 +239,9 @@ export default function ImportHistory({ imports }: Props) {
                 )}
 
                 {/* Pagination */}
-                {imports.links && imports.links.length > 3 && (
+                {(imports.links && Array.isArray(imports.links) && imports.links.length > 3) && (
                     <div className="flex items-center justify-center space-x-2">
-                        {imports.links.map((link: any, index: number) => (
+                        {(imports.links || []).map((link: any, index: number) => (
                             <Button
                                 key={index}
                                 variant={link.active ? "default" : "outline"}

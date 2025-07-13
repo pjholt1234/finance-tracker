@@ -1,9 +1,8 @@
-import { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
-import { router } from '@inertiajs/react';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Tag as TagIcon, X, ChevronDown } from 'lucide-react';
+import { X, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Tag {
@@ -53,13 +52,13 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     }));
 
     // Filter available tags (exclude already selected ones) and limit to 5
-    const filteredTags = availableTags.filter(tag =>
-        !selectedTags.some(selected => selected.id === tag.id) &&
+    const filteredTags = (availableTags || []).filter(tag =>
+        !(selectedTags || []).some(selected => selected.id === tag.id) &&
         tag.name.toLowerCase().includes(searchValue.toLowerCase())
     ).slice(0, 5);
 
     // Check if search value matches an existing tag exactly
-    const exactMatch = availableTags.find(tag =>
+    const exactMatch = (availableTags || []).find(tag =>
         tag.name.toLowerCase() === searchValue.toLowerCase()
     );
 
@@ -88,7 +87,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
 
     // Sync availableTags with parent tags prop
     useEffect(() => {
-        setAvailableTags(tags);
+        setAvailableTags(tags || []);
     }, [tags]);
 
     // Focus input when dropdown opens and reset highlighted index
@@ -108,7 +107,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     const shouldShowDropdown = open && searchValue.trim().length > 0;
 
     const handleSelectTag = (tag: Tag) => {
-        onTagsChange([...selectedTags, tag]);
+        onTagsChange([...(selectedTags || []), tag]);
         setSearchValue('');
         setHighlightedIndex(-1);
         // Keep focus on input after selection
@@ -120,7 +119,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     };
 
     const handleRemoveTag = (tagToRemove: Tag) => {
-        onTagsChange(selectedTags.filter(tag => tag.id !== tagToRemove.id));
+        onTagsChange((selectedTags || []).filter(tag => tag.id !== tagToRemove.id));
     };
 
     const handleCreateTag = async () => {
@@ -156,7 +155,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                 }
 
                 // Add to selected tags
-                onTagsChange([...selectedTags, newTag]);
+                onTagsChange([...(selectedTags || []), newTag]);
 
                 // Clear search and keep focus on input
                 setSearchValue('');
@@ -241,7 +240,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
         }
     };
 
-    const handleOptionClick = (option: any, index: number) => {
+    const handleOptionClick = (option: Tag | { id: number; name: string; color: string; isCreate: true }) => {
         if ('isCreate' in option && option.isCreate) {
             handleCreateTag();
         } else {
@@ -251,8 +250,6 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
 
     return (
         <div className={cn("flex items-start gap-2 flex-wrap", className)}>
-            <TagIcon className="h-4 w-4 text-muted-foreground mt-2" />
-
             <div className="flex-1 min-w-0">
                 <div className="relative" ref={dropdownRef}>
                     <Button
@@ -299,7 +296,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                                             {filteredTags.map((tag, index) => (
                                                 <button
                                                     key={tag.id}
-                                                    onClick={() => handleOptionClick(tag, index)}
+                                                    onClick={() => handleOptionClick(tag)}
                                                     className={cn(
                                                         "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left",
                                                         "hover:bg-accent hover:text-accent-foreground",
@@ -321,7 +318,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                                             {filteredTags.length > 0 && <div className="border-t border-border my-2" />}
                                             <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Create New</div>
                                             <button
-                                                onClick={() => handleOptionClick({ isCreate: true }, filteredTags.length)}
+                                                onClick={() => handleOptionClick({ id: -1, name: searchValue, color: '#6b7280', isCreate: true })}
                                                 disabled={isCreating}
                                                 className={cn(
                                                     "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left",
@@ -356,9 +353,9 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                 </div>
 
                 {/* Selected Tags */}
-                {selectedTags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mt-2">
-                        {selectedTags.map((tag) => (
+                {(selectedTags || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                        {(selectedTags || []).map((tag) => (
                             <Badge
                                 key={tag.id}
                                 variant="secondary"

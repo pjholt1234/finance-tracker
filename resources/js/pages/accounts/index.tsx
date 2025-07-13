@@ -3,11 +3,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { CardGrid } from '@/components/ui/card-grid';
+import { useCurrencyFormat } from '@/hooks/use-currency-format';
 import {
     Plus,
-    MoreHorizontal,
     Edit,
     Trash2,
     Eye,
@@ -46,6 +49,7 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function AccountsIndex({ accounts }: Props) {
     const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
+    const { formatCurrency } = useCurrencyFormat();
 
     const handleDelete = (account: Account) => {
         router.delete(route('accounts.destroy', account.id), {
@@ -55,161 +59,119 @@ export default function AccountsIndex({ accounts }: Props) {
         });
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-        }).format(amount);
-    };
+    const renderAccountCard = (account: Account) => (
+        <Card key={account.id} className="hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                        <CreditCard className="h-5 w-5 text-muted-foreground" />
+                        <CardTitle className="text-lg">{account.name}</CardTitle>
+                    </div>
+                    <ActionMenu
+                        actions={[
+                            {
+                                label: 'View',
+                                icon: Eye,
+                                href: route('accounts.show', account.id),
+                            },
+                            {
+                                label: 'Edit',
+                                icon: Edit,
+                                href: route('accounts.edit', account.id),
+                            },
+                            {
+                                label: 'Delete',
+                                icon: Trash2,
+                                onClick: () => setDeletingAccount(account),
+                                variant: 'destructive',
+                            },
+                        ]}
+                    />
+                </div>
+                <CardDescription>
+                    Account {account.number} • {account.sort_code}
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Current Balance</span>
+                        <div className="flex items-center space-x-1">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-semibold">
+                                {formatCurrency(account.balance)}
+                            </span>
+                        </div>
+                    </div>
 
-    const formatBalance = (balance: number) => {
-        return formatCurrency(balance / 100);
-    };
+                    <div className="flex items-center justify-between text-sm">
+                        <span className="text-muted-foreground">Starting Balance</span>
+                        <span>{formatCurrency(account.balance_at_start)}</span>
+                    </div>
+
+                    {account.description && (
+                        <p className="text-sm text-muted-foreground line-clamp-2">
+                            {account.description}
+                        </p>
+                    )}
+
+                    <div className="pt-2">
+                        <Button variant="outline" size="sm" asChild className="w-full">
+                            <Link href={route('accounts.show', account.id)}>
+                                View Details
+                            </Link>
+                        </Button>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Accounts" />
 
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">Accounts</h1>
-                        <p className="text-muted-foreground">
-                            Manage your bank accounts and view their balances.
-                        </p>
-                    </div>
-                    <Button asChild>
-                        <Link href={route('accounts.create')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Account
-                        </Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    title="Accounts"
+                    description="Manage your bank accounts and view their balances."
+                    action={{
+                        href: route('accounts.create'),
+                        label: 'Add Account',
+                        icon: Plus,
+                    }}
+                />
 
                 {accounts.length === 0 ? (
-                    <Card>
-                        <CardContent className="flex flex-col items-center justify-center py-12">
-                            <Building2 className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No accounts yet</h3>
-                            <p className="text-muted-foreground text-center mb-4">
-                                Create your first account to start importing transactions.
-                            </p>
-                            <Button asChild>
-                                <Link href={route('accounts.create')}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Account
-                                </Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
+                    <EmptyState
+                        icon={Building2}
+                        title="No accounts yet"
+                        description="Create your first account to start importing transactions."
+                        action={{
+                            href: route('accounts.create'),
+                            label: 'Add Account',
+                            icon: Plus,
+                        }}
+                    />
                 ) : (
-                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                        {accounts.map((account) => (
-                            <Card key={account.id} className="hover:shadow-md transition-shadow">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <CreditCard className="h-5 w-5 text-muted-foreground" />
-                                            <CardTitle className="text-lg">{account.name}</CardTitle>
-                                        </div>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={route('accounts.show', account.id)}>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={route('accounts.edit', account.id)}>
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    onClick={() => setDeletingAccount(account)}
-                                                    className="text-destructive"
-                                                >
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                    <CardDescription>
-                                        Account {account.number} • {account.sort_code}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-sm font-medium">Current Balance</span>
-                                            <div className="flex items-center space-x-1">
-                                                <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                                <span className="font-semibold">
-                                                    {formatBalance(account.balance)}
-                                                </span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between text-sm">
-                                            <span className="text-muted-foreground">Starting Balance</span>
-                                            <span>{formatBalance(account.balance_at_start)}</span>
-                                        </div>
-
-                                        {account.description && (
-                                            <p className="text-sm text-muted-foreground line-clamp-2">
-                                                {account.description}
-                                            </p>
-                                        )}
-
-                                        <div className="pt-2">
-                                            <Button variant="outline" size="sm" asChild className="w-full">
-                                                <Link href={route('accounts.show', account.id)}>
-                                                    View Details
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    <CardGrid
+                        items={accounts}
+                        renderItem={renderAccountCard}
+                        columns={{ sm: 1, md: 2, lg: 3 }}
+                    />
                 )}
             </div>
 
-            <Dialog open={!!deletingAccount} onOpenChange={() => setDeletingAccount(null)}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Delete Account</DialogTitle>
-                        <DialogDescription>
-                            Are you sure you want to delete "{deletingAccount?.name}"? This action cannot be undone.
-                            {deletingAccount && (
-                                <span className="block mt-2 text-sm text-muted-foreground">
-                                    Note: You can only delete accounts that have no imports or transactions.
-                                </span>
-                            )}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setDeletingAccount(null)}>
-                            Cancel
-                        </Button>
-                        <Button
-                            variant="destructive"
-                            onClick={() => deletingAccount && handleDelete(deletingAccount)}
-                        >
-                            Delete
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+            <ConfirmationDialog
+                open={!!deletingAccount}
+                onOpenChange={() => setDeletingAccount(null)}
+                title="Delete Account"
+                description={`Are you sure you want to delete "${deletingAccount?.name}"? This action cannot be undone.`}
+                confirmLabel="Delete"
+                onConfirm={() => deletingAccount && handleDelete(deletingAccount)}
+                variant="destructive"
+                additionalInfo="Note: You can only delete accounts that have no imports or transactions."
+            />
         </AppLayout>
     );
 } 

@@ -3,6 +3,10 @@ import { Plus, Tag as TagIcon, Edit, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { PageHeader } from '@/components/ui/page-header';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ActionMenu } from '@/components/ui/action-menu';
+import { CardGrid } from '@/components/ui/card-grid';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 
@@ -28,89 +32,86 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function TagsIndex({ tags }: Props) {
+    const renderTagCard = (tag: Tag) => (
+        <Card key={tag.id} className="group hover:shadow-md transition-shadow">
+            <CardHeader className="pb-3">
+                <div className="flex items-start justify-between">
+                    <div className="flex items-center space-x-2">
+                        <div
+                            className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
+                            style={{ backgroundColor: tag.color }}
+                        />
+                        <CardTitle className="text-lg">{tag.name}</CardTitle>
+                    </div>
+                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ActionMenu
+                            actions={[
+                                {
+                                    label: 'View',
+                                    icon: Eye,
+                                    href: route('tags.show', tag.id),
+                                },
+                                {
+                                    label: 'Edit',
+                                    icon: Edit,
+                                    href: route('tags.edit', tag.id),
+                                },
+                            ]}
+                        />
+                    </div>
+                </div>
+                {tag.description && (
+                    <CardDescription className="text-sm">
+                        {tag.description}
+                    </CardDescription>
+                )}
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center justify-between">
+                    <Badge variant="secondary">
+                        {tag.transactions_count} transaction{tag.transactions_count !== 1 ? 's' : ''}
+                    </Badge>
+                    <div className="text-xs text-muted-foreground">
+                        Created {new Date(tag.created_at).toLocaleDateString()}
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Tags" />
 
             <div className="space-y-6">
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Tags</h1>
-                        <p className="text-muted-foreground">
-                            Manage your transaction tags and categorization rules.
-                        </p>
-                    </div>
-                    <Button asChild>
-                        <Link href={route('tags.create')}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Create Tag
-                        </Link>
-                    </Button>
-                </div>
+                <PageHeader
+                    title="Tags"
+                    description="Manage your transaction tags and categorization rules."
+                    action={{
+                        href: route('tags.create'),
+                        label: 'Create Tag',
+                        icon: Plus,
+                    }}
+                />
 
-                {/* Tags Grid */}
                 {tags.length > 0 ? (
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {tags.map((tag) => (
-                            <Card key={tag.id} className="group hover:shadow-md transition-shadow">
-                                <CardHeader className="pb-3">
-                                    <div className="flex items-start justify-between">
-                                        <div className="flex items-center space-x-2">
-                                            <div
-                                                className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                                                style={{ backgroundColor: tag.color }}
-                                            />
-                                            <CardTitle className="text-lg">{tag.name}</CardTitle>
-                                        </div>
-                                        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="sm" asChild>
-                                                <Link href={route('tags.show', tag.id)}>
-                                                    <Eye className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                            <Button variant="ghost" size="sm" asChild>
-                                                <Link href={route('tags.edit', tag.id)}>
-                                                    <Edit className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </div>
-                                    {tag.description && (
-                                        <CardDescription className="text-sm">
-                                            {tag.description}
-                                        </CardDescription>
-                                    )}
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="flex items-center justify-between">
-                                        <Badge variant="secondary">
-                                            {tag.transactions_count} transaction{tag.transactions_count !== 1 ? 's' : ''}
-                                        </Badge>
-                                        <div className="text-xs text-muted-foreground">
-                                            Created {new Date(tag.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
+                    <CardGrid
+                        items={tags}
+                        renderItem={renderTagCard}
+                        columns={{ sm: 1, md: 2, lg: 3 }}
+                        className="gap-6"
+                    />
                 ) : (
-                    <div className="text-center py-12">
-                        <TagIcon className="mx-auto h-12 w-12 text-muted-foreground" />
-                        <h3 className="mt-4 text-lg font-semibold">No tags yet</h3>
-                        <p className="mt-2 text-muted-foreground">
-                            Create your first tag to start categorizing your transactions.
-                        </p>
-                        <div className="mt-6">
-                            <Button asChild>
-                                <Link href={route('tags.create')}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Create Your First Tag
-                                </Link>
-                            </Button>
-                        </div>
-                    </div>
+                    <EmptyState
+                        icon={TagIcon}
+                        title="No tags yet"
+                        description="Create your first tag to start categorizing your transactions."
+                        action={{
+                            href: route('tags.create'),
+                            label: 'Create Your First Tag',
+                            icon: Plus,
+                        }}
+                    />
                 )}
             </div>
         </AppLayout>

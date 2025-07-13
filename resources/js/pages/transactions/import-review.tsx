@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -94,13 +94,13 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function ImportReview({ preview, schema, account, filename, temp_path, tags }: Props) {
     const [transactions, setTransactions] = useState<PreviewTransaction[]>(
-        preview.transactions.map(t => ({
+        preview?.transactions?.map(t => ({
             ...t,
             status: t.is_duplicate ? 'duplicate' : 'pending',
             reference: t.reference || ''
-        }))
+        })) || []
     );
-    const [availableTags, setAvailableTags] = useState<Tag[]>(tags);
+    const [availableTags, setAvailableTags] = useState<Tag[]>(tags || []);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showFinalReview, setShowFinalReview] = useState(false);
 
@@ -115,9 +115,9 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
     const { processing } = useForm();
 
-    // Skip duplicates when navigating
-    const nonDuplicateTransactions = transactions.filter(t => !t.is_duplicate);
-    const currentTransaction = nonDuplicateTransactions[currentIndex];
+    // Skip duplicates when navigating - add null check
+    const nonDuplicateTransactions = (transactions || []).filter(t => !t.is_duplicate);
+    const currentTransaction = nonDuplicateTransactions.length > 0 ? nonDuplicateTransactions[currentIndex] : null;
 
     // Function to handle new tag creation from TagSelect components
     const handleTagCreated = (newTag: Tag) => {
@@ -135,29 +135,35 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     };
 
     const updateCurrentTransaction = (updates: Partial<PreviewTransaction>) => {
+        if (!currentTransaction) return;
         setTransactions(prev => prev.map(t =>
             t.unique_hash === currentTransaction.unique_hash ? { ...t, ...updates } : t
         ));
     };
 
     const updateTransactionTags = (newTags: Tag[]) => {
+        if (!currentTransaction) return;
         updateCurrentTransaction({ tags: newTags });
     };
 
     const updateTransactionDescription = (description: string) => {
+        if (!currentTransaction) return;
         updateCurrentTransaction({ description });
     };
 
     const updateTransactionReference = (reference: string) => {
+        if (!currentTransaction) return;
         updateCurrentTransaction({ reference });
     };
 
     const handleApprove = () => {
+        if (!currentTransaction) return;
         updateCurrentTransaction({ status: 'approved' });
         handleNext();
     };
 
     const handleDiscard = () => {
+        if (!currentTransaction) return;
         updateCurrentTransaction({ status: 'discarded' });
         handleNext();
     };
@@ -176,7 +182,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
         }
     };
 
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: KeyboardEvent) => {
         // Only handle global shortcuts when not focused on input elements
         if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
             return;
@@ -202,9 +208,9 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 handleNext();
                 break;
         }
-    };
+    }, [handleApprove, handleDiscard, handlePrevious, handleNext]);
 
-    const handleTabNavigation = (e: KeyboardEvent) => {
+    const handleTabNavigation = useCallback((e: KeyboardEvent) => {
         if (e.key === 'Tab') {
             const focusableElements = [
                 descriptionRef.current,
@@ -254,7 +260,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 }
             }
         }
-    };
+    }, []);
 
     useEffect(() => {
         document.addEventListener('keydown', handleKeyDown);
@@ -263,7 +269,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             document.removeEventListener('keydown', handleKeyDown);
             document.removeEventListener('keydown', handleTabNavigation);
         };
-    }, [currentIndex, currentTransaction]);
+    }, [currentIndex, currentTransaction, handleKeyDown, handleTabNavigation]);
 
     const handleSubmit = () => {
         router.post(route('transaction-imports.finalize'), {
@@ -276,7 +282,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     };
 
     const getStatusStats = () => {
-        const stats = transactions.reduce((acc, t) => {
+        const stats = (transactions || []).reduce((acc, t) => {
             acc[t.status] = (acc[t.status] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
@@ -340,7 +346,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                                 <div className="space-y-2">
                                     <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
-                                    <p className="text-2xl font-bold">{preview.total_rows}</p>
+                                    <p className="text-2xl font-bold">{preview?.total_rows || 0}</p>
                                 </div>
                                 <div className="space-y-2">
                                     <p className="text-sm font-medium text-muted-foreground">Approved</p>
@@ -352,7 +358,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 </div>
                                 <div className="space-y-2">
                                     <p className="text-sm font-medium text-muted-foreground">Duplicates</p>
-                                    <p className="text-2xl font-bold text-yellow-600">{preview.duplicate_count}</p>
+                                    <p className="text-2xl font-bold text-yellow-600">{preview?.duplicate_count || 0}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -368,7 +374,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
-                                {transactions.map((transaction, index) => (
+                                {(transactions || []).map((transaction) => (
                                     <div
                                         key={transaction.unique_hash}
                                         className={`p-4 border rounded-lg ${transaction.is_duplicate ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800' :
@@ -421,7 +427,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             <Textarea
                                                                 value={transaction.description}
                                                                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                                                                    const updatedTransactions = transactions.map(t =>
+                                                                    const updatedTransactions = (transactions || []).map(t =>
                                                                         t.unique_hash === transaction.unique_hash
                                                                             ? { ...t, description: e.target.value }
                                                                             : t
@@ -440,7 +446,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             <Input
                                                                 value={transaction.reference || ''}
                                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                                                    const updatedTransactions = transactions.map(t =>
+                                                                    const updatedTransactions = (transactions || []).map(t =>
                                                                         t.unique_hash === transaction.unique_hash
                                                                             ? { ...t, reference: e.target.value }
                                                                             : t
@@ -460,7 +466,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         tags={availableTags}
                                                         selectedTags={transaction.tags}
                                                         onTagsChange={(newTags) => {
-                                                            const updatedTransactions = transactions.map(t =>
+                                                            const updatedTransactions = (transactions || []).map(t =>
                                                                 t.unique_hash === transaction.unique_hash
                                                                     ? { ...t, tags: newTags }
                                                                     : t
@@ -480,7 +486,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         size="sm"
                                                         variant={transaction.status === 'approved' ? 'default' : 'outline'}
                                                         onClick={() => {
-                                                            const updatedTransactions = transactions.map(t =>
+                                                            const updatedTransactions = (transactions || []).map(t =>
                                                                 t.unique_hash === transaction.unique_hash
                                                                     ? { ...t, status: 'approved' as const }
                                                                     : t
@@ -495,7 +501,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         size="sm"
                                                         variant={transaction.status === 'discarded' ? 'destructive' : 'outline'}
                                                         onClick={() => {
-                                                            const updatedTransactions = transactions.map(t =>
+                                                            const updatedTransactions = (transactions || []).map(t =>
                                                                 t.unique_hash === transaction.unique_hash
                                                                     ? { ...t, status: 'discarded' as const }
                                                                     : t
@@ -526,7 +532,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                     <Alert>
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
-                            No transactions to review. All transactions may be duplicates.
+                            No transactions to review. All transactions may be duplicates or the import data is not available.
                         </AlertDescription>
                     </Alert>
                 </div>
@@ -721,7 +727,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 </Card>
 
                 {/* Errors */}
-                {preview.errors.length > 0 && (
+                {preview?.errors?.length > 0 && (
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>
