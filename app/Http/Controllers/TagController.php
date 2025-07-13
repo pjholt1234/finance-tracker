@@ -35,6 +35,7 @@ class TagController extends Controller
      */
     public function create()
     {
+        $this->authorize('create', Tag::class);
         return Inertia::render('tags/create');
     }
 
@@ -43,6 +44,7 @@ class TagController extends Controller
      */
     public function store(StoreTagRequest $request)
     {
+        $this->authorize('create', Tag::class);
         $validated = $request->validated();
 
         $tagData = [
@@ -53,7 +55,6 @@ class TagController extends Controller
 
         $tag = Auth::user()->tags()->create($tagData);
 
-        // Return JSON for AJAX requests, redirect for form submissions
         if ($request->expectsJson() || $request->header('X-Inertia')) {
             return response()->json($tag, 201);
         }
@@ -110,7 +111,6 @@ class TagController extends Controller
     {
         $this->authorize('delete', $tag);
 
-        // Check if tag has any transactions
         if ($tag->transactions()->count() > 0) {
             return back()->with('error', 'Cannot delete tag that has associated transactions.');
         }

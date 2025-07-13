@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
+use App\Models\User;
 
 class AccountController extends Controller
 {
@@ -20,7 +21,9 @@ class AccountController extends Controller
      */
     public function index(): Response
     {
-        $accounts = Auth::user()->accounts()
+        /** @var User $user */
+        $user = Auth::user();
+        $accounts = $user->accounts()
             ->orderBy('name')
             ->get();
 
@@ -34,6 +37,7 @@ class AccountController extends Controller
      */
     public function create(): Response
     {
+        $this->authorize('create', Account::class);
         return Inertia::render('accounts/create');
     }
 
@@ -42,9 +46,10 @@ class AccountController extends Controller
      */
     public function store(StoreAccountRequest $request)
     {
+        $this->authorize('create', Account::class);
         $validated = $request->validated();
 
-        $account = Account::create([
+        Account::create([
             'user_id' => Auth::id(),
             'name' => $validated['name'],
             'number' => $validated['number'],
@@ -63,28 +68,20 @@ class AccountController extends Controller
      */
     public function show(Account $account): Response
     {
-        // Verify ownership
-        if ($account->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('view', $account);
 
-        // Get the total transaction count before loading relationships
         $totalTransactionCount = $account->transactions()->count();
 
-        // Load relationships with proper counts
         $account->load(['imports.csvSchema', 'transactions' => function ($query) {
             $query->latest()->limit(10);
         }]);
 
-        // Update the account balance to ensure it's current
         $account->updateBalance();
         $account->refresh();
 
-        // Explicitly format the account data to ensure relationships are included
         $accountData = $account->toArray();
         $accountData['total_transaction_count'] = $totalTransactionCount;
 
-        // Ensure imports have their csvSchema relationship properly included
         if (isset($accountData['imports'])) {
             foreach ($accountData['imports'] as $index => $import) {
                 if (isset($account->imports[$index]->csvSchema)) {
@@ -103,10 +100,7 @@ class AccountController extends Controller
      */
     public function edit(Account $account): Response
     {
-        // Verify ownership
-        if ($account->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('update', $account);
 
         return Inertia::render('accounts/edit', [
             'account' => $account,
@@ -118,10 +112,7 @@ class AccountController extends Controller
      */
     public function update(UpdateAccountRequest $request, Account $account)
     {
-        // Verify ownership
-        if ($account->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('update', $account);
 
         $validated = $request->validated();
 
@@ -142,12 +133,8 @@ class AccountController extends Controller
      */
     public function destroy(Account $account)
     {
-        // Verify ownership
-        if ($account->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('delete', $account);
 
-        // Check if account has imports or transactions
         if ($account->imports()->exists() || $account->transactions()->exists()) {
             return back()->withErrors([
                 'account' => 'Cannot delete account that has imports or transactions.',
@@ -165,12 +152,8 @@ class AccountController extends Controller
      */
     public function recalculateBalance(Account $account)
     {
-        // Verify ownership
-        if ($account->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('recalculateBalance', $account);
 
-        // Update the account balance
         $account->updateBalance();
 
         return back()->with('success', 'Account balance recalculated successfully.');

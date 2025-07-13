@@ -29,6 +29,7 @@ class TransactionImportController extends Controller
      */
     public function create(): Response
     {
+        $this->authorize('create', Import::class);
         $schemas = Auth::user()->csvSchemas()->latest()->get();
         $accounts = Auth::user()->accounts()->orderBy('name')->get();
 
@@ -43,6 +44,7 @@ class TransactionImportController extends Controller
      */
     public function store(StoreTransactionImportRequest $request)
     {
+        $this->authorize('create', Import::class);
         $schema = CsvSchema::findOrFail($request->csv_schema_id);
         $this->authorize('view', $schema);
 
@@ -51,14 +53,12 @@ class TransactionImportController extends Controller
         $file = $request->file('csv_file');
 
         try {
-            // Preview transactions instead of importing directly
             $preview = $this->csvImportService->previewTransactions(
                 $file,
                 $schema,
                 Auth::id()
             );
 
-            // Store file temporarily for the review process
             $filename = $file->getClientOriginalName();
             $tempPath = $file->store('temp-imports', 'local');
 
@@ -101,7 +101,7 @@ class TransactionImportController extends Controller
      */
     public function finalize(FinalizeTransactionImportRequest $request)
     {
-        // Decode the JSON transactions data
+        $this->authorize('create', Import::class);
         $transactions = json_decode($request->transactions, true);
 
         $schema = CsvSchema::findOrFail($request->schema_id);
@@ -118,7 +118,6 @@ class TransactionImportController extends Controller
                 $account->id
             );
 
-            // Clean up temporary file
             Storage::disk('local')->delete($request->temp_path);
 
             return redirect()->route('transaction-imports.show', $import)
@@ -144,13 +143,10 @@ class TransactionImportController extends Controller
      */
     public function show(Import $import): Response
     {
-        // Verify ownership
-        if ($import->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('view', $import);
 
         $import->load(['csvSchema', 'account', 'transactions' => function ($query) {
-            $query->latest()->limit(10); // Show latest 10 transactions as preview
+            $query->latest()->limit(10);
         }]);
 
         $stats = $this->csvImportService->getImportStats($import);
@@ -181,15 +177,9 @@ class TransactionImportController extends Controller
      */
     public function destroy(Import $import)
     {
-        // Verify ownership
-        if ($import->user_id !== Auth::id()) {
-            abort(403);
-        }
+        $this->authorize('delete', $import);
 
-        // Delete all transactions from this import
         $import->transactions()->delete();
-
-        // Delete the import record
         $import->delete();
 
         return redirect()->route('transaction-imports.index')

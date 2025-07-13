@@ -39,6 +39,7 @@ class CsvSchemaController extends Controller
      */
     public function create(): Response
     {
+        $this->authorize('create', CsvSchema::class);
         return Inertia::render('csv-schemas/create');
     }
 
@@ -47,6 +48,7 @@ class CsvSchemaController extends Controller
      */
     public function preview(PreviewCsvSchemaRequest $request)
     {
+        $this->authorize('create', CsvSchema::class);
         try {
             $file = $request->file('csv_file');
             $previewData = $this->csvReaderService->parseForPreview($file, 20);
@@ -66,15 +68,15 @@ class CsvSchemaController extends Controller
      */
     public function store(StoreCsvSchemaRequest $request)
     {
+        $this->authorize('create', CsvSchema::class);
         $validated = $request->validated();
 
         $schema = Auth::user()->csvSchemas()->create($validated);
 
-        // Validate the schema configuration
         try {
             $schema->validateSchema();
         } catch (ValidationException $e) {
-            $schema->delete(); // Clean up if validation fails
+            $schema->delete();
             throw $e;
         }
 
@@ -101,13 +103,11 @@ class CsvSchemaController extends Controller
     {
         $this->authorize('update', $csvSchema);
 
-        // Generate available columns (1-indexed to match our database schema)
         $availableColumns = [];
         for ($i = 1; $i <= 20; $i++) {
             $availableColumns[$i] = "Column $i";
         }
 
-        // Available date formats
         $availableDateFormats = [
             'Y-m-d' => 'YYYY-MM-DD (2024-01-15)',
             'd/m/Y' => 'DD/MM/YYYY (15/01/2024)',
@@ -136,7 +136,6 @@ class CsvSchemaController extends Controller
 
         $csvSchema->update($validated);
 
-        // Validate the schema configuration
         try {
             $csvSchema->validateSchema();
         } catch (ValidationException $e) {
@@ -167,18 +166,15 @@ class CsvSchemaController extends Controller
     {
         $this->authorize('view', $csvSchema);
 
-        // Generate a unique name for the cloned schema
         $baseName = $csvSchema->name . ' (copy)';
         $uniqueName = $baseName;
         $counter = 1;
 
-        // Check if the name already exists and increment counter if needed
         while (Auth::user()->csvSchemas()->where('name', $uniqueName)->exists()) {
             $counter++;
             $uniqueName = $csvSchema->name . ' (copy ' . $counter . ')';
         }
 
-        // Create a new schema with copied data
         $clonedSchema = Auth::user()->csvSchemas()->create([
             'name' => $uniqueName,
             'transaction_data_start' => $csvSchema->transaction_data_start,
