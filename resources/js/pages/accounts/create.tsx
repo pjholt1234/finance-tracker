@@ -5,16 +5,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle, Building2, Hash, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Building2, Hash, DollarSign } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { FormEvent } from 'react';
+import currencyChangeHandler from '@/utils/currencyChangeHandler';
 
 interface FormData {
     name: string;
     number: string;
     sort_code: string;
     description: string;
-    balance_at_start: number; // Balance in pennies
+    balance_at_start: number;
     [key: string]: any;
 }
 
@@ -35,10 +37,10 @@ export default function CreateAccount() {
         number: '',
         sort_code: '',
         description: '',
-        balance_at_start: 0, // Start with 0 pennies
+        balance_at_start: 0,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         post(route('accounts.store'));
     };
@@ -130,17 +132,7 @@ export default function CreateAccount() {
                                                 type="number"
                                                 step="0.01"
                                                 value={data.balance_at_start === 0 ? '' : (data.balance_at_start / 100).toString()}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    if (value === '') {
-                                                        setData('balance_at_start', 0);
-                                                    } else {
-                                                        const numValue = parseFloat(value);
-                                                        if (!isNaN(numValue)) {
-                                                            setData('balance_at_start', Math.round(numValue * 100));
-                                                        }
-                                                    }
-                                                }}
+                                                onChange={(e) => currencyChangeHandler(e, setData, 'balance_at_start')}
                                                 placeholder="0.00"
                                                 className={`pl-10 ${errors.balance_at_start ? 'border-destructive' : ''}`}
                                             />
@@ -189,4 +181,4 @@ export default function CreateAccount() {
             </div>
         </AppLayout>
     );
-} 
+}

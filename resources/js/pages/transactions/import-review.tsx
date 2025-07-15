@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TagSelect, TagSelectRef } from '@/components/ui/tag-select';
+import { ErrorMessage, ConflictMessage } from '@/components/ui/error-message';
 import {
     ArrowLeft,
     CheckCircle,
@@ -25,6 +26,16 @@ import {
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { formatDate } from '@/utils/date';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+    DialogClose,
+} from '@/components/ui/dialog';
+import { Select } from '@/components/ui/select';
+import { api, type ApiError } from '@/lib/api';
 
 interface CsvSchema {
     id: number;
@@ -103,6 +114,11 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const [availableTags, setAvailableTags] = useState<Tag[]>(tags || []);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showFinalReview, setShowFinalReview] = useState(false);
+    const [tagModalOpen, setTagModalOpen] = useState(false);
+    const [editingTag, setEditingTag] = useState<Tag | null>(null);
+    const [tagModalMode, setTagModalMode] = useState<'create' | 'edit'>('create');
+    const [criteriaLoading, setCriteriaLoading] = useState(false);
+    const [criteriaError, setCriteriaError] = useState<string | null>(null);
 
     // Refs for tab navigation
     const tagSelectRef = useRef<TagSelectRef>(null);
@@ -122,6 +138,13 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     // Function to handle new tag creation from TagSelect components
     const handleTagCreated = (newTag: Tag) => {
         setAvailableTags(prev => [...prev, newTag]);
+    };
+
+    // Open modal for editing a tag
+    const handleEditTag = (tag: Tag) => {
+        setEditingTag(tag);
+        setTagModalMode('edit');
+        setTagModalOpen(true);
     };
 
     const formatCurrency = (amount: number | undefined) => {
@@ -299,6 +322,106 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const canSubmit = stats.approved > 0;
     const progressValue = ((currentIndex + 1) / nonDuplicateTransactions.length) * 100;
 
+    // Tag criteria modal state
+    const [criteria, setCriteria] = useState({
+        description_match: '',
+        match_type: 'exact',
+        balance_match: '',
+        balance_min: '',
+        balance_max: '',
+        date_match: '',
+        date_start: '',
+        date_end: '',
+        day_of_month: '',
+        day_of_week: '',
+        logic_type: 'and',
+    });
+
+    // Load criteria for editing
+    useEffect(() => {
+        if (editingTag && tagModalMode === 'edit' && tagModalOpen) {
+            setCriteriaLoading(true);
+            setCriteriaError(null);
+            api.get(`/tags/${editingTag.id}/criteria`)
+                .then(res => {
+                    if (res.data) {
+                        setCriteria({
+                            description_match: res.data.description_match || '',
+                            match_type: res.data.match_type || 'exact',
+                            balance_match: res.data.balance_match || '',
+                            balance_min: res.data.balance_min || '',
+                            balance_max: res.data.balance_max || '',
+                            date_match: res.data.date_match || '',
+                            date_start: res.data.date_start || '',
+                            date_end: res.data.date_end || '',
+                            day_of_month: res.data.day_of_month || '',
+                            day_of_week: res.data.day_of_week || '',
+                            logic_type: res.data.logic_type || 'and',
+                        });
+                    } else {
+                        setCriteria({
+                            description_match: '',
+                            match_type: 'exact',
+                            balance_match: '',
+                            balance_min: '',
+                            balance_max: '',
+                            date_match: '',
+                            date_start: '',
+                            date_end: '',
+                            day_of_month: '',
+                            day_of_week: '',
+                            logic_type: 'and',
+                        });
+                    }
+                })
+                .catch((error: ApiError) => {
+                    if (error.isConflict) {
+                        setCriteriaError('Tag criteria already exists for this tag. Please edit the existing criteria instead.');
+                    } else {
+                        setCriteriaError('Failed to load criteria');
+                    }
+                })
+                .finally(() => setCriteriaLoading(false));
+        }
+    }, [editingTag, tagModalMode, tagModalOpen]);
+
+    const handleCriteriaChange = (field: string, value: string) => {
+        setCriteria(prev => ({ ...prev, [field]: value }));
+    };
+
+    const handleSaveCriteria = async () => {
+        setCriteriaLoading(true);
+        setCriteriaError(null);
+        try {
+            if (editingTag && tagModalMode === 'edit') {
+                // Try to load existing criteria to get its ID
+                const res = await api.get(`/tags/${editingTag.id}/criteria`);
+                if (res.data && res.data.id) {
+                    await api.put(`/tags/${editingTag.id}/criteria/${res.data.id}`, criteria);
+                } else {
+                    await api.post(`/tags/${editingTag.id}/criteria`, criteria);
+                }
+            } else if (editingTag && tagModalMode === 'create') {
+                await api.post(`/tags/${editingTag.id}/criteria`, criteria);
+            }
+            setTagModalOpen(false);
+            // Re-fetch or re-apply recommendations for all transactions (simulate by reloading page for now)
+            window.location.reload();
+        } catch (error) {
+            const apiError = error as ApiError;
+
+            if (apiError.isConflict) {
+                setCriteriaError('Tag criteria already exists for this tag. Please edit the existing criteria instead.');
+            } else if (apiError.isValidation) {
+                setCriteriaError('Please check your criteria values and try again.');
+            } else {
+                setCriteriaError('Failed to save criteria. Please try again.');
+            }
+        } finally {
+            setCriteriaLoading(false);
+        }
+    };
+
     if (showFinalReview) {
         return (
             <AppLayout breadcrumbs={breadcrumbs}>
@@ -474,6 +597,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             setTransactions(updatedTransactions);
                                                         }}
                                                         onTagCreated={handleTagCreated}
+                                                        onEditTag={handleEditTag}
                                                         placeholder="Add tag"
                                                     />
                                                 )}
@@ -667,10 +791,11 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 <TagSelect
                                     ref={tagSelectRef}
                                     tags={availableTags}
-                                    selectedTags={currentTransaction.tags}
+                                    selectedTags={currentTransaction?.tags || []}
                                     onTagsChange={updateTransactionTags}
                                     onTagCreated={handleTagCreated}
-                                    placeholder="Add tags"
+                                    onEditTag={handleEditTag}
+                                    placeholder="Add tag"
                                 />
                             </div>
                         </div>
@@ -736,6 +861,104 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                     </Alert>
                 )}
             </div>
+            {/* Tag Criteria Modal */}
+            <Dialog open={tagModalOpen} onOpenChange={setTagModalOpen}>
+                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {tagModalMode === 'create' ? 'Create Tag Criteria' : 'Edit Tag Criteria'}
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {criteriaError && (
+                        <ErrorMessage
+                            error={criteriaError}
+                            onDismiss={() => setCriteriaError(null)}
+                        />
+                    )}
+
+                    <div className="space-y-4">
+                        {/* Description Criteria */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Description Match</label>
+                            <Input
+                                placeholder="Enter description to match"
+                                value={criteria.description_match}
+                                onChange={(e) => handleCriteriaChange('description_match', e.target.value)}
+                            />
+                            <Select
+                                value={criteria.match_type}
+                                onValueChange={(value) => handleCriteriaChange('match_type', value)}
+                            >
+                                <option value="exact">Exact Match</option>
+                                <option value="contains">Contains</option>
+                            </Select>
+                        </div>
+
+                        {/* Balance Criteria */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Balance Criteria</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                    placeholder="Min amount"
+                                    type="number"
+                                    step="0.01"
+                                    value={criteria.balance_min}
+                                    onChange={(e) => handleCriteriaChange('balance_min', e.target.value)}
+                                />
+                                <Input
+                                    placeholder="Max amount"
+                                    type="number"
+                                    step="0.01"
+                                    value={criteria.balance_max}
+                                    onChange={(e) => handleCriteriaChange('balance_max', e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Date Criteria */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Date Criteria</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Input
+                                    type="date"
+                                    value={criteria.date_start}
+                                    onChange={(e) => handleCriteriaChange('date_start', e.target.value)}
+                                />
+                                <Input
+                                    type="date"
+                                    value={criteria.date_end}
+                                    onChange={(e) => handleCriteriaChange('date_end', e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Logic Type */}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Logic Type</label>
+                            <Select
+                                value={criteria.logic_type}
+                                onValueChange={(value) => handleCriteriaChange('logic_type', value)}
+                            >
+                                <option value="and">AND (All criteria must match)</option>
+                                <option value="or">OR (Any criteria can match)</option>
+                            </Select>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button
+                            onClick={handleSaveCriteria}
+                            disabled={criteriaLoading}
+                        >
+                            {criteriaLoading ? 'Saving...' : 'Save Criteria'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </AppLayout>
     );
 } 

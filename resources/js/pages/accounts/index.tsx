@@ -2,7 +2,6 @@ import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { PageHeader } from '@/components/ui/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ActionMenu } from '@/components/ui/action-menu';
@@ -20,21 +19,7 @@ import {
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-
-interface Account {
-    id: number;
-    name: string;
-    number: number;
-    sort_code?: string;
-    description?: string;
-    balance_at_start: number;
-    balance: number;
-    formatted_balance: string;
-    formatted_balance_at_start: string;
-    user_id: number;
-    created_at: string;
-    updated_at: string;
-}
+import { Account } from '@/types/global';
 
 interface Props {
     accounts: Account[];
@@ -174,4 +159,4 @@ export default function AccountsIndex({ accounts }: Props) {
             />
         </AppLayout>
     );
-} 
+}

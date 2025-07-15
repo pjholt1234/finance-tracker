@@ -19,21 +19,7 @@ import {
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-
-interface CsvSchema {
-    id: number;
-    name: string;
-    transaction_data_start: number;
-    date_column: number;
-    balance_column: number;
-    amount_column?: number;
-    paid_in_column?: number;
-    paid_out_column?: number;
-    description_column?: number;
-    date_format?: string;
-    created_at: string;
-    updated_at: string;
-}
+import { CsvSchema } from '@/types/global';
 
 interface EditSchemaForm {
     name: string;
@@ -515,4 +501,4 @@ export default function Edit({ schema, available_columns, available_date_formats
             </div>
         </AppLayout>
     );
-} 
+}

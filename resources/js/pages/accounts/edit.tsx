@@ -5,36 +5,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle, Building2, Hash, Calendar, DollarSign } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Building2, Hash, DollarSign } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-
-interface Account {
-    id: number;
-    name: string;
-    number: number;
-    sort_code?: string;
-    description?: string;
-    balance_at_start: number;
-    balance: number;
-    formatted_balance: string;
-    formatted_balance_at_start: string;
-    user_id: number;
-    created_at: string;
-    updated_at: string;
-}
+import { Account } from '@/types/global';
+import { FormEvent } from 'react';
+import currencyChangeHandler from '@/utils/currencyChangeHandler';
+import { useCurrencyFormat } from '@/hooks';
 
 interface FormData {
     name: string;
     number: string;
     sort_code: string;
     description: string;
-    balance_at_start: number; // Balance in pennies
+    balance_at_start: number;
     [key: string]: any;
-}
-
-interface Props {
-    account: Account;
 }
 
 const breadcrumbs = (account: Account): BreadcrumbItem[] => [
@@ -58,10 +43,12 @@ export default function EditAccount({ account }: { account: Account }) {
         number: account.number.toString(),
         sort_code: account.sort_code || '',
         description: account.description || '',
-        balance_at_start: account.balance_at_start || 0, // Already in pennies
+        balance_at_start: account.balance_at_start || 0,
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const { formatCurrency } = useCurrencyFormat();
+
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         put(route('accounts.update', account.id));
     };
@@ -170,17 +157,7 @@ export default function EditAccount({ account }: { account: Account }) {
                                                 type="number"
                                                 step="0.01"
                                                 value={data.balance_at_start === 0 ? '' : (data.balance_at_start / 100).toString()}
-                                                onChange={(e) => {
-                                                    const value = e.target.value;
-                                                    if (value === '') {
-                                                        setData('balance_at_start', 0);
-                                                    } else {
-                                                        const numValue = parseFloat(value);
-                                                        if (!isNaN(numValue)) {
-                                                            setData('balance_at_start', Math.round(numValue * 100));
-                                                        }
-                                                    }
-                                                }}
+                                                onChange={(e) => currencyChangeHandler(e, setData, 'balance_at_start')}
                                                 placeholder="0.00"
                                                 className={`pl-10 ${errors.balance_at_start ? 'border-destructive' : ''}`}
                                             />
@@ -195,7 +172,7 @@ export default function EditAccount({ account }: { account: Account }) {
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertDescription>
                                         Changing the starting balance will recalculate your current balance based on existing transactions.
-                                        Current balance: <strong>{(account.balance / 100).toFixed(2)}</strong>
+                                        Current balance: <strong>{formatCurrency(account.balance)}</strong>
                                     </AlertDescription>
                                 </Alert>
 
@@ -214,4 +191,4 @@ export default function EditAccount({ account }: { account: Account }) {
             </div>
         </AppLayout>
     );
-} 
+}

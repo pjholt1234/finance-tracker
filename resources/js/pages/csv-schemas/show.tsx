@@ -11,26 +11,11 @@ import {
     Hash,
     FileText,
     Clock,
-    Copy
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { formatDateTime } from '@/utils/date';
-
-interface CsvSchema {
-    id: number;
-    name: string;
-    transaction_data_start: number;
-    date_column: number;
-    balance_column: number;
-    amount_column?: number;
-    paid_in_column?: number;
-    paid_out_column?: number;
-    description_column?: number;
-    date_format?: string;
-    created_at: string;
-    updated_at: string;
-}
+import { CsvSchema } from '@/types/global';
 
 interface Props {
     schema: CsvSchema;
@@ -239,4 +224,4 @@ export default function Show({ schema }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

@@ -9,48 +9,14 @@ import {
     AlertCircle,
     FileText,
     Calendar,
-    DollarSign,
-    Users,
-    Download,
     Trash2,
     BarChart3
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { formatDate, formatDateTime } from '@/utils/date';
-
-interface CsvSchema {
-    id: number;
-    name: string;
-}
-
-interface Transaction {
-    id: number;
-    date: string;
-    balance: number; // Balance in pennies
-    paid_in?: number; // Paid in amount in pennies
-    paid_out?: number; // Paid out amount in pennies
-    description?: string;
-    reference?: string;
-    created_at: string;
-    updated_at: string;
-}
-
-interface Import {
-    id: number;
-    filename: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    total_rows: number;
-    processed_rows: number;
-    imported_rows: number;
-    duplicate_rows: number;
-    error_message?: string;
-    started_at?: string;
-    completed_at?: string;
-    created_at: string;
-    csv_schema: CsvSchema;
-    transactions: Transaction[];
-}
+import { useCurrencyFormat } from '@/hooks';
+import { Import } from '@/types/global';
 
 interface ImportStats {
     total_rows: number;
@@ -78,6 +44,8 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function ImportResults({ import: importData, stats }: Props) {
+    const { formatCurrency } = useCurrencyFormat();
+
     const handleDelete = () => {
         if (confirm(`Are you sure you want to delete this import and all ${importData.imported_rows} associated transactions?`)) {
             router.delete(route('transaction-imports.destroy', importData.id));
@@ -97,16 +65,6 @@ export default function ImportResults({ import: importData, stats }: Props) {
             default:
                 return <Badge variant="outline">{status}</Badge>;
         }
-    };
-
-    const formatCurrency = (amount: number | undefined) => {
-        if (!amount) return '-';
-
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-        }).format(amount / 100);
     };
 
     return (
@@ -299,4 +257,4 @@ export default function ImportResults({ import: importData, stats }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

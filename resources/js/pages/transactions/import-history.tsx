@@ -2,16 +2,9 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import {
-    ArrowLeft,
     Plus,
-    FileText,
-    Calendar,
-    DollarSign,
     MoreHorizontal,
-    Edit,
     Trash2,
     Eye,
     CheckCircle,
@@ -27,27 +20,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-import { formatDate, formatDateTime } from '@/utils/date';
-
-interface CsvSchema {
-    id: number;
-    name: string;
-}
-
-interface Import {
-    id: number;
-    filename: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    total_rows: number;
-    processed_rows: number;
-    imported_rows: number;
-    duplicate_rows: number;
-    error_message?: string;
-    started_at?: string;
-    completed_at?: string;
-    created_at: string;
-    csv_schema: CsvSchema;
-}
+import { formatDate } from '@/utils/date';
+import { Import } from '@/types/global';
 
 interface Props {
     imports: {
@@ -261,4 +235,4 @@ export default function ImportHistory({ imports }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

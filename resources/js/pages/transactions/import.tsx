@@ -21,29 +21,7 @@ import {
 } from 'lucide-react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-
-interface CsvSchema {
-    id: number;
-    name: string;
-    transaction_data_start: number;
-    date_column: string;
-    balance_column: string;
-    amount_column?: string;
-    paid_in_column?: string;
-    paid_out_column?: string;
-    description_column?: string;
-    date_format?: string;
-    created_at: string;
-}
-
-interface Account {
-    id: number;
-    name: string;
-    number: number;
-    sort_code: string;
-    description?: string;
-    balance: number;
-}
+import { Account, CsvSchema } from '@/types/global';
 
 interface ImportForm {
     csv_file: File | null;
@@ -72,7 +50,7 @@ export default function Import({ schemas, accounts }: Props) {
     const [selectedSchema, setSelectedSchema] = useState<CsvSchema | null>(null);
     const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
 
-    const { data, setData, post, processing, errors } = useForm<ImportForm>({
+    const { data, setData, processing, errors } = useForm<ImportForm>({
         csv_file: null,
         csv_schema_id: '',
         account_id: '',
@@ -357,4 +335,4 @@ export default function Import({ schemas, accounts }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

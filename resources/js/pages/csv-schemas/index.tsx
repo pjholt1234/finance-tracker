@@ -9,24 +9,11 @@ import {
     DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Plus, FileText, Calendar, DollarSign, Hash } from 'lucide-react';
-import { type BreadcrumbItem, type SharedData } from '@/types';
+import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { formatDate } from '@/utils/date';
+import { CsvSchema } from '@/types/global';
 
-interface CsvSchema {
-    id: number;
-    name: string;
-    transaction_data_start: number;
-    date_column: string;
-    balance_column: string;
-    amount_column?: string;
-    paid_in_column?: string;
-    paid_out_column?: string;
-    description_column?: string;
-    date_format?: string;
-    created_at: string;
-    updated_at: string;
-}
 
 interface Props {
     schemas: CsvSchema[];
@@ -194,4 +181,4 @@ export default function Index({ schemas }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

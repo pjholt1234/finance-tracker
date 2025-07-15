@@ -2,22 +2,16 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
     ArrowLeft,
     Edit,
     MoreHorizontal,
-    Calendar,
     DollarSign,
     Hash,
     FileText,
     Clock,
-    Building2,
-    CreditCard,
     Upload,
-    Eye,
-    Trash2,
     CheckCircle,
     AlertCircle,
     Calculator
@@ -26,52 +20,8 @@ import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { Label } from '@/components/ui/label';
 import { formatDate, formatDateTime } from '@/utils/date';
-
-interface Account {
-    id: number;
-    name: string;
-    number: number;
-    sort_code?: string;
-    description?: string;
-    balance_at_start: number;
-    balance: number;
-    formatted_balance: string;
-    formatted_balance_at_start: string;
-    user_id: number;
-    created_at: string;
-    updated_at: string;
-    total_transaction_count: number;
-    imports?: Import[];
-    transactions?: Transaction[];
-}
-
-interface Import {
-    id: number;
-    filename: string;
-    status: 'pending' | 'processing' | 'completed' | 'failed';
-    imported_rows: number;
-    duplicate_rows: number;
-    created_at: string;
-    csv_schema?: CsvSchema;
-}
-
-interface Transaction {
-    id: number;
-    date: string;
-    balance: number; // Balance in pennies
-    paid_in?: number; // Paid in amount in pennies
-    paid_out?: number; // Paid out amount in pennies
-    description?: string;
-    reference?: string;
-    import_id: number;
-    created_at: string;
-    updated_at: string;
-}
-
-interface CsvSchema {
-    id: number;
-    name: string;
-}
+import { Account, Import } from '@/types/global';
+import { useCurrencyFormat } from '@/hooks';
 
 interface Props {
     account: Account;
@@ -89,25 +39,7 @@ const breadcrumbs = (account: Account): BreadcrumbItem[] => [
 ];
 
 export default function AccountShow({ account }: Props) {
-    const formatCurrency = (amount: number | string) => {
-        const numAmount = typeof amount === 'string' ? parseFloat(amount) || 0 : amount;
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-        }).format(numAmount / 100);
-    };
-
-    const formatTransactionAmount = (amount: number | undefined) => {
-        if (!amount) return '-';
-
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            minimumFractionDigits: 2,
-        }).format(amount / 100);
-    };
-
+    const { formatCurrency } = useCurrencyFormat();
     const handleRecalculateBalance = () => {
         router.post(route('accounts.recalculate-balance', account.id));
     };
@@ -277,17 +209,17 @@ export default function AccountShow({ account }: Props) {
                                                 <div className="flex items-center gap-4">
                                                     {transaction.paid_in && (
                                                         <div className="text-green-600 font-medium">
-                                                            +{formatTransactionAmount(transaction.paid_in)}
+                                                            +{formatCurrency(transaction.paid_in)}
                                                         </div>
                                                     )}
                                                     {transaction.paid_out && (
                                                         <div className="text-red-600 font-medium">
-                                                            -{formatTransactionAmount(transaction.paid_out)}
+                                                            -{formatCurrency(transaction.paid_out)}
                                                         </div>
                                                     )}
                                                 </div>
                                                 <div className="text-xs text-muted-foreground">
-                                                    Balance: {formatTransactionAmount(transaction.balance)}
+                                                    Balance: {formatCurrency(transaction.balance)}
                                                 </div>
                                             </div>
                                         </div>
@@ -386,4 +318,4 @@ export default function AccountShow({ account }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}
