@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TagSelect, TagSelectRef } from '@/components/ui/tag-select';
-import { ErrorMessage, ConflictMessage } from '@/components/ui/error-message';
+import { ErrorMessage } from '@/components/ui/error-message';
 import {
     ArrowLeft,
     CheckCircle,
@@ -961,4 +961,4 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             </Dialog>
         </AppLayout>
     );
-} 
+}
