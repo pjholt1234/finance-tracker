@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { FormEvent } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -27,7 +28,7 @@ export default function TagsCreate() {
         description: '',
     });
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
         post(route('tags.store'));
     };
@@ -158,4 +159,4 @@ export default function TagsCreate() {
             </div>
         </AppLayout>
     );
-} 
+}

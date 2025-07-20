@@ -27,6 +27,7 @@ class StoreTagRequest extends FormRequest
             'name' => 'required|string|max:255',
             'color' => 'nullable|string|max:7', // Hex color
             'description' => 'nullable|string|max:500',
+            'expect_json' => 'nullable|boolean',
         ];
     }
 

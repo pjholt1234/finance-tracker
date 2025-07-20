@@ -1,15 +1,12 @@
-import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef, ChangeEvent, KeyboardEvent } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, ChevronDown, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-
-interface Tag {
-    id: number;
-    name: string;
-    color: string;
-}
+import { Tag } from '@/types/global';
+import { api, ApiError } from '@/lib/api';
+import { useToast } from '@/components/ui/toast';
 
 interface TagSelectProps {
     tags: Tag[];
@@ -37,6 +34,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     const [isCreating, setIsCreating] = useState(false);
     const [availableTags, setAvailableTags] = useState(tags);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const { showToast } = useToast();
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -128,55 +126,53 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
         setIsCreating(true);
 
         try {
-            const response = await fetch(route('tags.store'), {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                    'X-Inertia': 'true',
-                },
-                credentials: 'same-origin',
-                body: JSON.stringify({
-                    name: searchValue.trim(),
-                }),
+            const response = await api.post(route('tags.store'), {
+                name: searchValue.trim(),
+                expect_json: true,
             });
 
-            if (response.ok) {
-                const newTag = await response.json();
+            const newTag = response.data;
 
-                // Add to available tags
-                setAvailableTags(prev => [...prev, newTag]);
+            // Add to available tags
+            setAvailableTags(prev => [...prev, newTag]);
 
-                // Notify parent component of new tag
-                if (onTagCreated) {
-                    onTagCreated(newTag);
-                }
-
-                // Add to selected tags
-                onTagsChange([...(selectedTags || []), newTag]);
-
-                // Clear search and keep focus on input
-                setSearchValue('');
-                setHighlightedIndex(-1);
-                setTimeout(() => {
-                    if (inputRef.current) {
-                        inputRef.current.focus();
-                    }
-                }, 0);
-            } else {
-                const errorData = await response.json();
-                console.error('Failed to create tag:', errorData);
+            // Notify parent component of new tag
+            if (onTagCreated) {
+                onTagCreated(newTag);
             }
+
+            // Add to selected tags
+            onTagsChange([...(selectedTags || []), newTag]);
+
+            // Show success toast
+            showToast(`Tag "${searchValue.trim()}" created successfully!`, 'success');
+
+            // Clear search and keep focus on input
+            setSearchValue('');
+            setHighlightedIndex(-1);
+            setTimeout(() => {
+                if (inputRef.current) {
+                    inputRef.current.focus();
+                }
+            }, 0);
         } catch (error) {
-            console.error('Error creating tag:', error);
+            const apiError = error as ApiError;
+
+            if (apiError.isValidation && apiError.errors?.name) {
+                // Handle validation errors (like duplicate tag name)
+                showToast(apiError.errors.name[0], 'error');
+            } else if (apiError.isConflict) {
+                // Handle conflict errors (409 status)
+                showToast('A tag with this name already exists.', 'error');
+            } else {
+                showToast('Failed to create tag. Please try again.', 'error');
+            }
         } finally {
             setIsCreating(false);
         }
     };
 
-    const handleButtonKeyDown = (e: React.KeyboardEvent) => {
+    const handleButtonKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
         if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setOpen(true);
@@ -188,7 +184,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
         }
     };
 
-    const handleInputKeyDown = (e: React.KeyboardEvent) => {
+    const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         switch (e.key) {
             case 'Tab':
                 // Close dropdown when tabbing away from input
@@ -231,7 +227,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
         }
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setSearchValue(value);
         // Open dropdown when user starts typing
@@ -251,6 +247,27 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     return (
         <div className={cn("flex items-start gap-2 flex-wrap", className)}>
             <div className="flex-1 min-w-0">
+                {/* Selected Tags - Moved above the add tag box */}
+                {(selectedTags || []).length > 0 && (
+                    <div className="flex flex-wrap gap-1 mb-2">
+                        {(selectedTags || []).map((tag) => (
+                            <Badge
+                                key={tag.id}
+                                variant="secondary"
+                                className="cursor-pointer hover:bg-secondary/80"
+                                onClick={() => handleRemoveTag(tag)}
+                            >
+                                <div
+                                    className="w-2 h-2 rounded-full mr-1"
+                                    style={{ backgroundColor: tag.color }}
+                                />
+                                {tag.name}
+                                <X className="ml-1 h-3 w-3" />
+                            </Badge>
+                        ))}
+                    </div>
+                )}
+
                 <div className="relative" ref={dropdownRef}>
                     <Button
                         ref={buttonRef}
@@ -351,28 +368,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                         </div>
                     )}
                 </div>
-
-                {/* Selected Tags */}
-                {(selectedTags || []).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                        {(selectedTags || []).map((tag) => (
-                            <Badge
-                                key={tag.id}
-                                variant="secondary"
-                                className="cursor-pointer hover:bg-secondary/80"
-                                onClick={() => handleRemoveTag(tag)}
-                            >
-                                <div
-                                    className="w-2 h-2 rounded-full mr-1"
-                                    style={{ backgroundColor: tag.color }}
-                                />
-                                {tag.name}
-                                <X className="ml-1 h-3 w-3" />
-                            </Badge>
-                        ))}
-                    </div>
-                )}
             </div>
         </div>
     );
-}); 
+});

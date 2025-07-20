@@ -49,17 +49,16 @@ class TagController extends Controller
     public function store(StoreTagRequest $request)
     {
         $this->authorize('create', Tag::class);
-        $validated = $request->validated();
 
         /** @var User $user */
         $user = Auth::user();
         $tag = $user->tags()->create([
-            'name' => $validated['name'],
-            'color' => $validated['color'] ?? Tag::generateRandomColor(),
-            'description' => $validated['description'] ?? null,
+            'name' => $request->name,
+            'color' => $request->color ?? Tag::generateRandomColor(),
+            'description' => $request->description ?? null,
         ]);
 
-        if ($request->expectsJson() || $request->header('X-Inertia')) {
+        if ($request->expect_json) {
             return response()->json($tag, 201);
         }
 

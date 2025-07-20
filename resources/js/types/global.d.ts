@@ -72,4 +72,10 @@ interface CsvSchema {
     updated_at: string;
 }
 
-export { Account, Import, Transaction, CsvSchema, CsvPreviewData };
+interface Tag {
+    id: number;
+    name: string;
+    color: string;
+}
+
+export { Account, Import, Transaction, CsvSchema, CsvPreviewData, Tag };
