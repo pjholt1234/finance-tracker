@@ -72,10 +72,29 @@ interface CsvSchema {
     updated_at: string;
 }
 
+interface TagCriteria {
+    id: number;
+    tag_id: number;
+    type: string;
+    match_type: string;
+    value: any;
+    value_to: any;
+    day_of_month: string;
+    day_of_week: string;
+    logic_type: string;
+    created_at: string;
+    updated_at: string;
+}
+
 interface Tag {
     id: number;
     name: string;
     color: string;
+    description: string | null;
+    created_at: string;
+    updated_at: string;
+    transactions: Transaction[];
+    criterias: TagCriteria[];
 }
 
-export { Account, Import, Transaction, CsvSchema, CsvPreviewData, Tag };
+export { Account, Import, Transaction, CsvSchema, CsvPreviewData, Tag, TagCriteria };

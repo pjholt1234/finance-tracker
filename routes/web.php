@@ -12,6 +12,12 @@ Route::get('/', function () {
     return Inertia::render('welcome');
 })->name('home');
 
+Route::middleware(['api'])
+    ->prefix('api')
+    ->group(function () {
+        Route::get('/tags/suggestions', [TagController::class, 'suggestions']);
+    });
+
 Route::middleware(['auth', 'verified', 'two-factor'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 

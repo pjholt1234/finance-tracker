@@ -51,7 +51,6 @@ class ApiClient {
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken,
-            'X-Inertia': 'true',
         };
     }
 
@@ -140,4 +139,4 @@ export const api = new ApiClient();
 
 // Export the class for testing or custom instances
 export { ApiClient };
-export type { ApiError, ApiResponse }; 
+export type { ApiError, ApiResponse };

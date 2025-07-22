@@ -66,12 +66,17 @@ class TransactionImportController extends Controller
 
             $filename = $file->getClientOriginalName();
 
+            /** @var User $user */
+            $user = Auth::user();
+            $tags = $user->tags()->orderBy('name')->get();
+
             return Inertia::render('transactions/import-review', [
                 'preview' => $preview,
                 'schema' => $schema,
                 'account' => $account,
                 'filename' => $filename,
-                'file_content' => base64_encode(file_get_contents($file->getRealPath())),
+                'temp_path' => $file->getRealPath(),
+                'tags' => $tags,
             ]);
         } catch (\InvalidArgumentException $e) {
             if (str_contains($e->getMessage(), 'UTF-8') || str_contains($e->getMessage(), 'encoding')) {

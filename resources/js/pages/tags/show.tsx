@@ -1,42 +1,11 @@
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Edit, Tag as TagIcon, Calendar, DollarSign, Hash } from 'lucide-react';
+import { ArrowLeft, Edit, Tag as TagIcon, Calendar, Hash } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-
-interface Transaction {
-    id: number;
-    date: string;
-    description: string;
-    paid_in: number;
-    paid_out: number;
-    balance: number;
-    reference?: string;
-    formatted_paid_in: string;
-    formatted_paid_out: string;
-    formatted_balance: string;
-}
-
-interface TagCriteria {
-    id: number;
-    description_match?: string;
-    balance_match?: number;
-    date_match?: string;
-    match_type: string;
-}
-
-interface Tag {
-    id: number;
-    name: string;
-    color: string;
-    description: string | null;
-    created_at: string;
-    updated_at: string;
-    transactions: Transaction[];
-    criterias: TagCriteria[];
-}
+import { Tag, TagCriteria } from '@/types/global';
 
 interface Props {
     tag: Tag;
@@ -148,19 +117,19 @@ export default function TagsShow({ tag }: Props) {
                                     {tag.criterias.map((criteria) => (
                                         <div key={criteria.id} className="flex items-center justify-between p-3 border rounded-lg">
                                             <div className="space-y-1">
-                                                {criteria.description_match && (
+                                                {criteria.type === "description" && (
                                                     <div className="text-sm">
-                                                        <span className="font-medium">Description:</span> {criteria.description_match}
+                                                        <span className="font-medium">Description:</span> {criteria.value}
                                                     </div>
                                                 )}
-                                                {criteria.balance_match && (
+                                                {criteria.type === "balance" && (
                                                     <div className="text-sm">
-                                                        <span className="font-medium">Balance:</span> ${criteria.balance_match}
+                                                        <span className="font-medium">Balance:</span> ${criteria.value}
                                                     </div>
                                                 )}
-                                                {criteria.date_match && (
+                                                {criteria.type === "date" && (
                                                     <div className="text-sm">
-                                                        <span className="font-medium">Date:</span> {criteria.date_match}
+                                                        <span className="font-medium">Date:</span> {criteria.value}
                                                     </div>
                                                 )}
                                                 <Badge variant="outline" className="text-xs">
@@ -214,18 +183,18 @@ export default function TagsShow({ tag }: Props) {
                                             )}
                                         </div>
                                         <div className="text-right">
-                                            {transaction.paid_in > 0 && (
+                                            {(transaction.paid_in ?? 0) > 0 && (
                                                 <div className="text-sm font-medium text-green-600">
-                                                    +{transaction.formatted_paid_in}
+                                                    +{transaction.paid_in}
                                                 </div>
                                             )}
-                                            {transaction.paid_out > 0 && (
+                                            {(transaction.paid_out ?? 0) > 0 && (
                                                 <div className="text-sm font-medium text-red-600">
-                                                    -{transaction.formatted_paid_out}
+                                                    -{transaction.paid_out}
                                                 </div>
                                             )}
                                             <div className="text-xs text-muted-foreground">
-                                                Balance: {transaction.formatted_balance}
+                                                Balance: {transaction.balance}
                                             </div>
                                         </div>
                                     </div>
@@ -244,4 +213,4 @@ export default function TagsShow({ tag }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

@@ -28,6 +28,14 @@ class StoreTagRequest extends FormRequest
             'color' => 'nullable|string|max:7', // Hex color
             'description' => 'nullable|string|max:500',
             'expect_json' => 'nullable|boolean',
+            'criterias' => 'nullable|array',
+            'criterias.*.type' => 'required|in:description,amount,date',
+            'criterias.*.match_type' => 'required|string',
+            'criterias.*.value' => 'required|string',
+            'criterias.*.value_to' => 'nullable',
+            'criterias.*.day_of_month' => 'nullable|integer|min:1|max:31',
+            'criterias.*.day_of_week' => 'nullable|integer|min:1|max:7',
+            'criterias.*.logic_type' => 'nullable|in:and,or',
         ];
     }
 

@@ -33,7 +33,7 @@ class Tag extends Model
     public function transactions(): BelongsToMany
     {
         return $this->belongsToMany(Transaction::class)
-            ->withPivot('auto_applied')
+            ->withPivot('is_recommended', 'is_user_added')
             ->withTimestamps();
     }
 
@@ -55,7 +55,6 @@ class Tag extends Model
 
     /**
      * Check if this tag should be auto-applied to a transaction.
-     * Note: This method works with encrypted data, so it may have limitations.
      */
     public function shouldAutoApply(Transaction $transaction): bool
     {
@@ -63,13 +62,27 @@ class Tag extends Model
             return false;
         }
 
+        $matches = 0;
+        $totalCriteria = $this->criterias->count();
+
         foreach ($this->criterias as $criteria) {
-            if ($criteria->matches($transaction)) {
-                return true;
+            if ($criteria->matchesTransaction(
+                $transaction->description,
+                $transaction->paid_out > 0 ? $transaction->paid_out / 100 : $transaction->paid_in / 100,
+                $transaction->date->format('Y-m-d')
+            )) {
+                $matches++;
             }
         }
 
-        return false;
+        // Use the logic type to determine if all criteria must match (AND) or any criteria (OR)
+        $logicType = $this->criterias->first()?->logic_type ?? 'and';
+
+        return match ($logicType) {
+            'and' => $matches === $totalCriteria,
+            'or' => $matches > 0,
+            default => $matches === $totalCriteria,
+        };
     }
 
     /**
@@ -77,23 +90,21 @@ class Tag extends Model
      */
     public function autoApplyTo(Transaction $transaction): bool
     {
-        if (!$this->shouldAutoApply($transaction)) {
-            return false;
-        }
-
         // Check if tag is already applied
         if ($transaction->tags()->where('tag_id', $this->id)->exists()) {
             return false;
         }
 
-        // Apply the tag
-        $transaction->tags()->attach($this->id, [
-            'auto_applied' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        // Check if criteria match
+        if ($this->shouldAutoApply($transaction)) {
+            $transaction->tags()->attach($this->id, [
+                'is_recommended' => true,
+                'is_user_added' => false,
+            ]);
+            return true;
+        }
 
-        return true;
+        return false;
     }
 
     /**

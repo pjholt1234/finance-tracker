@@ -15,9 +15,13 @@ return new class extends Migration
             $table->id();
             $table->foreignId('tag_id')->constrained()->onDelete('cascade');
             $table->foreignId('transaction_id')->constrained()->onDelete('cascade');
-            $table->boolean('auto_applied')->default(false); // Track if tag was auto-applied
+
+            // Track how the tag was applied
+            $table->boolean('is_recommended')->default(false); // Auto-applied based on criteria
+            $table->boolean('is_user_added')->default(true); // Manually added by user
+
             $table->timestamps();
-            
+
             // Prevent duplicate tag assignments
             $table->unique(['tag_id', 'transaction_id']);
         });

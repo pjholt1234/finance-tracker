@@ -61,7 +61,7 @@ class Transaction extends Model
     public function tags(): BelongsToMany
     {
         return $this->belongsToMany(Tag::class)
-            ->withPivot('auto_applied')
+            ->withPivot('is_recommended', 'is_user_added')
             ->withTimestamps();
     }
 

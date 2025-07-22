@@ -2,11 +2,16 @@ import { useState, useRef, useEffect, useImperativeHandle, forwardRef, ChangeEve
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, ChevronDown, Plus } from 'lucide-react';
+import { X, ChevronDown, Plus, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tag } from '@/types/global';
 import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
+
+// Extend the Tag interface to include isSuggested property
+interface ExtendedTag extends Tag {
+    isSuggested?: boolean;
+}
 
 interface TagSelectProps {
     tags: Tag[];
@@ -15,6 +20,9 @@ interface TagSelectProps {
     onTagCreated?: (tag: Tag) => void;
     placeholder?: string;
     className?: string;
+    suggestedTags?: Tag[];
+    showSuggestions?: boolean;
+    suggestionsLoading?: boolean;
 }
 
 export interface TagSelectRef {
@@ -27,7 +35,10 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     onTagsChange,
     onTagCreated,
     placeholder = "Add tag",
-    className
+    className,
+    suggestedTags = [],
+    showSuggestions = false,
+    suggestionsLoading = false
 }, ref) => {
     const [open, setOpen] = useState(false);
     const [searchValue, setSearchValue] = useState('');
@@ -50,10 +61,34 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     }));
 
     // Filter available tags (exclude already selected ones) and limit to 5
-    const filteredTags = (availableTags || []).filter(tag =>
-        !(selectedTags || []).some(selected => selected.id === tag.id) &&
-        tag.name.toLowerCase().includes(searchValue.toLowerCase())
-    ).slice(0, 5);
+    const filteredTags = (availableTags || []).filter(tag => {
+        // Don't show if already selected
+        if ((selectedTags || []).some(selected => selected.id === tag.id)) {
+            return false;
+        }
+
+        // Show if it matches the search
+        return tag.name.toLowerCase().includes(searchValue.toLowerCase());
+    }).slice(0, 5);
+
+    const handleRemoveTag = (tagToRemove: ExtendedTag) => {
+        if (tagToRemove.isSuggested) {
+            // For suggested tags, just remove them from selected tags (dismissal)
+            onTagsChange((selectedTags || []).filter(tag => tag.id !== tagToRemove.id));
+        } else {
+            // For regular tags, remove them from selectedTags
+            onTagsChange((selectedTags || []).filter(tag => tag.id !== tagToRemove.id));
+        }
+    };
+
+    // Use selectedTags directly - they now include suggested tags with a flag
+    const allSelectedTags: ExtendedTag[] = (selectedTags || []).map(tag => ({
+        ...tag,
+        isSuggested: (tag as any).suggested === true
+    }));
+
+    // No need to add suggested tags separately since they're now in selectedTags
+    const displayTags = allSelectedTags;
 
     // Check if search value matches an existing tag exactly
     const exactMatch = (availableTags || []).find(tag =>
@@ -114,10 +149,6 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                 inputRef.current.focus();
             }
         }, 0);
-    };
-
-    const handleRemoveTag = (tagToRemove: Tag) => {
-        onTagsChange((selectedTags || []).filter(tag => tag.id !== tagToRemove.id));
     };
 
     const handleCreateTag = async () => {
@@ -247,14 +278,17 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     return (
         <div className={cn("flex items-start gap-2 flex-wrap", className)}>
             <div className="flex-1 min-w-0">
-                {/* Selected Tags - Moved above the add tag box */}
-                {(selectedTags || []).length > 0 && (
+                {/* Selected Tags */}
+                {displayTags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-2">
-                        {(selectedTags || []).map((tag) => (
+                        {displayTags.map((tag) => (
                             <Badge
                                 key={tag.id}
-                                variant="secondary"
-                                className="cursor-pointer hover:bg-secondary/80"
+                                variant={tag.isSuggested ? "outline" : "secondary"}
+                                className={cn(
+                                    "cursor-pointer hover:bg-secondary/80",
+                                    tag.isSuggested && "border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-600 dark:bg-blue-950 dark:hover:bg-blue-900"
+                                )}
                                 onClick={() => handleRemoveTag(tag)}
                             >
                                 <div
@@ -262,6 +296,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                                     style={{ backgroundColor: tag.color }}
                                 />
                                 {tag.name}
+                                {tag.isSuggested && <Sparkles className="ml-1 h-3 w-3 text-blue-500" />}
                                 <X className="ml-1 h-3 w-3" />
                             </Badge>
                         ))}
@@ -307,6 +342,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
 
                             {shouldShowDropdown && (
                                 <div className="max-h-60 overflow-y-auto">
+                                    {/* Available Tags Section */}
                                     {filteredTags.length > 0 && (
                                         <div className="px-2 pb-2">
                                             <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Available Tags</div>
@@ -330,9 +366,12 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                                         </div>
                                     )}
 
+                                    {/* Create New Tag Section */}
                                     {showCreateOption && (
                                         <div className="px-2 pb-2">
-                                            {filteredTags.length > 0 && <div className="border-t border-border my-2" />}
+                                            {filteredTags.length > 0 && (
+                                                <div className="border-t border-border my-2" />
+                                            )}
                                             <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Create New</div>
                                             <button
                                                 onClick={() => handleOptionClick({ id: -1, name: searchValue, color: '#6b7280', isCreate: true })}

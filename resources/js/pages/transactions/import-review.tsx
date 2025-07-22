@@ -1,5 +1,5 @@
 import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,6 +36,7 @@ import {
 } from '@/components/ui/dialog';
 import { Select } from '@/components/ui/select';
 import { api, type ApiError } from '@/lib/api';
+import { Tag as GlobalTag } from '@/types/global';
 
 interface CsvSchema {
     id: number;
@@ -51,12 +52,6 @@ interface Account {
     balance: number;
 }
 
-interface Tag {
-    id: number;
-    name: string;
-    color: string;
-}
-
 interface PreviewTransaction {
     row_number: number;
     date: string;
@@ -68,7 +63,7 @@ interface PreviewTransaction {
     unique_hash: string;
     is_duplicate: boolean;
     status: 'pending' | 'approved' | 'discarded' | 'duplicate';
-    tags: Tag[];
+    tags: GlobalTag[];
 }
 
 interface TransactionPreview {
@@ -89,7 +84,7 @@ interface Props {
     account: Account;
     filename: string;
     temp_path: string;
-    tags: Tag[];
+    tags: GlobalTag[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -111,14 +106,18 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             reference: t.reference || ''
         })) || []
     );
-    const [availableTags, setAvailableTags] = useState<Tag[]>(tags || []);
+    const [availableTags, setAvailableTags] = useState<GlobalTag[]>(tags || []);
+    const [suggestedTags, setSuggestedTags] = useState<GlobalTag[]>([]);
+    const [dismissedSuggestedTags, setDismissedSuggestedTags] = useState<Set<number>>(new Set());
+    const [suggestionsForTransaction, setSuggestionsForTransaction] = useState<string | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showFinalReview, setShowFinalReview] = useState(false);
     const [tagModalOpen, setTagModalOpen] = useState(false);
-    const [editingTag, setEditingTag] = useState<Tag | null>(null);
+    const [editingTag, setEditingTag] = useState<GlobalTag | null>(null);
     const [tagModalMode, setTagModalMode] = useState<'create' | 'edit'>('create');
     const [criteriaLoading, setCriteriaLoading] = useState(false);
     const [criteriaError, setCriteriaError] = useState<string | null>(null);
+    const [suggestionsLoading, setSuggestionsLoading] = useState(false);
 
     // Refs for tab navigation
     const tagSelectRef = useRef<TagSelectRef>(null);
@@ -135,13 +134,130 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const nonDuplicateTransactions = (transactions || []).filter(t => !t.is_duplicate);
     const currentTransaction = nonDuplicateTransactions.length > 0 ? nonDuplicateTransactions[currentIndex] : null;
 
+    // Function to fetch tag suggestions based on current transaction
+    const fetchTagSuggestions = useCallback(async (transaction: PreviewTransaction) => {
+        if (!transaction) return;
+
+        console.log('Fetching suggestions for transaction:', {
+            description: transaction.description,
+            date: transaction.date,
+            amount: (transaction.paid_out && transaction.paid_out > 0)
+                ? transaction.paid_out / 100
+                : (transaction.paid_in ? transaction.paid_in / 100 : undefined)
+        });
+
+        setSuggestionsLoading(true);
+        try {
+            const amount = (transaction.paid_out && transaction.paid_out > 0)
+                ? transaction.paid_out / 100
+                : (transaction.paid_in ? transaction.paid_in / 100 : undefined);
+
+            const params = new URLSearchParams({
+                description: transaction.description || '',
+                date: transaction.date,
+            });
+
+            if (amount !== undefined) {
+                params.append('amount', amount.toString());
+            }
+
+            const response = await api.get(`/api/tags/suggestions?${params.toString()}`);
+
+            console.log('Backend returned suggestions:', {
+                transactionDescription: transaction.description,
+                suggestedTags: response.data || [],
+                suggestedTagNames: (response.data || []).map((t: any) => t.name)
+            });
+
+            setSuggestedTags(response.data || []);
+            setSuggestionsForTransaction(transaction.unique_hash);
+        } catch (error) {
+            console.error('Failed to fetch tag suggestions:', error);
+
+            // Log more details about the error
+            if (error && typeof error === 'object') {
+                console.error('Error details:', {
+                    status: (error as any).status,
+                    message: (error as any).message,
+                    isConflict: (error as any).isConflict,
+                    isValidation: (error as any).isValidation,
+                });
+            }
+
+            setSuggestedTags([]);
+        } finally {
+            setSuggestionsLoading(false);
+        }
+    }, []);
+
+    // Fetch suggestions when current transaction changes
+    useEffect(() => {
+        if (currentTransaction) {
+            console.log('Transaction changed, clearing suggestions:', {
+                transactionDescription: currentTransaction.description,
+                currentIndex,
+                suggestedTagsCount: suggestedTags.length
+            });
+            // Clear any existing suggestions first to prevent stale suggestions from leaking
+            setSuggestedTags([]);
+            setSuggestionsForTransaction(null);
+            fetchTagSuggestions(currentTransaction);
+        }
+    }, [currentTransaction, fetchTagSuggestions]);
+
+    // Auto-add suggested tags to selected tags when suggestions change
+    useEffect(() => {
+        console.log('Auto-add effect running:', {
+            currentTransactionDescription: currentTransaction?.description,
+            suggestedTagsCount: suggestedTags.length,
+            suggestionsLoading,
+            suggestedTagNames: suggestedTags.map(t => t.name)
+        });
+
+        if (currentTransaction && suggestedTags.length > 0) {
+            // Only auto-add if we're not currently loading suggestions (prevents stale suggestions)
+            if (suggestionsLoading) {
+                console.log('Skipping auto-add because suggestions are loading');
+                return;
+            }
+
+            // CRITICAL FIX: Only apply suggestions if they were fetched for the current transaction
+            // This prevents stale suggestions from being applied to the wrong transaction
+            const currentTransactionHash = currentTransaction.unique_hash;
+
+            if (suggestionsForTransaction && suggestionsForTransaction !== currentTransactionHash) {
+                console.log('Skipping auto-add because suggestions are for a different transaction:', {
+                    currentHash: currentTransactionHash,
+                    suggestionsForHash: suggestionsForTransaction
+                });
+                return;
+            }
+
+            const currentTagIds = new Set((currentTransaction.tags || []).map(tag => tag.id));
+            const newSuggestedTags = suggestedTags
+                .filter(tag => !currentTagIds.has(tag.id) && !dismissedSuggestedTags.has(tag.id))
+                .map(tag => ({ ...tag, suggested: true }));
+
+            console.log('Auto-adding tags:', {
+                newSuggestedTagNames: newSuggestedTags.map(t => t.name),
+                currentTransactionDescription: currentTransaction.description
+            });
+
+            if (newSuggestedTags.length > 0) {
+                updateCurrentTransaction({
+                    tags: [...(currentTransaction.tags || []), ...newSuggestedTags]
+                });
+            }
+        }
+    }, [suggestedTags, currentTransaction, dismissedSuggestedTags, suggestionsLoading]);
+
     // Function to handle new tag creation from TagSelect components
-    const handleTagCreated = (newTag: Tag) => {
+    const handleTagCreated = (newTag: GlobalTag) => {
         setAvailableTags(prev => [...prev, newTag]);
     };
 
     // Open modal for editing a tag
-    const handleEditTag = (tag: Tag) => {
+    const handleEditTag = (tag: GlobalTag) => {
         setEditingTag(tag);
         setTagModalMode('edit');
         setTagModalOpen(true);
@@ -164,7 +280,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
         ));
     };
 
-    const updateTransactionTags = (newTags: Tag[]) => {
+    const updateTransactionTags = (newTags: GlobalTag[]) => {
         if (!currentTransaction) return;
         updateCurrentTransaction({ tags: newTags });
     };
@@ -597,8 +713,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             setTransactions(updatedTransactions);
                                                         }}
                                                         onTagCreated={handleTagCreated}
-                                                        onEditTag={handleEditTag}
                                                         placeholder="Add tag"
+                                                        suggestedTags={suggestedTags}
+                                                        showSuggestions={true}
+                                                        suggestionsLoading={suggestionsLoading}
                                                     />
                                                 )}
                                             </div>
@@ -663,6 +781,26 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             </AppLayout>
         );
     }
+
+    const handleTagsChange = (newTags: GlobalTag[]) => {
+        // Check if any suggested tags were removed (dismissed)
+        const currentSuggestedTagIds = new Set(
+            (currentTransaction?.tags || [])
+                .filter(tag => (tag as any).suggested === true)
+                .map(tag => tag.id)
+        );
+        const newTagIds = new Set(newTags.map(tag => tag.id));
+
+        // Find dismissed suggested tags
+        const dismissedTags = Array.from(currentSuggestedTagIds).filter(id => !newTagIds.has(id));
+
+        // Add dismissed tags to the dismissed set
+        if (dismissedTags.length > 0) {
+            setDismissedSuggestedTags(prev => new Set([...prev, ...dismissedTags]));
+        }
+
+        updateCurrentTransaction({ tags: newTags });
+    };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
@@ -792,10 +930,12 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                     ref={tagSelectRef}
                                     tags={availableTags}
                                     selectedTags={currentTransaction?.tags || []}
-                                    onTagsChange={updateTransactionTags}
+                                    onTagsChange={handleTagsChange}
                                     onTagCreated={handleTagCreated}
-                                    onEditTag={handleEditTag}
                                     placeholder="Add tag"
+                                    suggestedTags={suggestedTags}
+                                    showSuggestions={true}
+                                    suggestionsLoading={suggestionsLoading}
                                 />
                             </div>
                         </div>
