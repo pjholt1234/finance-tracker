@@ -91,6 +91,7 @@ interface Tag {
     name: string;
     color: string;
     description: string | null;
+    archived: boolean;
     created_at: string;
     updated_at: string;
     transactions: Transaction[];

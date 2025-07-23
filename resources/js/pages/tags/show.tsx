@@ -77,6 +77,13 @@ export default function TagsShow({ tag }: Props) {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
+                                <span className="text-sm font-medium">Status</span>
+                                <Badge variant={tag.archived ? "outline" : "secondary"}>
+                                    {tag.archived ? 'Archived' : 'Active'}
+                                </Badge>
+                            </div>
+
+                            <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Color</span>
                                 <div className="flex items-center space-x-2">
                                     <div

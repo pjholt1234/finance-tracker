@@ -17,6 +17,22 @@ class Tag extends Model
         'name',
         'color',
         'description',
+        'archived',
+    ];
+
+    protected $casts = [
+        'archived' => 'boolean',
+    ];
+
+    protected $visible = [
+        'id',
+        'name',
+        'color',
+        'description',
+        'archived',
+        'user_id',
+        'created_at',
+        'updated_at',
     ];
 
     /**
@@ -51,6 +67,22 @@ class Tag extends Model
     public function scopeForUser($query, int $userId)
     {
         return $query->where('user_id', $userId);
+    }
+
+    /**
+     * Scope to filter out archived tags.
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('archived', false);
+    }
+
+    /**
+     * Scope to filter only archived tags.
+     */
+    public function scopeArchived($query)
+    {
+        return $query->where('archived', true);
     }
 
     /**

@@ -31,6 +31,8 @@ Route::middleware(['auth', 'verified', 'two-factor'])->group(function () {
 
     // Tag routes
     Route::resource('tags', TagController::class);
+    Route::post('tags/{tag}/archive', [TagController::class, 'archive'])->name('tags.archive');
+    Route::post('tags/{tag}/unarchive', [TagController::class, 'unarchive'])->name('tags.unarchive');
 
     // Transaction Import routes
     Route::get('imports', [TransactionImportController::class, 'index'])->name('transaction-imports.index');

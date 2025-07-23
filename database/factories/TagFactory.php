@@ -25,6 +25,7 @@ class TagFactory extends Factory
             'name' => $this->faker->unique()->word(),
             'color' => $this->faker->hexColor(),
             'description' => $this->faker->sentence(),
+            'archived' => false,
         ];
     }
 
@@ -45,6 +46,16 @@ class TagFactory extends Factory
     {
         return $this->state(fn(array $attributes) => [
             'description' => null,
+        ]);
+    }
+
+    /**
+     * Create an archived tag.
+     */
+    public function archived(): static
+    {
+        return $this->state(fn(array $attributes) => [
+            'archived' => true,
         ]);
     }
 }

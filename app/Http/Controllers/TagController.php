@@ -25,13 +25,21 @@ class TagController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
-        $tags = $user->tags()
+        $activeTags = $user->tags()
+            ->active()
+            ->withCount('transactions')
+            ->orderBy('name')
+            ->get();
+
+        $archivedTags = $user->tags()
+            ->archived()
             ->withCount('transactions')
             ->orderBy('name')
             ->get();
 
         return Inertia::render('tags/index', [
-            'tags' => $tags,
+            'activeTags' => $activeTags,
+            'archivedTags' => $archivedTags,
         ]);
     }
 
@@ -66,6 +74,7 @@ class TagController extends Controller
             'name' => $request->name,
             'color' => $request->color ?? Tag::generateRandomColor(),
             'description' => $request->description ?? null,
+            'archived' => false,
         ]);
 
         Log::info('Tag created successfully:', ['tag_id' => $tag->id]);
@@ -222,8 +231,9 @@ class TagController extends Controller
             'date' => $date,
         ]);
 
-        // Get all user's tags with criteria
+        // Get all user's active tags with criteria (exclude archived tags)
         $tags = $user->tags()
+            ->active()
             ->with('criterias')
             ->get();
 
@@ -283,5 +293,29 @@ class TagController extends Controller
         ]);
 
         return response()->json($suggestedTags);
+    }
+
+    /**
+     * Archive the specified tag.
+     */
+    public function archive(Tag $tag)
+    {
+        $this->authorize('update', $tag);
+
+        $tag->update(['archived' => true]);
+
+        return redirect()->route('tags.index')->with('success', 'Tag archived successfully.');
+    }
+
+    /**
+     * Unarchive the specified tag.
+     */
+    public function unarchive(Tag $tag)
+    {
+        $this->authorize('update', $tag);
+
+        $tag->update(['archived' => false]);
+
+        return redirect()->route('tags.index')->with('success', 'Tag unarchived successfully.');
     }
 }
