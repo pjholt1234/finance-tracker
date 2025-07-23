@@ -114,28 +114,56 @@ export default function TagsShow({ tag }: Props) {
                         <CardContent>
                             {tag.criterias.length > 0 ? (
                                 <div className="space-y-3">
-                                    {tag.criterias.map((criteria) => (
-                                        <div key={criteria.id} className="flex items-center justify-between p-3 border rounded-lg">
-                                            <div className="space-y-1">
-                                                {criteria.type === "description" && (
-                                                    <div className="text-sm">
-                                                        <span className="font-medium">Description:</span> {criteria.value}
+                                    {tag.criterias.map((criteria, index) => (
+                                        <div key={criteria.id} className="space-y-2">
+                                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                                                <div className="space-y-1">
+                                                    <div className="flex items-center space-x-2">
+                                                        <Badge variant="outline" className="text-xs">
+                                                            {criteria.type.charAt(0).toUpperCase() + criteria.type.slice(1)}
+                                                        </Badge>
+                                                        <Badge variant="secondary" className="text-xs">
+                                                            {criteria.match_type.replace('_', ' ')}
+                                                        </Badge>
                                                     </div>
-                                                )}
-                                                {criteria.type === "balance" && (
                                                     <div className="text-sm">
-                                                        <span className="font-medium">Balance:</span> ${criteria.value}
+                                                        {criteria.type === "description" && (
+                                                            <span>"{criteria.value}"</span>
+                                                        )}
+                                                        {criteria.type === "amount" && (
+                                                            <span>
+                                                                {criteria.match_type === 'range' && criteria.value_to
+                                                                    ? `$${criteria.value} - $${criteria.value_to}`
+                                                                    : `$${criteria.value}`
+                                                                }
+                                                            </span>
+                                                        )}
+                                                        {criteria.type === "date" && (
+                                                            <span>
+                                                                {criteria.match_type === 'day_of_month'
+                                                                    ? `Day ${criteria.day_of_month || criteria.value} of month`
+                                                                    : criteria.match_type === 'day_of_week'
+                                                                        ? (() => {
+                                                                            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                                                                            const dayNumber = criteria.day_of_week || parseInt(criteria.value || '1');
+                                                                            const dayName = days[dayNumber - 1] || 'Unknown';
+                                                                            return dayName;
+                                                                        })()
+                                                                        : criteria.value
+                                                                }
+                                                            </span>
+                                                        )}
                                                     </div>
-                                                )}
-                                                {criteria.type === "date" && (
-                                                    <div className="text-sm">
-                                                        <span className="font-medium">Date:</span> {criteria.value}
-                                                    </div>
-                                                )}
-                                                <Badge variant="outline" className="text-xs">
-                                                    {criteria.match_type}
-                                                </Badge>
+                                                </div>
                                             </div>
+                                            {/* Show operator between criteria */}
+                                            {index < tag.criterias.length - 1 && (
+                                                <div className="flex justify-center">
+                                                    <Badge variant="outline" className="text-xs font-medium">
+                                                        {criteria.logic_type === 'or' ? 'OR' : 'AND'}
+                                                    </Badge>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

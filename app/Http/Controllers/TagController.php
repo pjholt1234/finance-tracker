@@ -54,24 +54,51 @@ class TagController extends Controller
         /** @var User $user */
         $user = Auth::user();
 
+        Log::info('Creating tag with data:', [
+            'name' => $request->name,
+            'color' => $request->color,
+            'description' => $request->description,
+            'criterias_count' => $request->has('criterias') ? count($request->criterias) : 0,
+            'criterias' => $request->criterias ?? [],
+        ]);
+
         $tag = $user->tags()->create([
             'name' => $request->name,
             'color' => $request->color ?? Tag::generateRandomColor(),
             'description' => $request->description ?? null,
         ]);
 
+        Log::info('Tag created successfully:', ['tag_id' => $tag->id]);
+
         // Create criteria if provided
         if ($request->has('criterias') && is_array($request->criterias)) {
-            foreach ($request->criterias as $criteriaData) {
-                $tag->criterias()->create([
-                    'type' => $criteriaData['type'],
-                    'match_type' => $criteriaData['match_type'],
-                    'value' => $criteriaData['value'],
-                    'value_to' => $criteriaData['value_to'] ?? null,
-                    'day_of_month' => $criteriaData['day_of_month'] ?? null,
-                    'day_of_week' => $criteriaData['day_of_week'] ?? null,
-                    'logic_type' => $criteriaData['logic_type'] ?? 'and',
+            Log::info('Creating criteria for tag:', ['tag_id' => $tag->id]);
+
+            foreach ($request->criterias as $index => $criteriaData) {
+                Log::info('Creating criteria:', [
+                    'index' => $index,
+                    'criteria_data' => $criteriaData,
                 ]);
+
+                try {
+                    $criteria = $tag->criterias()->create([
+                        'type' => $criteriaData['type'],
+                        'match_type' => $criteriaData['match_type'],
+                        'value' => $criteriaData['value'],
+                        'value_to' => $criteriaData['value_to'] ?? null,
+                        'day_of_month' => $criteriaData['day_of_month'] ?? null,
+                        'day_of_week' => $criteriaData['day_of_week'] ?? null,
+                        'logic_type' => $criteriaData['logic_type'] ?? 'and',
+                    ]);
+
+                    Log::info('Criteria created successfully:', ['criteria_id' => $criteria->id]);
+                } catch (\Exception $e) {
+                    Log::error('Failed to create criteria:', [
+                        'error' => $e->getMessage(),
+                        'criteria_data' => $criteriaData,
+                    ]);
+                    throw $e;
+                }
             }
         }
 
@@ -105,6 +132,8 @@ class TagController extends Controller
     {
         $this->authorize('update', $tag);
 
+        $tag->load('criterias');
+
         return Inertia::render('tags/edit', [
             'tag' => $tag,
         ]);
@@ -118,7 +147,34 @@ class TagController extends Controller
         $this->authorize('update', $tag);
 
         $validated = $request->validated();
-        $tag->update($validated);
+
+        // Update tag details
+        $tag->update([
+            'name' => $validated['name'],
+            'color' => $validated['color'] ?? $tag->color,
+            'description' => $validated['description'] ?? null,
+        ]);
+
+        // Handle criteria updates
+        if (isset($validated['criterias'])) {
+            // Delete existing criteria
+            $tag->criterias()->delete();
+
+            // Create new criteria
+            if (is_array($validated['criterias'])) {
+                foreach ($validated['criterias'] as $criteriaData) {
+                    $tag->criterias()->create([
+                        'type' => $criteriaData['type'],
+                        'match_type' => $criteriaData['match_type'],
+                        'value' => $criteriaData['value'],
+                        'value_to' => $criteriaData['value_to'] ?? null,
+                        'day_of_month' => $criteriaData['day_of_month'] ?? null,
+                        'day_of_week' => $criteriaData['day_of_week'] ?? null,
+                        'logic_type' => $criteriaData['logic_type'] ?? 'and',
+                    ]);
+                }
+            }
+        }
 
         return redirect()->route('tags.index')->with('success', 'Tag updated successfully.');
     }

@@ -79,8 +79,8 @@ interface TagCriteria {
     match_type: string;
     value: any;
     value_to: any;
-    day_of_month: string;
-    day_of_week: string;
+    day_of_month: number | null;
+    day_of_week: number | null;
     logic_type: string;
     created_at: string;
     updated_at: string;

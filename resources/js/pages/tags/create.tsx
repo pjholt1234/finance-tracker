@@ -11,7 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import { Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-import { FormEvent, useState } from 'react';
+import { FormEvent, useState, useEffect } from 'react';
+import { useToast } from '@/components/ui/toast';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -57,9 +58,39 @@ export default function TagsCreate() {
         logic_type: 'and',
     });
 
+    const { showToast } = useToast();
+
+    // Show toast notifications for validation errors
+    useEffect(() => {
+        if (Object.keys(errors).length > 0) {
+            // Show general error toast
+            showToast('Please fix the validation errors below.', 'error');
+        }
+    }, [errors, showToast]);
+
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
-        post(route('tags.store'));
+
+        console.log('Form data being submitted:', data);
+        console.log('Criterias array:', data.criterias);
+        console.log('Criterias length:', data.criterias.length);
+        console.log('First criteria:', data.criterias[0]);
+
+        // Client-side validation
+        if (!data.name.trim()) {
+            showToast('Please enter a tag name.', 'error');
+            return;
+        }
+
+        post(route('tags.store'), {
+            onError: (errors) => {
+                console.log('Form submission errors:', errors);
+                showToast('Please fix the validation errors below.', 'error');
+            },
+            onSuccess: () => {
+                showToast('Tag created successfully!', 'success');
+            },
+        });
     };
 
     const generateRandomColor = () => {
@@ -74,15 +105,88 @@ export default function TagsCreate() {
     };
 
     const addCriteria = () => {
-        if (!newCriteria.value) return;
+        console.log('Adding criteria:', newCriteria);
 
-        setData('criterias', [...data.criterias, { ...newCriteria }]);
+        if (!newCriteria.value) {
+            showToast('Please enter a value for the criteria.', 'error');
+            return;
+        }
+
+        // Validate amount criteria
+        if (newCriteria.type === 'amount') {
+            const amountValue = parseFloat(newCriteria.value);
+            if (isNaN(amountValue)) {
+                showToast('Please enter a valid number for amount criteria.', 'error');
+                return;
+            }
+            if (newCriteria.match_type === 'range') {
+                if (!newCriteria.value_to) {
+                    showToast('Range end value is required for range criteria.', 'error');
+                    return;
+                }
+                const rangeValue = parseFloat(newCriteria.value_to);
+                if (isNaN(rangeValue)) {
+                    showToast('Please enter a valid number for the range end value.', 'error');
+                    return;
+                }
+                if (amountValue >= rangeValue) {
+                    showToast('Range start value must be less than range end value.', 'error');
+                    return;
+                }
+            }
+        }
+
+        // Validate date criteria
+        if (newCriteria.type === 'date') {
+            if (newCriteria.match_type === 'exact') {
+                const dateValue = new Date(newCriteria.value);
+                if (isNaN(dateValue.getTime())) {
+                    showToast('Please enter a valid date (YYYY-MM-DD format).', 'error');
+                    return;
+                }
+            } else if (newCriteria.match_type === 'day_of_month') {
+                const dayValue = parseInt(newCriteria.value);
+                if (isNaN(dayValue) || dayValue < 1 || dayValue > 31) {
+                    showToast('Day of month must be a number between 1 and 31.', 'error');
+                    return;
+                }
+            } else if (newCriteria.match_type === 'day_of_week') {
+                const dayValue = parseInt(newCriteria.value);
+                if (isNaN(dayValue) || dayValue < 1 || dayValue > 7) {
+                    showToast('Day of week must be a number between 1 and 7.', 'error');
+                    return;
+                }
+            }
+        }
+
+        // Create the criteria object with proper field mapping
+        const criteriaToAdd = { ...newCriteria };
+
+        // For date criteria, map the value to the correct field
+        if (newCriteria.type === 'date') {
+            if (newCriteria.match_type === 'day_of_month') {
+                criteriaToAdd.day_of_month = parseInt(newCriteria.value);
+                criteriaToAdd.value = ''; // Clear the value field
+            } else if (newCriteria.match_type === 'day_of_week') {
+                criteriaToAdd.day_of_week = parseInt(newCriteria.value);
+                criteriaToAdd.value = ''; // Clear the value field
+            }
+        }
+
+        console.log('Criteria to add:', criteriaToAdd);
+        console.log('Current criterias before adding:', data.criterias);
+
+        setData('criterias', [...data.criterias, criteriaToAdd]);
+
+        console.log('Criterias after adding:', [...data.criterias, criteriaToAdd]);
+
         setNewCriteria({
             type: 'description',
             match_type: 'exact',
             value: '',
             logic_type: 'and',
         });
+        showToast('Criteria added successfully!', 'success');
     };
 
     const removeCriteria = (index: number) => {
@@ -130,11 +234,12 @@ export default function TagsCreate() {
                 return `${typeName} ${matchName}: $${criteria.value}`;
             case 'date':
                 if (criteria.match_type === 'day_of_month') {
-                    return `${typeName} on day ${criteria.value} of month`;
+                    return `${typeName} on day ${criteria.day_of_month || criteria.value} of month`;
                 }
                 if (criteria.match_type === 'day_of_week') {
                     const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
-                    const dayName = days[parseInt(criteria.value) - 1] || 'Unknown';
+                    const dayNumber = criteria.day_of_week || parseInt(criteria.value);
+                    const dayName = days[dayNumber - 1] || 'Unknown';
                     return `${typeName} on ${dayName}`;
                 }
                 return `${typeName} ${matchName}: ${criteria.value}`;
@@ -186,6 +291,7 @@ export default function TagsCreate() {
                                         onChange={(e) => setData('name', e.target.value)}
                                         placeholder="Enter tag name"
                                         className={errors.name ? 'border-red-500' : ''}
+                                        required
                                     />
                                     {errors.name && (
                                         <p className="text-sm text-red-500">{errors.name}</p>
@@ -261,21 +367,44 @@ export default function TagsCreate() {
                                         <Label>Current Criteria</Label>
                                         <div className="space-y-2">
                                             {data.criterias.map((criteria, index) => (
-                                                <div key={index} className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                                                    <div className="flex items-center space-x-2">
-                                                        <Badge variant="outline">
-                                                            {criteria.type.charAt(0).toUpperCase() + criteria.type.slice(1)}
-                                                        </Badge>
-                                                        <span className="text-sm">{getCriteriaDescription(criteria)}</span>
+                                                <div key={index} className="space-y-2">
+                                                    <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                                                        <div className="flex items-center space-x-2">
+                                                            <Badge variant="outline">
+                                                                {criteria.type.charAt(0).toUpperCase() + criteria.type.slice(1)}
+                                                            </Badge>
+                                                            <span className="text-sm">{getCriteriaDescription(criteria)}</span>
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => removeCriteria(index)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
                                                     </div>
-                                                    <Button
-                                                        type="button"
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => removeCriteria(index)}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
+                                                    {/* Show errors for this specific criteria */}
+                                                    {errors[`criterias.${index}.value`] && (
+                                                        <p className="text-sm text-red-500 px-3">
+                                                            {errors[`criterias.${index}.value`]}
+                                                        </p>
+                                                    )}
+                                                    {errors[`criterias.${index}.value_to`] && (
+                                                        <p className="text-sm text-red-500 px-3">
+                                                            {errors[`criterias.${index}.value_to`]}
+                                                        </p>
+                                                    )}
+                                                    {errors[`criterias.${index}.day_of_month`] && (
+                                                        <p className="text-sm text-red-500 px-3">
+                                                            {errors[`criterias.${index}.day_of_month`]}
+                                                        </p>
+                                                    )}
+                                                    {errors[`criterias.${index}.day_of_week`] && (
+                                                        <p className="text-sm text-red-500 px-3">
+                                                            {errors[`criterias.${index}.day_of_week`]}
+                                                        </p>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
@@ -340,18 +469,27 @@ export default function TagsCreate() {
                                                         newCriteria.type === 'amount' ? 'Enter amount' :
                                                             newCriteria.type === 'date' ? 'Enter date (YYYY-MM-DD)' : 'Enter value'
                                                 }
+                                                className={errors['criterias.*.value'] ? 'border-red-500' : ''}
                                             />
+                                            {errors['criterias.*.value'] && (
+                                                <p className="text-sm text-red-500">{errors['criterias.*.value']}</p>
+                                            )}
                                         </div>
 
                                         {/* Value To (for ranges) */}
                                         {newCriteria.match_type === 'range' && (
                                             <div className="space-y-2">
-                                                <Label>To</Label>
+                                                <Label>To *</Label>
                                                 <Input
                                                     value={newCriteria.value_to || ''}
                                                     onChange={(e) => setNewCriteria(prev => ({ ...prev, value_to: e.target.value }))}
                                                     placeholder="Maximum value"
+                                                    className={errors['criterias.*.value_to'] ? 'border-red-500' : ''}
+                                                    required
                                                 />
+                                                {errors['criterias.*.value_to'] && (
+                                                    <p className="text-sm text-red-500">{errors['criterias.*.value_to']}</p>
+                                                )}
                                             </div>
                                         )}
                                     </div>
