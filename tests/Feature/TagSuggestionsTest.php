@@ -110,11 +110,37 @@ class TagSuggestionsTest extends TestCase
         $this->assertCount(0, $data);
     }
 
+    public function test_tag_suggestions_excludes_archived_tags()
+    {
+        // Create an archived tag with matching criteria
+        $tag = Tag::factory()->archived()->create([
+            'user_id' => $this->user->id,
+            'name' => 'Archived Tag',
+            'color' => '#ff0000',
+        ]);
+
+        TagCriteria::create([
+            'tag_id' => $tag->id,
+            'type' => 'description',
+            'match_type' => 'contains',
+            'value' => 'NATIONWIDE',
+        ]);
+
+        $response = $this->actingAs($this->user)
+            ->get('/api/tags/suggestions?description=NATIONWIDE+C%2FCARD&date=2024-07-12&amount=762.49');
+
+        $response->assertStatus(200);
+        $data = $response->json();
+
+        // Archived tags should not be suggested even if they match criteria
+        $this->assertCount(0, $data);
+    }
+
     public function test_tag_suggestions_requires_authentication()
     {
         $response = $this->get('/api/tags/suggestions?description=test&date=2024-07-12&amount=100');
 
-        $response->assertRedirect('/login');
+        $response->assertStatus(403);
     }
 
     public function test_tag_suggestions_validates_input_parameters()

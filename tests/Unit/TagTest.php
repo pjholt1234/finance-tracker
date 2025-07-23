@@ -57,11 +57,13 @@ class TagTest extends TestCase
         ]);
 
         $tag->transactions()->attach($transaction->id, [
-            'auto_applied' => false,
+            'is_recommended' => false,
+            'is_user_added' => true,
         ]);
 
         $this->assertTrue($tag->transactions->contains($transaction));
-        $this->assertEquals(0, $tag->transactions->first()->pivot->auto_applied);
+        $this->assertEquals(false, $tag->transactions->first()->pivot->is_recommended);
+        $this->assertEquals(true, $tag->transactions->first()->pivot->is_user_added);
     }
 
     public function test_criterias_relationship(): void
@@ -148,7 +150,8 @@ class TagTest extends TestCase
 
         // Manually attach the tag first
         $transaction->tags()->attach($tag->id, [
-            'auto_applied' => false,
+            'is_recommended' => false,
+            'is_user_added' => true,
         ]);
 
         // Attempt to auto-apply should return false (already applied)

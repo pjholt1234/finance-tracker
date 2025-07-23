@@ -21,30 +21,41 @@ class TagTest extends TestCase
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => 'Test Tag',
             'description' => 'Test description',
+            'expect_json' => true,
         ]);
 
-        $response->assertStatus(201)
-            ->assertJsonStructure([
-                'id',
-                'name',
-                'description',
-                'color',
-                'user_id',
-                'created_at',
-                'updated_at'
-            ]);
+        $response->assertStatus(201);
 
+        // Check if the archived field is saved to the database
         $this->assertDatabaseHas('tags', [
             'name' => 'Test Tag',
             'description' => 'Test description',
             'user_id' => $user->id,
+            'archived' => false,
         ]);
+
+        // Check the response structure
+        $response->assertJsonStructure([
+            'id',
+            'name',
+            'description',
+            'color',
+            'user_id',
+            'created_at',
+            'updated_at'
+        ]);
+
+        // Check that archived field is present in response
+        $responseData = $response->json();
+        $this->assertArrayHasKey('archived', $responseData);
+        $this->assertFalse($responseData['archived']);
     }
 
     public function test_unauthenticated_user_cannot_create_tag()
     {
         $response = $this->postJson('/tags', [
             'name' => 'Test Tag',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(401);
@@ -58,6 +69,7 @@ class TagTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/tags', [
             'description' => 'Test description',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(422)
@@ -82,6 +94,7 @@ class TagTest extends TestCase
         // Same user cannot create duplicate tag
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => 'Duplicate Tag',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(422)
@@ -90,6 +103,7 @@ class TagTest extends TestCase
         // Different user can create tag with same name
         $response = $this->actingAs($otherUser)->postJson('/tags', [
             'name' => 'Duplicate Tag',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(201);
@@ -103,6 +117,7 @@ class TagTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => str_repeat('a', 256), // Exceeds 255 character limit
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(422)
@@ -117,6 +132,7 @@ class TagTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => 'Test Tag',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(201);
@@ -136,6 +152,7 @@ class TagTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => 'Test Tag',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(201);
@@ -153,6 +170,7 @@ class TagTest extends TestCase
 
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => 'Test Tag',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(201);
@@ -170,6 +188,7 @@ class TagTest extends TestCase
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => 'Test Tag',
             'description' => null,
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(201);
@@ -190,6 +209,7 @@ class TagTest extends TestCase
         $response = $this->actingAs($user)->postJson('/tags', [
             'name' => '  Test Tag  ',
             'description' => '  Test description  ',
+            'expect_json' => true,
         ]);
 
         $response->assertStatus(201);

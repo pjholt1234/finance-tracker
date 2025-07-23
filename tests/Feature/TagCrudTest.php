@@ -24,8 +24,13 @@ class TagCrudTest extends TestCase
 
     public function test_authenticated_user_can_view_tags_index()
     {
-        // Create some tags
+        // Create some active tags
         Tag::factory()->count(3)->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        // Create one archived tag
+        Tag::factory()->archived()->create([
             'user_id' => $this->user->id,
         ]);
 
@@ -35,7 +40,8 @@ class TagCrudTest extends TestCase
         $response->assertInertia(
             fn($page) => $page
                 ->component('tags/index')
-                ->has('tags', 3)
+                ->has('activeTags', 3)
+                ->has('archivedTags', 1)
         );
     }
 
@@ -252,15 +258,69 @@ class TagCrudTest extends TestCase
 
     public function test_unauthenticated_user_cannot_access_tag_pages()
     {
-        $tag = Tag::factory()->create([
-            'user_id' => $this->user->id,
-        ]);
+        $tag = Tag::factory()->create();
 
         $this->get(route('tags.index'))->assertRedirect('/login');
         $this->get(route('tags.create'))->assertRedirect('/login');
-        $this->get(route('tags.edit', $tag))->assertRedirect('/login');
         $this->post(route('tags.store'))->assertRedirect('/login');
+        $this->get(route('tags.show', $tag))->assertRedirect('/login');
+        $this->get(route('tags.edit', $tag))->assertRedirect('/login');
         $this->put(route('tags.update', $tag))->assertRedirect('/login');
         $this->delete(route('tags.destroy', $tag))->assertRedirect('/login');
+    }
+
+    public function test_authenticated_user_can_archive_tag()
+    {
+        $tag = Tag::factory()->create([
+            'user_id' => $this->user->id,
+            'archived' => false,
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('tags.archive', $tag));
+
+        $response->assertRedirect(route('tags.index'));
+        $response->assertSessionHas('success', 'Tag archived successfully.');
+
+        $this->assertDatabaseHas('tags', [
+            'id' => $tag->id,
+            'archived' => true,
+        ]);
+    }
+
+    public function test_authenticated_user_can_unarchive_tag()
+    {
+        $tag = Tag::factory()->archived()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('tags.unarchive', $tag));
+
+        $response->assertRedirect(route('tags.index'));
+        $response->assertSessionHas('success', 'Tag unarchived successfully.');
+
+        $this->assertDatabaseHas('tags', [
+            'id' => $tag->id,
+            'archived' => false,
+        ]);
+    }
+
+    public function test_user_cannot_archive_other_users_tag()
+    {
+        $tag = Tag::factory()->create([
+            'archived' => false,
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('tags.archive', $tag));
+
+        $response->assertStatus(403);
+    }
+
+    public function test_user_cannot_unarchive_other_users_tag()
+    {
+        $tag = Tag::factory()->archived()->create();
+
+        $response = $this->actingAs($this->user)->post(route('tags.unarchive', $tag));
+
+        $response->assertStatus(403);
     }
 }

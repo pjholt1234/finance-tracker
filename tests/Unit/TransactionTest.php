@@ -156,11 +156,13 @@ class TransactionTest extends TestCase
         ]);
 
         $transaction->tags()->attach($tag->id, [
-            'auto_applied' => false,
+            'is_recommended' => false,
+            'is_user_added' => true,
         ]);
 
         $this->assertTrue($transaction->tags->contains($tag));
-        $this->assertEquals(0, $transaction->tags->first()->pivot->auto_applied);
+        $this->assertEquals(false, $transaction->tags->first()->pivot->is_recommended);
+        $this->assertEquals(true, $transaction->tags->first()->pivot->is_user_added);
     }
 
     public function test_for_user_scope(): void
