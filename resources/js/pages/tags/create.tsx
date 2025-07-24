@@ -71,11 +71,6 @@ export default function TagsCreate() {
     const handleSubmit = (e: FormEvent) => {
         e.preventDefault();
 
-        console.log('Form data being submitted:', data);
-        console.log('Criterias array:', data.criterias);
-        console.log('Criterias length:', data.criterias.length);
-        console.log('First criteria:', data.criterias[0]);
-
         // Client-side validation
         if (!data.name.trim()) {
             showToast('Please enter a tag name.', 'error');
@@ -84,7 +79,6 @@ export default function TagsCreate() {
 
         post(route('tags.store'), {
             onError: (errors) => {
-                console.log('Form submission errors:', errors);
                 showToast('Please fix the validation errors below.', 'error');
             },
             onSuccess: () => {
@@ -105,8 +99,6 @@ export default function TagsCreate() {
     };
 
     const addCriteria = () => {
-        console.log('Adding criteria:', newCriteria);
-
         if (!newCriteria.value) {
             showToast('Please enter a value for the criteria.', 'error');
             return;
@@ -173,12 +165,7 @@ export default function TagsCreate() {
             }
         }
 
-        console.log('Criteria to add:', criteriaToAdd);
-        console.log('Current criterias before adding:', data.criterias);
-
         setData('criterias', [...data.criterias, criteriaToAdd]);
-
-        console.log('Criterias after adding:', [...data.criterias, criteriaToAdd]);
 
         setNewCriteria({
             type: 'description',

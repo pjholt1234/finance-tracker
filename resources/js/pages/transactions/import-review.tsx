@@ -138,14 +138,6 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const fetchTagSuggestions = useCallback(async (transaction: PreviewTransaction) => {
         if (!transaction) return;
 
-        console.log('Fetching suggestions for transaction:', {
-            description: transaction.description,
-            date: transaction.date,
-            amount: (transaction.paid_out && transaction.paid_out > 0)
-                ? transaction.paid_out / 100
-                : (transaction.paid_in ? transaction.paid_in / 100 : undefined)
-        });
-
         setSuggestionsLoading(true);
         try {
             const amount = (transaction.paid_out && transaction.paid_out > 0)
@@ -162,12 +154,6 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             }
 
             const response = await api.get(`/api/tags/suggestions?${params.toString()}`);
-
-            console.log('Backend returned suggestions:', {
-                transactionDescription: transaction.description,
-                suggestedTags: response.data || [],
-                suggestedTagNames: (response.data || []).map((t: any) => t.name)
-            });
 
             setSuggestedTags(response.data || []);
             setSuggestionsForTransaction(transaction.unique_hash);
@@ -193,12 +179,6 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     // Fetch suggestions when current transaction changes
     useEffect(() => {
         if (currentTransaction) {
-            console.log('Transaction changed, clearing suggestions:', {
-                transactionDescription: currentTransaction.description,
-                currentIndex,
-                suggestedTagsCount: suggestedTags.length
-            });
-            // Clear any existing suggestions first to prevent stale suggestions from leaking
             setSuggestedTags([]);
             setSuggestionsForTransaction(null);
             fetchTagSuggestions(currentTransaction);
@@ -207,17 +187,9 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
     // Auto-add suggested tags to selected tags when suggestions change
     useEffect(() => {
-        console.log('Auto-add effect running:', {
-            currentTransactionDescription: currentTransaction?.description,
-            suggestedTagsCount: suggestedTags.length,
-            suggestionsLoading,
-            suggestedTagNames: suggestedTags.map(t => t.name)
-        });
-
         if (currentTransaction && suggestedTags.length > 0) {
             // Only auto-add if we're not currently loading suggestions (prevents stale suggestions)
             if (suggestionsLoading) {
-                console.log('Skipping auto-add because suggestions are loading');
                 return;
             }
 
@@ -226,10 +198,6 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             const currentTransactionHash = currentTransaction.unique_hash;
 
             if (suggestionsForTransaction && suggestionsForTransaction !== currentTransactionHash) {
-                console.log('Skipping auto-add because suggestions are for a different transaction:', {
-                    currentHash: currentTransactionHash,
-                    suggestionsForHash: suggestionsForTransaction
-                });
                 return;
             }
 
@@ -237,11 +205,6 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             const newSuggestedTags = suggestedTags
                 .filter(tag => !currentTagIds.has(tag.id) && !dismissedSuggestedTags.has(tag.id))
                 .map(tag => ({ ...tag, suggested: true }));
-
-            console.log('Auto-adding tags:', {
-                newSuggestedTagNames: newSuggestedTags.map(t => t.name),
-                currentTransactionDescription: currentTransaction.description
-            });
 
             if (newSuggestedTags.length > 0) {
                 updateCurrentTransaction({
@@ -717,6 +680,11 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         suggestedTags={suggestedTags}
                                                         showSuggestions={true}
                                                         suggestionsLoading={suggestionsLoading}
+                                                        transactionData={{
+                                                            description: transaction.description,
+                                                            amount: transaction.paid_in ? transaction.paid_in / 100 : transaction.paid_out ? transaction.paid_out / 100 : undefined,
+                                                            date: transaction.date,
+                                                        }}
                                                     />
                                                 )}
                                             </div>
@@ -936,6 +904,11 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                     suggestedTags={suggestedTags}
                                     showSuggestions={true}
                                     suggestionsLoading={suggestionsLoading}
+                                    transactionData={{
+                                        description: currentTransaction.description,
+                                        amount: currentTransaction.paid_in ? currentTransaction.paid_in / 100 : currentTransaction.paid_out ? currentTransaction.paid_out / 100 : undefined,
+                                        date: currentTransaction.date,
+                                    }}
                                 />
                             </div>
                         </div>

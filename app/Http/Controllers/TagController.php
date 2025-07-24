@@ -59,60 +59,37 @@ class TagController extends Controller
     {
         $this->authorize('create', Tag::class);
 
-        /** @var User $user */
-        $user = Auth::user();
+        $validated = $request->validated();
 
-        Log::info('Creating tag with data:', [
-            'name' => $request->name,
-            'color' => $request->color,
-            'description' => $request->description,
-            'criterias_count' => $request->has('criterias') ? count($request->criterias) : 0,
-            'criterias' => $request->criterias ?? [],
-        ]);
-
-        $tag = $user->tags()->create([
-            'name' => $request->name,
-            'color' => $request->color ?? Tag::generateRandomColor(),
-            'description' => $request->description ?? null,
+        // Create the tag
+        $tag = Tag::create([
+            'user_id' => Auth::id(),
+            'name' => $validated['name'],
+            'color' => $validated['color'] ?? Tag::generateRandomColor(),
+            'description' => $validated['description'] ?? null,
             'archived' => false,
         ]);
 
-        Log::info('Tag created successfully:', ['tag_id' => $tag->id]);
-
-        // Create criteria if provided
-        if ($request->has('criterias') && is_array($request->criterias)) {
-            Log::info('Creating criteria for tag:', ['tag_id' => $tag->id]);
-
-            foreach ($request->criterias as $index => $criteriaData) {
-                Log::info('Creating criteria:', [
-                    'index' => $index,
-                    'criteria_data' => $criteriaData,
+        // Handle criteria creation
+        if (isset($validated['criterias']) && is_array($validated['criterias'])) {
+            foreach ($validated['criterias'] as $criteriaData) {
+                $tag->criterias()->create([
+                    'type' => $criteriaData['type'],
+                    'match_type' => $criteriaData['match_type'],
+                    'value' => $criteriaData['value'],
+                    'value_to' => $criteriaData['value_to'] ?? null,
+                    'day_of_month' => $criteriaData['day_of_month'] ?? null,
+                    'day_of_week' => $criteriaData['day_of_week'] ?? null,
+                    'logic_type' => $criteriaData['logic_type'] ?? 'and',
                 ]);
-
-                try {
-                    $criteria = $tag->criterias()->create([
-                        'type' => $criteriaData['type'],
-                        'match_type' => $criteriaData['match_type'],
-                        'value' => $criteriaData['value'],
-                        'value_to' => $criteriaData['value_to'] ?? null,
-                        'day_of_month' => $criteriaData['day_of_month'] ?? null,
-                        'day_of_week' => $criteriaData['day_of_week'] ?? null,
-                        'logic_type' => $criteriaData['logic_type'] ?? 'and',
-                    ]);
-
-                    Log::info('Criteria created successfully:', ['criteria_id' => $criteria->id]);
-                } catch (\Exception $e) {
-                    Log::error('Failed to create criteria:', [
-                        'error' => $e->getMessage(),
-                        'criteria_data' => $criteriaData,
-                    ]);
-                    throw $e;
-                }
             }
         }
 
+        // Reload the tag with criteria for JSON response
+        $tag->load('criterias');
+
         if ($request->expect_json) {
-            return response()->json($tag, 201);
+            return response()->json($tag);
         }
 
         return redirect()->route('tags.index')->with('success', 'Tag created successfully.');
@@ -132,6 +109,18 @@ class TagController extends Controller
         return Inertia::render('tags/show', [
             'tag' => $tag,
         ]);
+    }
+
+    /**
+     * Get tag data as JSON for API requests.
+     */
+    public function apiShow(Tag $tag)
+    {
+        $this->authorize('view', $tag);
+
+        $tag->load('criterias');
+
+        return response()->json($tag);
     }
 
     /**
@@ -183,6 +172,13 @@ class TagController extends Controller
                     ]);
                 }
             }
+        }
+
+        // Reload the tag with criteria for JSON response
+        $tag->load('criterias');
+
+        if ($request->expect_json) {
+            return response()->json($tag);
         }
 
         return redirect()->route('tags.index')->with('success', 'Tag updated successfully.');
