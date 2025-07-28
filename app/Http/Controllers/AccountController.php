@@ -70,8 +70,6 @@ class AccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        $totalTransactionCount = $account->transactions()->count();
-
         $account->load(['imports.csvSchema', 'transactions' => function ($query) {
             $query->latest()->limit(10);
         }]);
@@ -80,7 +78,9 @@ class AccountController extends Controller
         $account->refresh();
 
         $accountData = $account->toArray();
-        $accountData['total_transaction_count'] = $totalTransactionCount;
+        $accountData['total_transaction_count'] = $account
+            ->transactions()
+            ->count();
 
         if (!isset($accountData['imports'])) {
             return Inertia::render('accounts/show', [

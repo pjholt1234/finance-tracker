@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Services\TagValidationService;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -72,90 +73,20 @@ class StoreTagRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $this->merge([
-                'name' => trim($this->name),
-                'description' => isset($this->description) ? trim($this->description) : null,
-            ]);
+            $validationService = new TagValidationService();
 
-            if ($this->description === '') {
-                $this->merge(['description' => null]);
-            }
+            // Prepare and merge cleaned data
+            $cleanedData = $validationService->prepareTagData($this->all());
+            $this->merge($cleanedData);
 
-            // Validate criteria based on match type
+            // Validate criteria if present
             if ($this->has('criterias') && is_array($this->criterias)) {
-                foreach ($this->criterias as $index => $criteria) {
-                    // Validate range criteria
-                    if (isset($criteria['match_type']) && $criteria['match_type'] === 'range') {
-                        if (empty($criteria['value_to'])) {
-                            $validator->errors()->add("criterias.{$index}.value_to", 'Range end value is required for range criteria.');
-                        } else {
-                            // Validate that range values are numeric
-                            if (!is_numeric($criteria['value']) || !is_numeric($criteria['value_to'])) {
-                                $validator->errors()->add("criterias.{$index}.value", 'Range values must be numbers.');
-                            } elseif (floatval($criteria['value']) >= floatval($criteria['value_to'])) {
-                                $validator->errors()->add("criterias.{$index}.value_to", 'Range end value must be greater than start value.');
-                            }
-                        }
-                    }
-
-                    // Validate description criteria
-                    if (isset($criteria['type']) && $criteria['type'] === 'description') {
-                        if (empty($criteria['value'])) {
-                            $validator->errors()->add("criterias.{$index}.value", 'Description value is required.');
-                        }
-                    }
-
-                    // Validate amount criteria
-                    if (isset($criteria['type']) && $criteria['type'] === 'amount') {
-                        if (empty($criteria['value'])) {
-                            $validator->errors()->add("criterias.{$index}.value", 'Amount value is required.');
-                        } elseif (!is_numeric($criteria['value'])) {
-                            $validator->errors()->add("criterias.{$index}.value", 'Amount value must be a number.');
-                        }
-                        if (isset($criteria['match_type']) && in_array($criteria['match_type'], ['greater_than', 'less_than'])) {
-                            if (!is_numeric($criteria['value'])) {
-                                $validator->errors()->add("criterias.{$index}.value", 'Amount value must be a number.');
-                            }
-                        }
-                    }
-
-                    // Validate date criteria
-                    if (isset($criteria['type']) && $criteria['type'] === 'date') {
-                        if (isset($criteria['match_type'])) {
-                            if ($criteria['match_type'] === 'exact') {
-                                if (empty($criteria['value'])) {
-                                    $validator->errors()->add("criterias.{$index}.value", 'Date value is required for exact date criteria.');
-                                } elseif (!strtotime($criteria['value'])) {
-                                    $validator->errors()->add("criterias.{$index}.value", 'Please enter a valid date (YYYY-MM-DD format).');
-                                }
-                            } elseif ($criteria['match_type'] === 'day_of_month') {
-                                if (empty($criteria['day_of_month'])) {
-                                    $validator->errors()->add("criterias.{$index}.day_of_month", 'Day of month is required for day of month criteria.');
-                                } else {
-                                    $day = intval($criteria['day_of_month']);
-                                    if ($day < 1 || $day > 31) {
-                                        $validator->errors()->add("criterias.{$index}.day_of_month", 'Day of month must be between 1 and 31.');
-                                    }
-                                }
-                            } elseif ($criteria['match_type'] === 'day_of_week') {
-                                if (empty($criteria['day_of_week'])) {
-                                    $validator->errors()->add("criterias.{$index}.day_of_week", 'Day of week is required for day of week criteria.');
-                                } else {
-                                    $day = intval($criteria['day_of_week']);
-                                    if ($day < 1 || $day > 7) {
-                                        $validator->errors()->add("criterias.{$index}.day_of_week", 'Day of week must be between 1 and 7.');
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
+                $validationService->validateCriterias($validator, $this->criterias);
             }
 
-            /** @var User $user */
-            $user = Auth::user();
-            if ($user->tags()->where('name', $this->name)->exists()) {
-                $validator->errors()->add('name', 'You already have a tag with this name.');
+            // Validate tag name uniqueness only if name is present
+            if (isset($this->name) && !empty($this->name)) {
+                $validationService->validateTagNameUniqueness($validator, $this->name);
             }
         });
     }

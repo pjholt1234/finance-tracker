@@ -61,7 +61,6 @@ class TagController extends Controller
 
         $validated = $request->validated();
 
-        // Create the tag
         $tag = Tag::create([
             'user_id' => Auth::id(),
             'name' => $validated['name'],
@@ -70,7 +69,6 @@ class TagController extends Controller
             'archived' => false,
         ]);
 
-        // Handle criteria creation
         if (isset($validated['criterias']) && is_array($validated['criterias'])) {
             foreach ($validated['criterias'] as $criteriaData) {
                 $tag->criterias()->create([
@@ -85,11 +83,10 @@ class TagController extends Controller
             }
         }
 
-        // Reload the tag with criteria for JSON response
         $tag->load('criterias');
 
         if ($request->expect_json) {
-            return response()->json($tag);
+            return response()->json($tag, 201);
         }
 
         return redirect()->route('tags.index')->with('success', 'Tag created successfully.');
@@ -227,16 +224,10 @@ class TagController extends Controller
             'date' => $date,
         ]);
 
-        // Get all user's active tags with criteria (exclude archived tags)
         $tags = $user->tags()
             ->active()
             ->with('criterias')
             ->get();
-
-        Log::info('Found tags with criteria', [
-            'total_tags' => $tags->count(),
-            'tags_with_criteria' => $tags->filter(fn($tag) => $tag->criterias->isNotEmpty())->count(),
-        ]);
 
         $suggestedTags = [];
 
@@ -283,10 +274,6 @@ class TagController extends Controller
             }
             return strcmp($a['name'], $b['name']);
         });
-
-        Log::info('Returning suggested tags', [
-            'suggested_count' => count($suggestedTags),
-        ]);
 
         return response()->json($suggestedTags);
     }

@@ -178,7 +178,7 @@ class CsvReaderService
     /**
      * Get supported date formats with descriptions.
      */
-    private function getSupportedDateFormats(): array
+    public function getSupportedDateFormats(): array
     {
         return [
             'Y-m-d' => 'YYYY-MM-DD (2024-01-15)',

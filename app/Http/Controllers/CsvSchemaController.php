@@ -114,15 +114,7 @@ class CsvSchemaController extends Controller
             $availableColumns[$i] = "Column $i";
         }
 
-        $availableDateFormats = [
-            'Y-m-d' => 'YYYY-MM-DD (2024-01-15)',
-            'd/m/Y' => 'DD/MM/YYYY (15/01/2024)',
-            'm/d/Y' => 'MM/DD/YYYY (01/15/2024)',
-            'd-m-Y' => 'DD-MM-YYYY (15-01-2024)',
-            'm-d-Y' => 'MM-DD-YYYY (01-15-2024)',
-            'Y/m/d' => 'YYYY/MM/DD (2024/01/15)',
-            'd.m.Y' => 'DD.MM.YYYY (15.01.2024)',
-        ];
+        $availableDateFormats = $this->csvReaderService->getSupportedDateFormats();
 
         return Inertia::render('csv-schemas/edit', [
             'schema' => $csvSchema,
@@ -139,14 +131,8 @@ class CsvSchemaController extends Controller
         $this->authorize('update', $csvSchema);
 
         $validated = $request->validated();
-
         $csvSchema->update($validated);
-
-        try {
-            $csvSchema->validateSchema();
-        } catch (ValidationException $e) {
-            throw $e;
-        }
+        $csvSchema->validateSchema();
 
         return redirect()->route('csv-schemas.show', $csvSchema)
             ->with('success', 'CSV schema updated successfully.');
