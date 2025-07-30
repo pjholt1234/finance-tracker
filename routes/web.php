@@ -9,8 +9,8 @@ use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionImportController;
 
 Route::get('/', function () {
-    return Inertia::render('welcome');
-})->name('home');
+    return redirect()->route('dashboard.index');
+})->middleware(['auth', 'verified', 'two-factor'])->name('home');
 
 Route::middleware(['api'])
     ->prefix('api')
@@ -19,8 +19,6 @@ Route::middleware(['api'])
     });
 
 Route::middleware(['auth', 'verified', 'two-factor'])->group(function () {
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
     // Account routes
     Route::resource('accounts', AccountController::class);
     Route::post('accounts/{account}/recalculate-balance', [AccountController::class, 'recalculateBalance'])->name('accounts.recalculate-balance');
@@ -34,6 +32,10 @@ Route::middleware(['auth', 'verified', 'two-factor'])->group(function () {
     Route::post('tags/{tag}/archive', [TagController::class, 'archive'])->name('tags.archive');
     Route::post('tags/{tag}/unarchive', [TagController::class, 'unarchive'])->name('tags.unarchive');
     Route::get('tags/{tag}/api', [TagController::class, 'apiShow'])->name('tags.api-show');
+
+    // Dashboard routes
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    Route::get('dashboard/api', [DashboardController::class, 'dashboard'])->name('dashboard.api');
 
     // Transaction Import routes
     Route::get('imports', [TransactionImportController::class, 'index'])->name('transaction-imports.index');

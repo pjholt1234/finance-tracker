@@ -3,16 +3,202 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Account;
+use App\Models\Tag;
+use App\Models\Transaction;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Show the dashboard.
      */
     public function index(): Response
     {
         return Inertia::render('dashboard');
+    }
+
+    /**
+     * Get dashboard data.
+     */
+    public function dashboard(Request $request)
+    {
+        $this->authorize('viewAny', Transaction::class);
+
+        $user = Auth::user();
+
+        // Get filter parameters
+        $accountIds = $request->input('account_ids') ? explode(',', $request->input('account_ids')) : [];
+        $dateFrom = $request->input('date_from');
+        $dateTo = $request->input('date_to');
+        $tagIds = $request->input('tag_ids') ? explode(',', $request->input('tag_ids')) : [];
+
+        // Build query for transactions
+        $query = Transaction::query()
+            ->whereHas('account', function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            });
+
+        // Apply filters
+        if (!empty($accountIds)) {
+            $query->whereIn('account_id', $accountIds);
+        }
+
+        if ($dateFrom) {
+            $query->where('date', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->where('date', '<=', $dateTo);
+        }
+
+        if (!empty($tagIds)) {
+            $query->whereHas('tags', function ($q) use ($tagIds) {
+                $q->whereIn('tags.id', $tagIds);
+            });
+        }
+
+        // Get transactions for the period
+        $transactions = $query->with(['account', 'tags'])->get();
+
+        // Calculate stats
+        $income = $transactions->where('paid_in', '>', 0)->sum('paid_in') / 100;
+        $outgoings = $transactions->where('paid_out', '>', 0)->sum('paid_out') / 100;
+
+        // Calculate total balance (most recent balance from each account)
+        $totalBalance = 0;
+        $accounts = Account::where('user_id', $user->id)->get();
+
+        foreach ($accounts as $account) {
+            // Skip if account is filtered out
+            if (!empty($accountIds) && !in_array($account->id, $accountIds)) {
+                continue;
+            }
+
+            $latestTransaction = Transaction::where('account_id', $account->id)
+                ->orderBy('date', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            if ($latestTransaction) {
+                $totalBalance += $latestTransaction->balance / 100;
+            } else {
+                $totalBalance += $account->balance_at_start / 100;
+            }
+        }
+
+        // Get tag breakdown
+        $tagBreakdown = [];
+        $tagStats = $transactions->flatMap(function ($transaction) {
+            return $transaction->tags->map(function ($tag) use ($transaction) {
+                return [
+                    'tag' => $tag->name,
+                    'income' => $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0,
+                    'outgoings' => $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0,
+                ];
+            });
+        })->groupBy('tag')->map(function ($items, $tagName) {
+            return [
+                'tag' => $tagName,
+                'income' => $items->sum('income'),
+                'outgoings' => $items->sum('outgoings'),
+            ];
+        })->values();
+
+        // Get balance over time (daily balance for the filtered period)
+        $balanceOverTime = $this->calculateBalanceOverTime($user, $accountIds, $dateFrom, $dateTo);
+
+        return response()->json([
+            'accounts' => $accounts,
+            'tags' => Tag::where('user_id', $user->id)->active()->get(),
+            'stats' => [
+                'income' => round($income, 2),
+                'outgoings' => round($outgoings, 2),
+                'totalBalance' => round($totalBalance, 2),
+            ],
+            'tagBreakdown' => $tagStats->toArray(),
+            'balanceOverTime' => $balanceOverTime,
+        ]);
+    }
+
+    /**
+     * Calculate balance over time for the specified period and accounts.
+     */
+    private function calculateBalanceOverTime($user, $accountIds, $dateFrom, $dateTo)
+    {
+        $endDate = $dateTo ? Carbon::parse($dateTo) : Carbon::now();
+        $startDate = $dateFrom ? Carbon::parse($dateFrom) : $endDate->copy()->subDays(30);
+
+        // Get all transactions for the accounts in the date range
+        $query = Transaction::whereHas('account', function ($q) use ($user) {
+            $q->where('user_id', $user->id);
+        });
+
+        if (!empty($accountIds)) {
+            $query->whereIn('account_id', $accountIds);
+        }
+
+        $allTransactions = $query->where('date', '<=', $endDate->format('Y-m-d'))
+            ->orderBy('date')
+            ->orderBy('id')
+            ->get();
+
+        // Group transactions by account and date
+        $transactionsByAccount = $allTransactions->groupBy('account_id');
+
+        // Get all unique dates where transactions occurred
+        $transactionDates = $allTransactions->pluck('date')->unique()->sort();
+
+        // If no transactions in range, return empty array
+        if ($transactionDates->isEmpty()) {
+            return [];
+        }
+
+        $balanceOverTime = [];
+
+        // Calculate balance for each date where transactions occurred
+        foreach ($transactionDates as $date) {
+            $dateString = $date->format('Y-m-d');
+            $dailyBalance = 0;
+
+            // Calculate balance for each account on this date
+            foreach ($transactionsByAccount as $accountId => $accountTransactions) {
+                // Skip if account is filtered out
+                if (!empty($accountIds) && !in_array($accountId, $accountIds)) {
+                    continue;
+                }
+
+                // Get the latest transaction for this account up to this date
+                $latestTransaction = $accountTransactions
+                    ->where('date', '<=', $dateString)
+                    ->sortByDesc('date')
+                    ->sortByDesc('id')
+                    ->first();
+
+                if ($latestTransaction) {
+                    $dailyBalance += $latestTransaction->balance / 100;
+                } else {
+                    // If no transactions, use account starting balance
+                    $account = Account::find($accountId);
+                    if ($account) {
+                        $dailyBalance += $account->balance_at_start / 100;
+                    }
+                }
+            }
+
+            $balanceOverTime[] = [
+                'date' => $dateString,
+                'balance' => round($dailyBalance, 2),
+            ];
+        }
+
+        return $balanceOverTime;
     }
 }
