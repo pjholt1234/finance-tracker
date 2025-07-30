@@ -9,6 +9,8 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { TagSelect, TagSelectRef } from '@/components/ui/tag-select';
 import { ErrorMessage } from '@/components/ui/error-message';
+import { API_ENDPOINTS } from '@/utils/constants';
+import { buildApiParams } from '@/utils/form-helpers';
 import {
     ArrowLeft,
     CheckCircle,
@@ -144,27 +146,22 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 ? transaction.paid_out / 100
                 : (transaction.paid_in ? transaction.paid_in / 100 : undefined);
 
-            const params = new URLSearchParams({
+            const params = buildApiParams({
                 description: transaction.description || '',
                 date: transaction.date,
+                amount: amount,
             });
 
-            if (amount !== undefined) {
-                params.append('amount', amount.toString());
-            }
-
-            const response = await api.get(`/api/tags/suggestions?${params.toString()}`);
+            const response = await api.get(`${API_ENDPOINTS.TAG_SUGGESTIONS}?${params.toString()}`);
 
             setSuggestedTags(response.data || []);
             setSuggestionsForTransaction(transaction.unique_hash);
         } catch (error) {
-
             setSuggestedTags([]);
         } finally {
             setSuggestionsLoading(false);
         }
     }, []);
-
     // Fetch suggestions when current transaction changes
     useEffect(() => {
         if (currentTransaction) {
@@ -410,7 +407,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
         if (editingTag && tagModalMode === 'edit' && tagModalOpen) {
             setCriteriaLoading(true);
             setCriteriaError(null);
-            api.get(`/tags/${editingTag.id}/criteria`)
+            api.get(API_ENDPOINTS.TAG_CRITERIA(editingTag.id))
                 .then(res => {
                     if (res.data) {
                         setCriteria({
@@ -463,14 +460,14 @@ export default function ImportReview({ preview, schema, account, filename, temp_
         try {
             if (editingTag && tagModalMode === 'edit') {
                 // Try to load existing criteria to get its ID
-                const res = await api.get(`/tags/${editingTag.id}/criteria`);
+                const res = await api.get(API_ENDPOINTS.TAG_CRITERIA(editingTag.id));
                 if (res.data && res.data.id) {
-                    await api.put(`/tags/${editingTag.id}/criteria/${res.data.id}`, criteria);
+                    await api.put(API_ENDPOINTS.TAG_CRITERIA_WITH_ID(editingTag.id, res.data.id), criteria);
                 } else {
-                    await api.post(`/tags/${editingTag.id}/criteria`, criteria);
+                    await api.post(API_ENDPOINTS.TAG_CRITERIA(editingTag.id), criteria);
                 }
             } else if (editingTag && tagModalMode === 'create') {
-                await api.post(`/tags/${editingTag.id}/criteria`, criteria);
+                await api.post(API_ENDPOINTS.TAG_CRITERIA(editingTag.id), criteria);
             }
             setTagModalOpen(false);
             // Re-fetch or re-apply recommendations for all transactions (simulate by reloading page for now)

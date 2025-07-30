@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Plus, X, Trash2, CheckCircle, XCircle, Sparkles } from 'lucide-react';
 import { api, ApiError } from '@/lib/api';
+import { useErrorHandler } from '@/hooks/use-error-handler';
 import { useToast } from '@/components/ui/toast';
 import { Tag } from '@/types/global';
 
@@ -66,6 +67,7 @@ export function TagCreateModal({
     const [isCreating, setIsCreating] = useState(false);
     const [isEditMode, setIsEditMode] = useState(false);
     const { showToast } = useToast();
+    const { handleApiError, handleApiSuccess } = useErrorHandler();
 
     // Reset form when modal opens/closes
     useEffect(() => {
@@ -355,7 +357,7 @@ export function TagCreateModal({
                 if (onTagUpdated) {
                     onTagUpdated(updatedTag);
                 }
-                showToast(`Tag "${formData.name.trim()}" updated successfully!`, 'success');
+                handleApiSuccess(VALIDATION_MESSAGES.TAG_UPDATED_SUCCESS);
             } else {
                 // Create new tag
                 const response = await api.post(route('tags.store'), {
@@ -368,20 +370,12 @@ export function TagCreateModal({
 
                 const newTag = response.data;
                 onTagCreated(newTag);
-                showToast(`Tag "${formData.name.trim()}" created successfully!`, 'success');
+                handleApiSuccess(VALIDATION_MESSAGES.TAG_CREATED_SUCCESS);
             }
 
             onOpenChange(false);
         } catch (error) {
-            const apiError = error as ApiError;
-
-            if (apiError.isValidation && apiError.errors?.name) {
-                showToast(apiError.errors.name[0], 'error');
-            } else if (apiError.isConflict) {
-                showToast('A tag with this name already exists.', 'error');
-            } else {
-                showToast(`Failed to ${editingTag ? 'update' : 'create'} tag. Please try again.`, 'error');
-            }
+            handleApiError(error, `Failed to ${editingTag ? 'update' : 'create'} tag. Please try again.`);
         } finally {
             setIsCreating(false);
         }
@@ -652,4 +646,4 @@ export function TagCreateModal({
             </DialogContent>
         </Dialog>
     );
-} 
+}

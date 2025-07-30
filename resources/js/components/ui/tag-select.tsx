@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { Tag } from '@/types/global';
 import { api, ApiError } from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
+import { useErrorHandler } from '@/hooks/use-error-handler';
+import { VALIDATION_MESSAGES } from '@/utils/constants';
 import { TagCreateModal } from './tag-create-modal';
 
 // Extend the Tag interface to include isSuggested property
@@ -58,6 +60,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
     const [editingTag, setEditingTag] = useState<Tag | null>(null);
     const [modalInitialTagName, setModalInitialTagName] = useState('');
     const { showToast } = useToast();
+    const { handleApiError, handleApiSuccess } = useErrorHandler();
 
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -106,13 +109,9 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
             setShowCreateModal(true);
             setOpen(false);
         } catch (error) {
-            // Fallback to using the tag data we have
-            setEditingTag(tag);
-            setShowCreateModal(true);
-            setOpen(false);
+            handleApiError(error, 'Failed to create tag. Please try again.');
         }
     };
-
     // Use selectedTags directly - they now include suggested tags with a flag
     const allSelectedTags: ExtendedTag[] = (selectedTags || []).map(tag => ({
         ...tag,
@@ -217,7 +216,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
             onTagsChange([...(selectedTags || []), newTag]);
 
             // Show success toast
-            showToast(`Tag "${searchValue.trim()}" created successfully!`, 'success');
+            handleApiSuccess(VALIDATION_MESSAGES.TAG_CREATED_SUCCESS);
 
             // Clear search and keep focus on input
             setSearchValue('');
@@ -228,17 +227,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                 }
             }, 0);
         } catch (error) {
-            const apiError = error as ApiError;
-
-            if (apiError.isValidation && apiError.errors?.name) {
-                // Handle validation errors (like duplicate tag name)
-                showToast(apiError.errors.name[0], 'error');
-            } else if (apiError.isConflict) {
-                // Handle conflict errors (409 status)
-                showToast('A tag with this name already exists.', 'error');
-            } else {
-                showToast('Failed to create tag. Please try again.', 'error');
-            }
+            handleApiError(error, 'Failed to create tag. Please try again.');
         } finally {
             setIsCreating(false);
         }

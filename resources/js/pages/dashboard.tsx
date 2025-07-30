@@ -9,6 +9,8 @@ import { TagSelect } from '@/components/ui/tag-select';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
 import { api } from '@/lib/api';
+import { API_ENDPOINTS } from '@/utils/constants';
+import { buildApiParams } from '@/utils/form-helpers';
 import { Account, Tag, Transaction } from '@/types/global';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
@@ -58,25 +60,14 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams();
+            const params = buildApiParams({
+                account_ids: filters.accountIds,
+                date_from: filters.dateRange.from,
+                date_to: filters.dateRange.to,
+                tag_ids: filters.tagIds,
+            });
 
-            if (filters.accountIds.length > 0) {
-                params.append('account_ids', filters.accountIds.join(','));
-            }
-
-            if (filters.dateRange.from) {
-                params.append('date_from', filters.dateRange.from.toISOString().split('T')[0]);
-            }
-
-            if (filters.dateRange.to) {
-                params.append('date_to', filters.dateRange.to.toISOString().split('T')[0]);
-            }
-
-            if (filters.tagIds.length > 0) {
-                params.append('tag_ids', filters.tagIds.join(','));
-            }
-
-            const response = await api.get(`/dashboard/api?${params.toString()}`);
+            const response = await api.get(`${API_ENDPOINTS.DASHBOARD}?${params.toString()}`);
             setData(response.data);
         } catch (error) {
             // Don't set data to null on error, keep previous data if available
@@ -84,7 +75,6 @@ export default function Dashboard() {
             setLoading(false);
         }
     };
-
     useEffect(() => {
         fetchDashboardData();
     }, [filters]);
