@@ -15,21 +15,8 @@ import { useErrorHandler } from '@/hooks/use-error-handler';
 import { useToast } from '@/components/ui/toast';
 import { Tag } from '@/types/global';
 
-interface Criteria {
-    type: 'description' | 'amount' | 'date';
-    match_type: string;
-    value: string;
-    value_to?: string;
-    day_of_month?: number;
-    day_of_week?: number;
-    logic_type: 'and' | 'or';
-}
+import { TagCriteria, TransactionData } from '@/types/global';
 
-interface TransactionData {
-    description?: string;
-    amount?: number;
-    date?: string;
-}
 
 interface TagCreateModalProps {
     open: boolean;

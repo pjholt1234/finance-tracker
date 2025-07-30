@@ -98,4 +98,53 @@ interface Tag {
     criterias: TagCriteria[];
 }
 
-export { Account, Import, Transaction, CsvSchema, CsvPreviewData, Tag, TagCriteria };
+// Common UI/Component types
+interface TransactionData {
+    description?: string;
+    amount?: number;
+    date?: string;
+}
+
+interface PreviewTransaction {
+    id?: number;
+    date: string;
+    balance: number;
+    paid_in?: number;
+    paid_out?: number;
+    description?: string;
+    reference?: string;
+    unique_hash: string;
+    is_duplicate: boolean;
+    suggested_tags?: Tag[];
+}
+
+// Form data interfaces with more specific names
+interface AccountFormData {
+    name: string;
+    number: number;
+    sort_code?: string;
+    description?: string;
+    balance_at_start: number;
+}
+
+interface TagFormData {
+    name: string;
+    color: string;
+    description: string;
+    criterias: TagCriteria[];
+}
+
+// Export all interfaces at the bottom
+export {
+    Account,
+    Import,
+    Transaction,
+    CsvSchema,
+    CsvPreviewData,
+    Tag,
+    TagCriteria,
+    TransactionData,
+    PreviewTransaction,
+    AccountFormData,
+    TagFormData,
+};

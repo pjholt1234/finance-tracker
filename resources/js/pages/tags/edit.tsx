@@ -14,46 +14,19 @@ import { Link } from '@inertiajs/react';
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { FormEvent, useState, useEffect } from 'react';
+import { TagCriteria, TagFormData, Tag } from '@/types/global';
 import { useToast } from '@/components/ui/toast';
 
-interface Criteria {
-    id?: number;
-    type: 'description' | 'amount' | 'date';
-    match_type: string;
-    value: string;
-    value_to?: string;
-    day_of_month?: number;
-    day_of_week?: number;
-    logic_type: 'and' | 'or';
-}
-
-interface Tag {
-    id: number;
-    name: string;
-    color: string;
-    description: string | null;
-    created_at: string;
-    updated_at: string;
-    criterias: Criteria[];
-}
-
-interface FormData {
-    name: string;
-    color: string;
-    description: string;
-    criterias: Criteria[];
-    [key: string]: any;
-}
 
 export default function TagsEdit({ tag }: { tag: Tag }) {
-    const { data, setData, put, processing, errors } = useForm<FormData>({
+    const { data, setData, put, processing, errors } = useForm<TagFormData>({
         name: tag.name,
         color: tag.color,
         description: tag.description || '',
         criterias: tag.criterias || [],
     });
 
-    const [newCriteria, setNewCriteria] = useState<Criteria>({
+    const [newCriteria, setNewCriteria] = useState<TagCriteria>({
         type: 'description',
         match_type: 'exact',
         value: '',
