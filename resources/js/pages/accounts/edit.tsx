@@ -10,7 +10,7 @@ import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { Account } from '@/types/global';
 import { FormEvent } from 'react';
-import currencyChangeHandler from '@/utils/currencyChangeHandler';
+import currencyChangeHandler from '@/utils/currency-change-handler';
 import { useCurrencyFormat } from '@/hooks';
 
 interface FormData {

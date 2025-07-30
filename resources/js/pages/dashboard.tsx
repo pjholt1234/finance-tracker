@@ -79,7 +79,6 @@ export default function Dashboard() {
             const response = await api.get(`/dashboard/api?${params.toString()}`);
             setData(response.data);
         } catch (error) {
-            console.error('Failed to fetch dashboard data:', error);
             // Don't set data to null on error, keep previous data if available
         } finally {
             setLoading(false);

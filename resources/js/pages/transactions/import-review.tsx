@@ -158,17 +158,6 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             setSuggestedTags(response.data || []);
             setSuggestionsForTransaction(transaction.unique_hash);
         } catch (error) {
-            console.error('Failed to fetch tag suggestions:', error);
-
-            // Log more details about the error
-            if (error && typeof error === 'object') {
-                console.error('Error details:', {
-                    status: (error as any).status,
-                    message: (error as any).message,
-                    isConflict: (error as any).isConflict,
-                    isValidation: (error as any).isValidation,
-                });
-            }
 
             setSuggestedTags([]);
         } finally {

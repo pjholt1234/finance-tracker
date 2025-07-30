@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { TAG_COLORS, VALIDATION_MESSAGES } from '@/utils/constants';
+import { generateRandomColor } from '@/utils/form-helpers';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -110,17 +112,9 @@ export function TagCreateModal({
         }
     }, [open, editingTag]);
 
-    const generateRandomColor = () => {
-        const colors = [
-            '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-            '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-            '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-            '#ec4899', '#f43f5e'
-        ];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        setFormData(prev => ({ ...prev, color: randomColor }));
+    const handleGenerateRandomColor = () => {
+        setFormData(prev => ({ ...prev, color: generateRandomColor() }));
     };
-
     const getMatchTypeOptions = (type: string) => {
         switch (type) {
             case 'description':
@@ -340,7 +334,7 @@ export function TagCreateModal({
 
     const handleSubmit = async () => {
         if (!formData.name.trim()) {
-            showToast('Please enter a tag name.', 'error');
+            showToast(VALIDATION_MESSAGES.TAG_NAME_REQUIRED, 'error');
             return;
         }
 
@@ -424,15 +418,15 @@ export function TagCreateModal({
                                     <div
                                         className="w-8 h-8 rounded border-2 border-white shadow-sm cursor-pointer"
                                         style={{ backgroundColor: formData.color || '#6b7280' }}
-                                        onClick={generateRandomColor}
+                                        onClick={handleGenerateRandomColor}
                                     />
                                     <Input
                                         value={formData.color}
                                         onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                                        placeholder="#ef4444"
+                                        placeholder={TAG_COLORS[0]}
                                         className="flex-1"
                                     />
-                                    <Button type="button" variant="outline" onClick={generateRandomColor}>
+                                    <Button type="button" variant="outline" onClick={handleGenerateRandomColor}>
                                         Random
                                     </Button>
                                 </div>

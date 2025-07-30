@@ -1,4 +1,6 @@
 import { Head, useForm } from '@inertiajs/react';
+import { TAG_COLORS, VALIDATION_MESSAGES } from '@/utils/constants';
+import { generateRandomColor } from '@/utils/form-helpers';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,7 +66,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
     useEffect(() => {
         if (Object.keys(errors).length > 0) {
             // Show general error toast
-            showToast('Please fix the validation errors below.', 'error');
+            showToast(VALIDATION_MESSAGES.VALIDATION_ERRORS, 'error');
         }
     }, [errors, showToast]);
 
@@ -73,13 +75,13 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
 
         // Client-side validation
         if (!data.name.trim()) {
-            showToast('Please enter a tag name.', 'error');
+            showToast(VALIDATION_MESSAGES.TAG_NAME_REQUIRED, 'error');
             return;
         }
 
         put(route('tags.update', tag.id), {
             onError: (errors) => {
-                showToast('Please fix the validation errors below.', 'error');
+                showToast(VALIDATION_MESSAGES.VALIDATION_ERRORS, 'error');
             },
             onSuccess: () => {
                 showToast('Tag updated successfully!', 'success');
@@ -87,17 +89,9 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
         });
     };
 
-    const generateRandomColor = () => {
-        const colors = [
-            '#ef4444', '#f97316', '#f59e0b', '#eab308', '#84cc16',
-            '#22c55e', '#10b981', '#14b8a6', '#06b6d4', '#0ea5e9',
-            '#3b82f6', '#6366f1', '#8b5cf6', '#a855f7', '#d946ef',
-            '#ec4899', '#f43f5e'
-        ];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        setData('color', randomColor);
+    const handleGenerateRandomColor = () => {
+        setData('color', generateRandomColor());
     };
-
     const addCriteria = () => {
         if (!newCriteria.value) {
             showToast('Please enter a value for the criteria.', 'error');
@@ -309,7 +303,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                         <Button
                                             type="button"
                                             variant="outline"
-                                            onClick={generateRandomColor}
+                                            onClick={handleGenerateRandomColor}
                                         >
                                             Random Color
                                         </Button>

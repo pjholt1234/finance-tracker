@@ -9,7 +9,7 @@ import { ArrowLeft, AlertCircle, Building2, Hash, DollarSign } from 'lucide-reac
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { FormEvent } from 'react';
-import currencyChangeHandler from '@/utils/currencyChangeHandler';
+import currencyChangeHandler from '@/utils/currency-change-handler';
 
 interface FormData {
     name: string;
