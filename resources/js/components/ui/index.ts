@@ -5,6 +5,7 @@ export { ActionMenu } from './action-menu';
 export { ConfirmationDialog } from './confirmation-dialog';
 export { CardGrid } from './card-grid';
 export { FormLayout } from './form-layout';
+export { LoadingOverlay } from './loading-overlay';
 
 // Re-export existing UI components
 export * from './alert';
