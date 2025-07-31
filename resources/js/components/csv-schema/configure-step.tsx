@@ -1,10 +1,10 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Hash, Calendar, DollarSign, AlertCircle } from 'lucide-react';
 import { CsvPreviewData } from '@/types/global';
+import { AlertCircle, Calendar, DollarSign, Hash } from 'lucide-react';
 
 interface ConfigureStepProps {
     csvPreview: CsvPreviewData | null;
@@ -20,7 +20,7 @@ interface ConfigureStepProps {
         transaction_data_start: number | string;
     };
     errors: Partial<Record<string, string>>;
-    onDataChange: (key: string, value: any) => void;
+    onDataChange: (key: string, value: string | number) => void;
 }
 
 export function ConfigureStep({ csvPreview, data, errors, onDataChange }: ConfigureStepProps) {
@@ -31,9 +31,7 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                     <Hash className="h-5 w-5" />
                     Configure Column Mapping
                 </CardTitle>
-                <CardDescription>
-                    Map your CSV columns to transaction data fields
-                </CardDescription>
+                <CardDescription>Map your CSV columns to transaction data fields</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-6">
@@ -81,9 +79,7 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.balance_column && (
-                                <p className="text-xs text-destructive">{errors.balance_column}</p>
-                            )}
+                            {errors.balance_column && <p className="text-xs text-destructive">{errors.balance_column}</p>}
                         </div>
 
                         {/* Date Column */}
@@ -107,22 +103,20 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                                     ))}
                                 </SelectContent>
                             </Select>
-                            {errors.date_column && (
-                                <p className="text-xs text-destructive">{errors.date_column}</p>
-                            )}
+                            {errors.date_column && <p className="text-xs text-destructive">{errors.date_column}</p>}
                         </div>
 
                         {/* Date Format - Disabled */}
                         <div className="grid gap-2">
-                            <Label htmlFor="date_format" className="text-muted-foreground">Date Format (Auto-detect)</Label>
+                            <Label htmlFor="date_format" className="text-muted-foreground">
+                                Date Format (Auto-detect)
+                            </Label>
                             <Select disabled value="none">
                                 <SelectTrigger className="bg-muted">
                                     <SelectValue placeholder="Auto-detect" />
                                 </SelectTrigger>
                             </Select>
-                            <p className="text-xs text-muted-foreground">
-                                Date format will be automatically detected
-                            </p>
+                            <p className="text-xs text-muted-foreground">Date format will be automatically detected</p>
                         </div>
                     </div>
 
@@ -131,10 +125,7 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                         {/* Amount Type Selection */}
                         <div className="grid gap-2">
                             <Label>Amount Configuration</Label>
-                            <Select
-                                value={data.amount_type}
-                                onValueChange={(value: 'single' | 'split') => onDataChange('amount_type', value)}
-                            >
+                            <Select value={data.amount_type} onValueChange={(value: 'single' | 'split') => onDataChange('amount_type', value)}>
                                 <SelectTrigger>
                                     <SelectValue />
                                 </SelectTrigger>
@@ -167,9 +158,7 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                {errors.amount_column && (
-                                    <p className="text-xs text-destructive">{errors.amount_column}</p>
-                                )}
+                                {errors.amount_column && <p className="text-xs text-destructive">{errors.amount_column}</p>}
                             </div>
                         ) : (
                             <>
@@ -191,9 +180,7 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.paid_in_column && (
-                                        <p className="text-xs text-destructive">{errors.paid_in_column}</p>
-                                    )}
+                                    {errors.paid_in_column && <p className="text-xs text-destructive">{errors.paid_in_column}</p>}
                                 </div>
 
                                 <div className="grid gap-2">
@@ -214,25 +201,21 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.paid_out_column && (
-                                        <p className="text-xs text-destructive">{errors.paid_out_column}</p>
-                                    )}
+                                    {errors.paid_out_column && <p className="text-xs text-destructive">{errors.paid_out_column}</p>}
                                 </div>
                             </>
                         )}
                     </div>
 
                     {/* Validation Alert */}
-                    {data.amount_type === 'split' &&
-                        !data.paid_in_column &&
-                        !data.paid_out_column && (
-                            <Alert variant="destructive">
-                                <AlertCircle className="h-4 w-4" />
-                                <AlertDescription>
-                                    You must select at least one of Paid In or Paid Out columns when using split amount configuration.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+                    {data.amount_type === 'split' && !data.paid_in_column && !data.paid_out_column && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertDescription>
+                                You must select at least one of Paid In or Paid Out columns when using split amount configuration.
+                            </AlertDescription>
+                        </Alert>
+                    )}
 
                     {/* CSV Preview */}
                     {csvPreview && (
@@ -240,15 +223,16 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                             <div className="flex items-center justify-between">
                                 <h4 className="font-medium">Data Preview</h4>
                                 <span className="text-sm text-muted-foreground">
-                                    First 10 rows starting from row {typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1}
+                                    First 10 rows starting from row{' '}
+                                    {typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1}
                                 </span>
                             </div>
-                            <div className="border rounded-lg overflow-hidden">
+                            <div className="overflow-hidden rounded-lg border">
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-sm">
                                         <thead className="bg-muted">
                                             <tr>
-                                                <th className="px-3 py-2 text-left font-medium w-16">Row</th>
+                                                <th className="w-16 px-3 py-2 text-left font-medium">Row</th>
                                                 {csvPreview.headers.map((header, index) => {
                                                     const columnNumber = index + 1;
                                                     let isSelected = false;
@@ -295,34 +279,39 @@ export function ConfigureStep({ csvPreview, data, errors, onDataChange }: Config
                                         <tbody>
                                             {csvPreview.rows
                                                 .slice(
-                                                    Math.max(0, (typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1) - 1),
-                                                    Math.max(0, (typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1) - 1) + 10
+                                                    Math.max(
+                                                        0,
+                                                        (typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1) - 1,
+                                                    ),
+                                                    Math.max(
+                                                        0,
+                                                        (typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1) - 1,
+                                                    ) + 10,
                                                 )
                                                 .map((row, rowIndex) => {
-                                                    const actualRowNumber = (typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1) + rowIndex;
+                                                    const actualRowNumber =
+                                                        (typeof data.transaction_data_start === 'number' ? data.transaction_data_start : 1) +
+                                                        rowIndex;
                                                     return (
                                                         <tr key={rowIndex} className="border-t">
-                                                            <td className="px-3 py-2 font-medium text-muted-foreground">
-                                                                {actualRowNumber}
-                                                            </td>
+                                                            <td className="px-3 py-2 font-medium text-muted-foreground">{actualRowNumber}</td>
                                                             {row.map((cell, cellIndex) => {
                                                                 const columnNumber = cellIndex + 1;
                                                                 let isSelected = false;
 
-                                                                if (columnNumber === data.date_column ||
+                                                                if (
+                                                                    columnNumber === data.date_column ||
                                                                     columnNumber === data.balance_column ||
                                                                     columnNumber === data.amount_column ||
                                                                     (columnNumber === data.paid_in_column && data.paid_in_column) ||
                                                                     (columnNumber === data.paid_out_column && data.paid_out_column) ||
-                                                                    (columnNumber === data.description_column && data.description_column)) {
+                                                                    (columnNumber === data.description_column && data.description_column)
+                                                                ) {
                                                                     isSelected = true;
                                                                 }
 
                                                                 return (
-                                                                    <td
-                                                                        key={cellIndex}
-                                                                        className={`px-3 py-2 ${isSelected ? 'bg-primary/5' : ''}`}
-                                                                    >
+                                                                    <td key={cellIndex} className={`px-3 py-2 ${isSelected ? 'bg-primary/5' : ''}`}>
                                                                         {cell}
                                                                     </td>
                                                                 );

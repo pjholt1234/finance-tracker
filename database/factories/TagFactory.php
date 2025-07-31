@@ -34,7 +34,7 @@ class TagFactory extends Factory
      */
     public function withoutColor(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'color' => null,
         ]);
     }
@@ -44,7 +44,7 @@ class TagFactory extends Factory
      */
     public function withoutDescription(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'description' => null,
         ]);
     }
@@ -54,7 +54,7 @@ class TagFactory extends Factory
      */
     public function archived(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'archived' => true,
         ]);
     }

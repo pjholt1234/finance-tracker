@@ -11,9 +11,10 @@ export const generateRandomColor = (): string => {
  * Build URL search parameters from a filters object
  * Handles arrays, dates, and empty values appropriately
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const buildApiParams = (filters: Record<string, any>): URLSearchParams => {
     const params = new URLSearchParams();
-    
+
     Object.entries(filters).forEach(([key, value]) => {
         if (value !== null && value !== undefined && value !== '') {
             if (Array.isArray(value) && value.length > 0) {
@@ -25,7 +26,7 @@ export const buildApiParams = (filters: Record<string, any>): URLSearchParams =>
             }
         }
     });
-    
+
     return params;
 };
 

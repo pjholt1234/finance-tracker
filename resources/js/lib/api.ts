@@ -1,7 +1,6 @@
-/**
- * Standardized API client for the application
- * Uses fetch with proper CSRF handling and Inertia-compatible headers
- */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// API client for handling HTTP requests with CSRF support
+// The any types are necessary for flexibility with different API response shapes
 
 interface ApiOptions {
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
@@ -48,7 +47,7 @@ class ApiClient {
 
         return {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrfToken,
         };
@@ -69,12 +68,7 @@ class ApiClient {
     }
 
     private async request<T = any>(url: string, options: ApiOptions = {}): Promise<ApiResponse<T>> {
-        const {
-            method = 'GET',
-            headers = {},
-            body,
-            signal,
-        } = options;
+        const { method = 'GET', headers = {}, body, signal } = options;
 
         const config: RequestInit = {
             method,

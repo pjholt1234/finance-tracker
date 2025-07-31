@@ -1,25 +1,16 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
-import {
-    ArrowLeft,
-    Save,
-    Calendar,
-    DollarSign,
-    Hash,
-    FileText,
-    AlertCircle,
-    Info
-} from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { CsvSchema } from '@/types/global';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { AlertCircle, ArrowLeft, Calendar, DollarSign, FileText, Hash, Info, Save } from 'lucide-react';
 
 interface EditSchemaForm {
     name: string;
@@ -32,6 +23,7 @@ interface EditSchemaForm {
     description_column: number;
     date_format: string;
     amount_type: 'single' | 'split';
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
 
@@ -91,17 +83,15 @@ export default function Edit({ schema, available_columns, available_date_formats
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Edit Schema: ${schema.name}`} />
 
-            <div className="flex h-full flex-1 flex-col gap-4 rounded-xl overflow-x-auto">
+            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl">
                 <div className="flex items-center justify-between">
                     <div>
                         <h2 className="text-2xl font-bold">Edit CSV Schema</h2>
-                        <p className="text-muted-foreground mt-1">
-                            Update your CSV import configuration
-                        </p>
+                        <p className="mt-1 text-muted-foreground">Update your CSV import configuration</p>
                     </div>
                     <Link href={route('csv-schemas.show', schema.id)}>
                         <Button variant="outline">
-                            <ArrowLeft className="h-4 w-4 mr-2" />
+                            <ArrowLeft className="mr-2 h-4 w-4" />
                             Back to Schema
                         </Button>
                     </Link>
@@ -110,8 +100,8 @@ export default function Edit({ schema, available_columns, available_date_formats
                 <Alert>
                     <Info className="h-4 w-4" />
                     <AlertDescription>
-                        Note: Changes to this schema will only affect future CSV imports.
-                        Existing transactions imported with this schema will not be modified.
+                        Note: Changes to this schema will only affect future CSV imports. Existing transactions imported with this schema will not be
+                        modified.
                     </AlertDescription>
                 </Alert>
 
@@ -134,9 +124,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                     placeholder="e.g., Bank Statement Schema"
                                     required
                                 />
-                                {errors.name && (
-                                    <p className="text-xs text-destructive">{errors.name}</p>
-                                )}
+                                {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                             </div>
 
                             <div className="grid gap-2">
@@ -149,12 +137,8 @@ export default function Edit({ schema, available_columns, available_date_formats
                                     onChange={(e) => setData('transaction_data_start', parseInt(e.target.value) || 1)}
                                     className="max-w-32"
                                 />
-                                <p className="text-xs text-muted-foreground">
-                                    Row number where actual transaction data begins (after headers)
-                                </p>
-                                {errors.transaction_data_start && (
-                                    <p className="text-xs text-destructive">{errors.transaction_data_start}</p>
-                                )}
+                                <p className="text-xs text-muted-foreground">Row number where actual transaction data begins (after headers)</p>
+                                {errors.transaction_data_start && <p className="text-xs text-destructive">{errors.transaction_data_start}</p>}
                             </div>
                         </CardContent>
                     </Card>
@@ -166,9 +150,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                 <Hash className="h-5 w-5" />
                                 Column Mapping
                             </CardTitle>
-                            <CardDescription>
-                                Map your CSV columns to transaction data fields
-                            </CardDescription>
+                            <CardDescription>Map your CSV columns to transaction data fields</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
                             {/* Amount Type Selection */}
@@ -207,7 +189,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                         Date Column *
                                     </Label>
                                     <Select
-                                        value={data.date_column.toString() === "0" ? "" : data.date_column.toString()}
+                                        value={data.date_column.toString() === '0' ? '' : data.date_column.toString()}
                                         onValueChange={(value) => setData('date_column', parseInt(value) || 0)}
                                     >
                                         <SelectTrigger>
@@ -221,9 +203,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.date_column && (
-                                        <p className="text-xs text-destructive">{errors.date_column}</p>
-                                    )}
+                                    {errors.date_column && <p className="text-xs text-destructive">{errors.date_column}</p>}
                                 </div>
 
                                 <div className="grid gap-2">
@@ -232,7 +212,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                         Balance Column *
                                     </Label>
                                     <Select
-                                        value={data.balance_column.toString() === "0" ? "" : data.balance_column.toString()}
+                                        value={data.balance_column.toString() === '0' ? '' : data.balance_column.toString()}
                                         onValueChange={(value) => setData('balance_column', parseInt(value) || 0)}
                                     >
                                         <SelectTrigger>
@@ -246,9 +226,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.balance_column && (
-                                        <p className="text-xs text-destructive">{errors.balance_column}</p>
-                                    )}
+                                    {errors.balance_column && <p className="text-xs text-destructive">{errors.balance_column}</p>}
                                 </div>
                             </div>
 
@@ -260,7 +238,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                         Amount Column *
                                     </Label>
                                     <Select
-                                        value={data.amount_column.toString() === "0" ? "" : data.amount_column.toString()}
+                                        value={data.amount_column.toString() === '0' ? '' : data.amount_column.toString()}
                                         onValueChange={(value) => setData('amount_column', parseInt(value) || 0)}
                                     >
                                         <SelectTrigger>
@@ -274,17 +252,15 @@ export default function Edit({ schema, available_columns, available_date_formats
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.amount_column && (
-                                        <p className="text-xs text-destructive">{errors.amount_column}</p>
-                                    )}
+                                    {errors.amount_column && <p className="text-xs text-destructive">{errors.amount_column}</p>}
                                 </div>
                             ) : (
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="grid gap-2">
                                         <Label htmlFor="paid_in_column">Paid In Column</Label>
                                         <Select
-                                            value={data.paid_in_column.toString() === "0" ? "none" : data.paid_in_column.toString()}
-                                            onValueChange={(value) => setData('paid_in_column', value === "none" ? 0 : parseInt(value) || 0)}
+                                            value={data.paid_in_column.toString() === '0' ? 'none' : data.paid_in_column.toString()}
+                                            onValueChange={(value) => setData('paid_in_column', value === 'none' ? 0 : parseInt(value) || 0)}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select paid in column" />
@@ -298,16 +274,14 @@ export default function Edit({ schema, available_columns, available_date_formats
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {errors.paid_in_column && (
-                                            <p className="text-xs text-destructive">{errors.paid_in_column}</p>
-                                        )}
+                                        {errors.paid_in_column && <p className="text-xs text-destructive">{errors.paid_in_column}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
                                         <Label htmlFor="paid_out_column">Paid Out Column</Label>
                                         <Select
-                                            value={data.paid_out_column.toString() === "0" ? "none" : data.paid_out_column.toString()}
-                                            onValueChange={(value) => setData('paid_out_column', value === "none" ? 0 : parseInt(value) || 0)}
+                                            value={data.paid_out_column.toString() === '0' ? 'none' : data.paid_out_column.toString()}
+                                            onValueChange={(value) => setData('paid_out_column', value === 'none' ? 0 : parseInt(value) || 0)}
                                         >
                                             <SelectTrigger>
                                                 <SelectValue placeholder="Select paid out column" />
@@ -321,9 +295,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                                 ))}
                                             </SelectContent>
                                         </Select>
-                                        {errors.paid_out_column && (
-                                            <p className="text-xs text-destructive">{errors.paid_out_column}</p>
-                                        )}
+                                        {errors.paid_out_column && <p className="text-xs text-destructive">{errors.paid_out_column}</p>}
                                     </div>
                                 </div>
                             )}
@@ -335,8 +307,8 @@ export default function Edit({ schema, available_columns, available_date_formats
                                 <div className="grid gap-2">
                                     <Label htmlFor="description_column">Description Column (Optional)</Label>
                                     <Select
-                                        value={data.description_column.toString() === "0" ? "none" : data.description_column.toString()}
-                                        onValueChange={(value) => setData('description_column', value === "none" ? 0 : parseInt(value) || 0)}
+                                        value={data.description_column.toString() === '0' ? 'none' : data.description_column.toString()}
+                                        onValueChange={(value) => setData('description_column', value === 'none' ? 0 : parseInt(value) || 0)}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Select description column" />
@@ -350,16 +322,14 @@ export default function Edit({ schema, available_columns, available_date_formats
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.description_column && (
-                                        <p className="text-xs text-destructive">{errors.description_column}</p>
-                                    )}
+                                    {errors.description_column && <p className="text-xs text-destructive">{errors.description_column}</p>}
                                 </div>
 
                                 <div className="grid gap-2">
                                     <Label htmlFor="date_format">Date Format (Optional)</Label>
                                     <Select
-                                        value={data.date_format === "" ? "auto" : data.date_format}
-                                        onValueChange={(value) => setData('date_format', value === "auto" ? "" : value)}
+                                        value={data.date_format === '' ? 'auto' : data.date_format}
+                                        onValueChange={(value) => setData('date_format', value === 'auto' ? '' : value)}
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Auto-detect or select format" />
@@ -373,9 +343,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                                             ))}
                                         </SelectContent>
                                     </Select>
-                                    {errors.date_format && (
-                                        <p className="text-xs text-destructive">{errors.date_format}</p>
-                                    )}
+                                    {errors.date_format && <p className="text-xs text-destructive">{errors.date_format}</p>}
                                 </div>
                             </div>
 
@@ -395,35 +363,23 @@ export default function Edit({ schema, available_columns, available_date_formats
                     <Card>
                         <CardHeader>
                             <CardTitle>Configuration Preview</CardTitle>
-                            <CardDescription>
-                                Review your updated schema configuration
-                            </CardDescription>
+                            <CardDescription>Review your updated schema configuration</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="bg-muted rounded-lg p-4">
+                            <div className="rounded-lg bg-muted p-4">
                                 <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                                     <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                            Schema Name
-                                        </div>
-                                        <div className="text-sm">
-                                            {data.name || 'Unnamed Schema'}
-                                        </div>
+                                        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Schema Name</div>
+                                        <div className="text-sm">{data.name || 'Unnamed Schema'}</div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                            Data Start Row
-                                        </div>
-                                        <div className="text-sm">
-                                            Row {data.transaction_data_start}
-                                        </div>
+                                        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Data Start Row</div>
+                                        <div className="text-sm">Row {data.transaction_data_start}</div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                            Date Column
-                                        </div>
+                                        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Date Column</div>
                                         <div className="text-sm">
                                             {data.date_column !== 0 ? available_columns[data.date_column] : 'Not selected'}
                                             {data.date_format && (
@@ -435,33 +391,29 @@ export default function Edit({ schema, available_columns, available_date_formats
                                     </div>
 
                                     <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                            Balance Column
-                                        </div>
+                                        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Balance Column</div>
                                         <div className="text-sm">
                                             {data.balance_column !== 0 ? available_columns[data.balance_column] : 'Not selected'}
                                         </div>
                                     </div>
 
                                     <div className="space-y-1">
-                                        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                            Amount Configuration
-                                        </div>
+                                        <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">Amount Configuration</div>
                                         <div className="text-sm">
                                             {data.amount_type === 'single' ? (
                                                 <>
-                                                    <Badge variant="default" className="text-xs mb-1">Single</Badge>
+                                                    <Badge variant="default" className="mb-1 text-xs">
+                                                        Single
+                                                    </Badge>
                                                     {data.amount_column !== 0 ? available_columns[data.amount_column] : 'Not selected'}
                                                 </>
                                             ) : (
                                                 <>
-                                                    <Badge variant="outline" className="text-xs mb-1">Split</Badge>
-                                                    {data.paid_in_column !== 0 && (
-                                                        <div>In: {available_columns[data.paid_in_column]}</div>
-                                                    )}
-                                                    {data.paid_out_column !== 0 && (
-                                                        <div>Out: {available_columns[data.paid_out_column]}</div>
-                                                    )}
+                                                    <Badge variant="outline" className="mb-1 text-xs">
+                                                        Split
+                                                    </Badge>
+                                                    {data.paid_in_column !== 0 && <div>In: {available_columns[data.paid_in_column]}</div>}
+                                                    {data.paid_out_column !== 0 && <div>Out: {available_columns[data.paid_out_column]}</div>}
                                                     {data.paid_in_column === 0 && data.paid_out_column === 0 && (
                                                         <div className="text-muted-foreground">None selected</div>
                                                     )}
@@ -472,12 +424,10 @@ export default function Edit({ schema, available_columns, available_date_formats
 
                                     {data.description_column !== 0 && (
                                         <div className="space-y-1">
-                                            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                            <div className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                                                 Description Column
                                             </div>
-                                            <div className="text-sm">
-                                                {available_columns[data.description_column]}
-                                            </div>
+                                            <div className="text-sm">{available_columns[data.description_column]}</div>
                                         </div>
                                     )}
                                 </div>
@@ -488,7 +438,7 @@ export default function Edit({ schema, available_columns, available_date_formats
                     {/* Form Actions */}
                     <div className="flex gap-3">
                         <Button type="submit" disabled={processing || !canSave()}>
-                            <Save className="h-4 w-4 mr-2" />
+                            <Save className="mr-2 h-4 w-4" />
                             {processing ? 'Saving...' : 'Save Changes'}
                         </Button>
                         <Link href={route('csv-schemas.show', schema.id)}>

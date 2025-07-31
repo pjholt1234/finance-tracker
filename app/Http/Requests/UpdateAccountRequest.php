@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests;
 
-use App\Models\Account;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\Auth;
 
@@ -14,6 +13,7 @@ class UpdateAccountRequest extends FormRequest
     public function authorize(): bool
     {
         $account = $this->route('account');
+
         return $account->user_id === Auth::id();
     }
 
@@ -25,9 +25,10 @@ class UpdateAccountRequest extends FormRequest
     public function rules(): array
     {
         $account = $this->route('account');
+
         return [
             'name' => 'required|string|max:255',
-            'number' => 'required|integer|unique:accounts,number,' . $account->id . ',id,user_id,' . Auth::id(),
+            'number' => 'required|integer|unique:accounts,number,'.$account->id.',id,user_id,'.Auth::id(),
             'sort_code' => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'balance_at_start' => 'nullable|integer|min:0',

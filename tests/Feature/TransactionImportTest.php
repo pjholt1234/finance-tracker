@@ -2,14 +2,13 @@
 
 namespace Tests\Feature;
 
+use App\Models\Account;
 use App\Models\CsvSchema;
 use App\Models\Import;
 use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Account;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
@@ -19,6 +18,7 @@ class TransactionImportTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Account $account;
 
     protected function setUp(): void
@@ -70,7 +70,7 @@ class TransactionImportTest extends TestCase
         ]);
 
         $response->assertStatus(200); // Now returns the import-review page instead of redirecting
-        $response->assertInertia(fn($page) => $page->component('transactions/import-review'));
+        $response->assertInertia(fn ($page) => $page->component('transactions/import-review'));
     }
 
     public function test_csv_file_is_required_for_import()

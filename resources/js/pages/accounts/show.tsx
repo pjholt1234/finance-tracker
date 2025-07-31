@@ -1,27 +1,15 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import {
-    ArrowLeft,
-    Edit,
-    MoreHorizontal,
-    DollarSign,
-    Hash,
-    FileText,
-    Clock,
-    Upload,
-    CheckCircle,
-    AlertCircle,
-    Calculator
-} from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
 import { Label } from '@/components/ui/label';
-import { formatDate, formatDateTime } from '@/utils/date';
-import { Account, Import } from '@/types/global';
 import { useCurrencyFormat } from '@/hooks';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Account, Import } from '@/types/global';
+import { formatDate, formatDateTime } from '@/utils/date';
+import { Head, Link, router } from '@inertiajs/react';
+import { AlertCircle, ArrowLeft, Calculator, CheckCircle, Clock, DollarSign, Edit, FileText, Hash, MoreHorizontal, Upload } from 'lucide-react';
 
 interface Props {
     account: Account;
@@ -49,28 +37,28 @@ export default function AccountShow({ account }: Props) {
             case 'completed':
                 return (
                     <Badge className="bg-green-100 text-green-800">
-                        <CheckCircle className="h-3 w-3 mr-1" />
+                        <CheckCircle className="mr-1 h-3 w-3" />
                         Completed
                     </Badge>
                 );
             case 'failed':
                 return (
                     <Badge variant="destructive">
-                        <AlertCircle className="h-3 w-3 mr-1" />
+                        <AlertCircle className="mr-1 h-3 w-3" />
                         Failed
                     </Badge>
                 );
             case 'processing':
                 return (
                     <Badge variant="secondary">
-                        <Clock className="h-3 w-3 mr-1" />
+                        <Clock className="mr-1 h-3 w-3" />
                         Processing
                     </Badge>
                 );
             case 'pending':
                 return (
                     <Badge variant="outline">
-                        <Clock className="h-3 w-3 mr-1" />
+                        <Clock className="mr-1 h-3 w-3" />
                         Pending
                     </Badge>
                 );
@@ -174,18 +162,14 @@ export default function AccountShow({ account }: Props) {
                     <Card>
                         <CardHeader>
                             <CardTitle>Recent Transactions</CardTitle>
-                            <CardDescription>
-                                Latest transactions for this account
-                            </CardDescription>
+                            <CardDescription>Latest transactions for this account</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {account.transactions?.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No transactions yet</h3>
-                                    <p className="text-muted-foreground mb-4">
-                                        Import your first CSV file to see transactions here.
-                                    </p>
+                                <div className="py-8 text-center">
+                                    <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mb-2 text-lg font-semibold">No transactions yet</h3>
+                                    <p className="mb-4 text-muted-foreground">Import your first CSV file to see transactions here.</p>
                                     <Button asChild>
                                         <Link href={route('transaction-imports.create')}>
                                             <Upload className="mr-2 h-4 w-4" />
@@ -196,31 +180,21 @@ export default function AccountShow({ account }: Props) {
                             ) : (
                                 <div className="space-y-4">
                                     {account.transactions?.map((transaction) => (
-                                        <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                        <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-4">
                                             <div className="space-y-1">
-                                                <p className="text-sm font-medium">
-                                                    {transaction.description || 'No description'}
-                                                </p>
-                                                <p className="text-xs text-muted-foreground">
-                                                    {formatDate(transaction.date)}
-                                                </p>
+                                                <p className="text-sm font-medium">{transaction.description || 'No description'}</p>
+                                                <p className="text-xs text-muted-foreground">{formatDate(transaction.date)}</p>
                                             </div>
-                                            <div className="text-right space-y-1">
+                                            <div className="space-y-1 text-right">
                                                 <div className="flex items-center gap-4">
                                                     {transaction.paid_in && (
-                                                        <div className="text-green-600 font-medium">
-                                                            +{formatCurrency(transaction.paid_in)}
-                                                        </div>
+                                                        <div className="font-medium text-green-600">+{formatCurrency(transaction.paid_in)}</div>
                                                     )}
                                                     {transaction.paid_out && (
-                                                        <div className="text-red-600 font-medium">
-                                                            -{formatCurrency(transaction.paid_out)}
-                                                        </div>
+                                                        <div className="font-medium text-red-600">-{formatCurrency(transaction.paid_out)}</div>
                                                     )}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    Balance: {formatCurrency(transaction.balance)}
-                                                </div>
+                                                <div className="text-xs text-muted-foreground">Balance: {formatCurrency(transaction.balance)}</div>
                                             </div>
                                         </div>
                                     ))}
@@ -233,18 +207,14 @@ export default function AccountShow({ account }: Props) {
                     <Card>
                         <CardHeader>
                             <CardTitle>Import History</CardTitle>
-                            <CardDescription>
-                                Recent imports for this account
-                            </CardDescription>
+                            <CardDescription>Recent imports for this account</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {account.imports?.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <Upload className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                                    <h3 className="text-lg font-semibold mb-2">No imports yet</h3>
-                                    <p className="text-muted-foreground mb-4">
-                                        Start by importing your first CSV file.
-                                    </p>
+                                <div className="py-8 text-center">
+                                    <Upload className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                                    <h3 className="mb-2 text-lg font-semibold">No imports yet</h3>
+                                    <p className="mb-4 text-muted-foreground">Start by importing your first CSV file.</p>
                                     <Button asChild>
                                         <Link href={route('transaction-imports.create')}>
                                             <Upload className="mr-2 h-4 w-4" />
@@ -255,7 +225,7 @@ export default function AccountShow({ account }: Props) {
                             ) : (
                                 <div className="space-y-4">
                                     {account.imports?.map((importData) => (
-                                        <div key={importData.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                        <div key={importData.id} className="flex items-center justify-between rounded-lg border p-4">
                                             <div className="space-y-1">
                                                 <div className="flex items-center space-x-2">
                                                     <p className="text-sm font-medium">{importData.filename}</p>
@@ -265,14 +235,10 @@ export default function AccountShow({ account }: Props) {
                                                     {importData.csv_schema?.name || 'Unknown Schema'} • {formatDateTime(importData.created_at)}
                                                 </p>
                                             </div>
-                                            <div className="text-right space-y-1">
-                                                <div className="text-sm font-medium">
-                                                    {importData.imported_rows} transactions
-                                                </div>
+                                            <div className="space-y-1 text-right">
+                                                <div className="text-sm font-medium">{importData.imported_rows} transactions</div>
                                                 {importData.duplicate_rows > 0 && (
-                                                    <div className="text-xs text-muted-foreground">
-                                                        {importData.duplicate_rows} duplicates
-                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">{importData.duplicate_rows} duplicates</div>
                                                 )}
                                             </div>
                                         </div>

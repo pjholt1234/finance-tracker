@@ -1,22 +1,14 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import {
-    ArrowLeft,
-    CheckCircle,
-    AlertCircle,
-    FileText,
-    Calendar,
-    Trash2,
-    BarChart3
-} from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import { formatDate, formatDateTime } from '@/utils/date';
 import { useCurrencyFormat } from '@/hooks';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Import } from '@/types/global';
+import { formatDate, formatDateTime } from '@/utils/date';
+import { Head, Link, router } from '@inertiajs/react';
+import { AlertCircle, ArrowLeft, BarChart3, Calendar, CheckCircle, FileText, Trash2 } from 'lucide-react';
 
 interface ImportStats {
     total_rows: number;
@@ -55,9 +47,19 @@ export default function ImportResults({ import: importData, stats }: Props) {
     const getStatusBadge = (status: Import['status']) => {
         switch (status) {
             case 'completed':
-                return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Completed</Badge>;
+                return (
+                    <Badge className="bg-green-100 text-green-800">
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                        Completed
+                    </Badge>
+                );
             case 'failed':
-                return <Badge variant="destructive"><AlertCircle className="h-3 w-3 mr-1" />Failed</Badge>;
+                return (
+                    <Badge variant="destructive">
+                        <AlertCircle className="mr-1 h-3 w-3" />
+                        Failed
+                    </Badge>
+                );
             case 'processing':
                 return <Badge variant="secondary">Processing</Badge>;
             case 'pending':
@@ -84,7 +86,7 @@ export default function ImportResults({ import: importData, stats }: Props) {
                     <div className="flex items-center gap-4">
                         <Link href={route('transaction-imports.index')}>
                             <Button variant="outline" size="sm">
-                                <ArrowLeft className="h-4 w-4 mr-2" />
+                                <ArrowLeft className="mr-2 h-4 w-4" />
                                 Back to Imports
                             </Button>
                         </Link>
@@ -92,12 +94,8 @@ export default function ImportResults({ import: importData, stats }: Props) {
                     <div className="flex items-center gap-2">
                         {getStatusBadge(importData.status)}
                         {importData.status === 'completed' && (
-                            <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={handleDelete}
-                            >
-                                <Trash2 className="h-4 w-4 mr-2" />
+                            <Button variant="destructive" size="sm" onClick={handleDelete}>
+                                <Trash2 className="mr-2 h-4 w-4" />
                                 Delete Import
                             </Button>
                         )}
@@ -111,12 +109,10 @@ export default function ImportResults({ import: importData, stats }: Props) {
                             <BarChart3 className="h-5 w-5" />
                             Import Summary
                         </CardTitle>
-                        <CardDescription>
-                            Overview of the import process and results
-                        </CardDescription>
+                        <CardDescription>Overview of the import process and results</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
                             <div className="space-y-2">
                                 <p className="text-sm font-medium text-muted-foreground">Total Rows</p>
                                 <p className="text-2xl font-bold">{stats.total_rows}</p>
@@ -140,15 +136,12 @@ export default function ImportResults({ import: importData, stats }: Props) {
                                 <span>Success Rate</span>
                                 <span className="font-medium">{stats.success_rate}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
-                                <div
-                                    className="bg-green-600 h-2 rounded-full"
-                                    style={{ width: `${stats.success_rate}%` }}
-                                ></div>
+                            <div className="h-2 w-full rounded-full bg-gray-200">
+                                <div className="h-2 rounded-full bg-green-600" style={{ width: `${stats.success_rate}%` }}></div>
                             </div>
                         </div>
 
-                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div className="mt-6 grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
                             <div>
                                 <p className="text-muted-foreground">CSV Schema</p>
                                 <p className="font-medium">{importData.csv_schema.name}</p>
@@ -191,43 +184,28 @@ export default function ImportResults({ import: importData, stats }: Props) {
                                 <FileText className="h-5 w-5" />
                                 Transactions
                             </CardTitle>
-                            <CardDescription>
-                                Preview of the latest imported transactions
-                            </CardDescription>
+                            <CardDescription>Preview of the latest imported transactions</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
                                 {importData.transactions.map((transaction) => (
-                                    <div
-                                        key={transaction.id}
-                                        className="flex items-center justify-between p-4 border rounded-lg"
-                                    >
+                                    <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-4">
                                         <div className="space-y-1">
                                             <div className="flex items-center gap-2">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />
                                                 <span className="font-medium">{formatDate(transaction.date)}</span>
                                             </div>
-                                            {transaction.description && (
-                                                <p className="text-sm text-muted-foreground">
-                                                    {transaction.description}
-                                                </p>
-                                            )}
+                                            {transaction.description && <p className="text-sm text-muted-foreground">{transaction.description}</p>}
                                         </div>
-                                        <div className="text-right space-y-1">
+                                        <div className="space-y-1 text-right">
                                             <div className="flex items-center gap-4">
                                                 {transaction.paid_in && (
-                                                    <div className="text-green-600 font-medium">
-                                                        +{formatCurrency(transaction.paid_in)}
-                                                    </div>
+                                                    <div className="font-medium text-green-600">+{formatCurrency(transaction.paid_in)}</div>
                                                 )}
                                                 {transaction.paid_out && (
-                                                    <div className="text-red-600 font-medium">
-                                                        -{formatCurrency(transaction.paid_out)}
-                                                    </div>
+                                                    <div className="font-medium text-red-600">-{formatCurrency(transaction.paid_out)}</div>
                                                 )}
-                                                <div className="text-sm text-muted-foreground">
-                                                    Balance: {formatCurrency(transaction.balance)}
-                                                </div>
+                                                <div className="text-sm text-muted-foreground">Balance: {formatCurrency(transaction.balance)}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -249,7 +227,7 @@ export default function ImportResults({ import: importData, stats }: Props) {
                 <div className="flex justify-center">
                     <Link href={route('transaction-imports.create')}>
                         <Button>
-                            <FileText className="h-4 w-4 mr-2" />
+                            <FileText className="mr-2 h-4 w-4" />
                             Import More Transactions
                         </Button>
                     </Link>

@@ -34,7 +34,7 @@ class TagShowTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) => $page
+            fn ($page) => $page
                 ->component('tags/show')
                 ->has('tag')
                 ->where('tag.id', $tag->id)

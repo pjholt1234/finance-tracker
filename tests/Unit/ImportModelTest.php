@@ -111,7 +111,7 @@ class ImportModelTest extends TestCase
 
     public function test_import_has_correct_fillable_attributes()
     {
-        $import = new Import();
+        $import = new Import;
         $fillable = $import->getFillable();
 
         $expectedFillable = [

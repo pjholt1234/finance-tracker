@@ -12,7 +12,7 @@ class DateParsingServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->dateParsingService = new DateParsingService();
+        $this->dateParsingService = new DateParsingService;
     }
 
     public function test_parse_date_with_ymd_format()

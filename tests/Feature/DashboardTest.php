@@ -2,13 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
 use App\Models\Account;
 use App\Models\Transaction;
-use App\Models\Tag;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
-use Carbon\Carbon;
 
 class DashboardTest extends TestCase
 {
@@ -158,7 +156,7 @@ class DashboardTest extends TestCase
         ]);
 
         // Filter by only account1
-        $response = $this->actingAs($user)->getJson('/dashboard/api?account_ids=' . $account1->id);
+        $response = $this->actingAs($user)->getJson('/dashboard/api?account_ids='.$account1->id);
 
         $data = $response->json();
 

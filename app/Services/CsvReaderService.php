@@ -3,20 +3,17 @@
 namespace App\Services;
 
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Facades\Excel;
-use Maatwebsite\Excel\HeadingRow;
 use Maatwebsite\Excel\Imports\HeadingRowFormatter;
 use PhpOffice\PhpSpreadsheet\Shared\Date;
-use Illuminate\Support\Collection;
 
 class CsvReaderService
 {
     /**
      * Parse a CSV file and return preview data.
      *
-     * @param UploadedFile $file
-     * @param int $previewRows Maximum number of rows to return for preview
-     * @return array
+     * @param  int  $previewRows  Maximum number of rows to return for preview
      */
     public function parseForPreview(UploadedFile $file, int $previewRows = 20): array
     {
@@ -42,10 +39,6 @@ class CsvReaderService
 
     /**
      * Parse a full CSV file using a schema configuration.
-     *
-     * @param UploadedFile $file
-     * @param array $schemaConfig
-     * @return Collection
      */
     public function parseWithSchema(UploadedFile $file, array $schemaConfig): Collection
     {
@@ -65,11 +58,6 @@ class CsvReaderService
 
     /**
      * Map a single CSV row to schema fields.
-     *
-     * @param array $row
-     * @param array $headers
-     * @param array $schema
-     * @return array|null
      */
     private function mapRowToSchema(array $row, array $headers, array $schema): ?array
     {
@@ -101,7 +89,7 @@ class CsvReaderService
      */
     private function mapAmountFields(array &$mapped, array $row, array $headers, array $schema): void
     {
-        if (!empty($schema['amount_column'])) {
+        if (! empty($schema['amount_column'])) {
             $mapped['amount'] = $this->getColumnValue($row, $headers, $schema['amount_column']);
         } else {
             $this->mapSeparateAmountFields($mapped, $row, $headers, $schema);
@@ -113,16 +101,16 @@ class CsvReaderService
      */
     private function mapSeparateAmountFields(array &$mapped, array $row, array $headers, array $schema): void
     {
-        if (!empty($schema['paid_in_column'])) {
+        if (! empty($schema['paid_in_column'])) {
             $paidInValue = $this->getColumnValue($row, $headers, $schema['paid_in_column']);
-            if (!empty($paidInValue)) {
+            if (! empty($paidInValue)) {
                 $mapped['paid_in'] = $paidInValue;
             }
         }
 
-        if (!empty($schema['paid_out_column'])) {
+        if (! empty($schema['paid_out_column'])) {
             $paidOutValue = $this->getColumnValue($row, $headers, $schema['paid_out_column']);
-            if (!empty($paidOutValue)) {
+            if (! empty($paidOutValue)) {
                 $mapped['paid_out'] = $paidOutValue;
             }
         }
@@ -133,7 +121,7 @@ class CsvReaderService
      */
     private function mapOptionalFields(array &$mapped, array $row, array $headers, array $schema): void
     {
-        if (!empty($schema['description_column'])) {
+        if (! empty($schema['description_column'])) {
             $mapped['description'] = $this->getColumnValue($row, $headers, $schema['description_column']);
         }
     }
@@ -141,10 +129,7 @@ class CsvReaderService
     /**
      * Get column value by column number (1-indexed).
      *
-     * @param array $row
-     * @param array $headers
-     * @param int $columnNumber 1-indexed column number
-     * @return string|null
+     * @param  int  $columnNumber  1-indexed column number
      */
     private function getColumnValue(array $row, array $headers, int $columnNumber): ?string
     {
@@ -160,10 +145,6 @@ class CsvReaderService
 
     /**
      * Detect potential date formats in CSV data.
-     *
-     * @param array $csvData
-     * @param array $headers
-     * @return array
      */
     private function detectDateFormats(array $csvData, array $headers): array
     {
@@ -211,7 +192,9 @@ class CsvReaderService
     private function analyzeRowForDateFormats(array $row, array $dateFormats, array &$detectedFormats): void
     {
         foreach ($row as $cell) {
-            if (empty($cell)) continue;
+            if (empty($cell)) {
+                continue;
+            }
 
             $this->checkCellForDateFormats($cell, $dateFormats, $detectedFormats);
         }
@@ -234,7 +217,7 @@ class CsvReaderService
      */
     private function addDetectedFormat(string $format, string $description, string $cell, array &$detectedFormats): void
     {
-        if (!isset($detectedFormats[$format])) {
+        if (! isset($detectedFormats[$format])) {
             $detectedFormats[$format] = [
                 'format' => $format,
                 'description' => $description,
@@ -245,10 +228,6 @@ class CsvReaderService
 
     /**
      * Check if a string matches a specific date format.
-     *
-     * @param string $dateString
-     * @param string $format
-     * @return bool
      */
     private function isValidDateFormat(string $dateString, string $format): bool
     {
@@ -258,6 +237,7 @@ class CsvReaderService
         }
 
         $date = \DateTime::createFromFormat($format, $dateString);
+
         return $date && $date->format($format) === $dateString;
     }
 
@@ -299,7 +279,7 @@ class CsvReaderService
 
         if ($encoding && $encoding !== 'UTF-8') {
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', $encoding);
-        } elseif (!$encoding) {
+        } elseif (! $encoding) {
             // If encoding detection fails, try to convert from common encodings
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', 'Windows-1252');
         }
@@ -315,6 +295,7 @@ class CsvReaderService
         $tempFile = tmpfile();
         fwrite($tempFile, $fileContent);
         rewind($tempFile);
+
         return $tempFile;
     }
 
@@ -405,7 +386,7 @@ class CsvReaderService
      */
     private function parseWithExcel(UploadedFile $file): \Illuminate\Support\Collection
     {
-        return Excel::toCollection(new CsvImport(), $file)->first();
+        return Excel::toCollection(new CsvImport, $file)->first();
     }
 
     /**
@@ -457,6 +438,7 @@ class CsvReaderService
     private function extractSchemaDataRows(\Illuminate\Support\Collection $collection, array $schemaConfig): \Illuminate\Support\Collection
     {
         $dataStartIndex = $schemaConfig['transaction_data_start'] - 1;
+
         return $collection->skip($dataStartIndex);
     }
 
@@ -467,6 +449,7 @@ class CsvReaderService
     {
         return $dataRows->map(function ($row) use ($headers, $schemaConfig) {
             $rowArray = $row->toArray();
+
             return $this->mapRowToSchema($rowArray, $headers, $schemaConfig);
         })->filter(); // Remove empty rows
     }

@@ -10,7 +10,6 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class TagController extends Controller
@@ -49,6 +48,7 @@ class TagController extends Controller
     public function create()
     {
         $this->authorize('create', Tag::class);
+
         return Inertia::render('tags/create');
     }
 
@@ -272,6 +272,7 @@ class TagController extends Controller
             if ($a['match_count'] !== $b['match_count']) {
                 return $b['match_count'] - $a['match_count'];
             }
+
             return strcmp($a['name'], $b['name']);
         });
 

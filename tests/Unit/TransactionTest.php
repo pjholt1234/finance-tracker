@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
+use App\Models\Account;
+use App\Models\Import;
+use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Tag;
-use App\Models\Import;
-use App\Models\Account;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -15,6 +15,7 @@ class TransactionTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Account $account;
 
     protected function setUp(): void

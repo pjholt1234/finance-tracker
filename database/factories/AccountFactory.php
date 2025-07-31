@@ -22,7 +22,7 @@ class AccountFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'name' => $this->faker->words(2, true) . ' Account',
+            'name' => $this->faker->words(2, true).' Account',
             'number' => $this->faker->unique()->numberBetween(10000000, 99999999),
             'sort_code' => $this->faker->numerify('##-##-##'),
             'description' => $this->faker->sentence(),
@@ -38,7 +38,7 @@ class AccountFactory extends Factory
      */
     public function withoutStartingBalance(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'balance_at_start' => 0,
             'balance' => 0,
         ]);

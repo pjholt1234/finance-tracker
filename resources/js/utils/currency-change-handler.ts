@@ -3,11 +3,7 @@ import { ChangeEvent } from 'react';
 /**
  * Handle currency input changes and convert to pennies
  */
-export const handleCurrencyChange = (
-    e: ChangeEvent<HTMLInputElement>, 
-    setData: (key: string, value: number) => void, 
-    formKey: string
-): void => {
+export const handleCurrencyChange = (e: ChangeEvent<HTMLInputElement>, setData: (key: string, value: number) => void, formKey: string): void => {
     const value = e.target.value;
     if (value === '') {
         setData(formKey, 0);

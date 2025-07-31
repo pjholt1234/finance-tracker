@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('color')->nullable(); // Hex color for UI display
             $table->text('description')->nullable();
             $table->timestamps();
-            
+
             // Ensure user can't have duplicate tag names
             $table->unique(['user_id', 'name']);
         });

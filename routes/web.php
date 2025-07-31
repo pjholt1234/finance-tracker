@@ -1,12 +1,11 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\CsvSchemaController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionImportController;
+use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
     return redirect()->route('dashboard.index');
@@ -46,5 +45,5 @@ Route::middleware(['auth', 'verified', 'two-factor'])->group(function () {
     Route::delete('imports/{import}', [TransactionImportController::class, 'destroy'])->name('transaction-imports.destroy');
 });
 
-require __DIR__ . '/settings.php';
-require __DIR__ . '/auth.php';
+require __DIR__.'/settings.php';
+require __DIR__.'/auth.php';

@@ -7,7 +7,6 @@ use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Contracts\Support\Responsable;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -26,7 +25,8 @@ class FortifyServiceProvider extends ServiceProvider
     {
         // Manually bind the ConfirmPasswordViewResponse for Inertia
         $this->app->singleton(ConfirmPasswordViewResponse::class, function () {
-            return new class implements ConfirmPasswordViewResponse {
+            return new class implements ConfirmPasswordViewResponse
+            {
                 public function toResponse($request)
                 {
                     return Inertia::render('auth/confirm-password')->toResponse($request);

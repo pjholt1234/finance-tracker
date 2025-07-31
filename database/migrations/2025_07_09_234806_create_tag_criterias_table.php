@@ -31,7 +31,7 @@ return new class extends Migration
                 'less_than',
                 // Date matching
                 'day_of_month',
-                'day_of_week'
+                'day_of_week',
             ])->default('exact');
 
             // Value fields for different criteria types

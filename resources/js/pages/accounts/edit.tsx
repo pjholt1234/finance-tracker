@@ -1,17 +1,17 @@
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, AlertCircle, Building2, Hash, DollarSign } from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import { Account } from '@/types/global';
-import { FormEvent } from 'react';
-import { handleCurrencyChange } from '@/utils/currency-change-handler';
 import { useCurrencyFormat } from '@/hooks';
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Account } from '@/types/global';
+import { handleCurrencyChange } from '@/utils/currency-change-handler';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { AlertCircle, ArrowLeft, Building2, DollarSign, Hash } from 'lucide-react';
+import { FormEvent } from 'react';
 
 interface FormData {
     name: string;
@@ -19,6 +19,7 @@ interface FormData {
     sort_code: string;
     description: string;
     balance_at_start: number;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
 
@@ -66,9 +67,7 @@ export default function EditAccount({ account }: { account: Account }) {
                     </Button>
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">Edit Account</h1>
-                        <p className="text-muted-foreground">
-                            Update the details for {account.name}.
-                        </p>
+                        <p className="text-muted-foreground">Update the details for {account.name}.</p>
                     </div>
                 </div>
 
@@ -79,9 +78,7 @@ export default function EditAccount({ account }: { account: Account }) {
                                 <Building2 className="h-5 w-5" />
                                 <span>Account Details</span>
                             </CardTitle>
-                            <CardDescription>
-                                Update the details for your bank account.
-                            </CardDescription>
+                            <CardDescription>Update the details for your bank account.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,15 +92,13 @@ export default function EditAccount({ account }: { account: Account }) {
                                             placeholder="e.g., Main Current Account"
                                             className={errors.name ? 'border-destructive' : ''}
                                         />
-                                        {errors.name && (
-                                            <p className="text-sm text-destructive">{errors.name}</p>
-                                        )}
+                                        {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label htmlFor="number">Account Number</Label>
                                         <div className="relative">
-                                            <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                            <Hash className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
                                             <Input
                                                 id="number"
                                                 value={data.number}
@@ -112,9 +107,7 @@ export default function EditAccount({ account }: { account: Account }) {
                                                 className={`pl-10 ${errors.number ? 'border-destructive' : ''}`}
                                             />
                                         </div>
-                                        {errors.number && (
-                                            <p className="text-sm text-destructive">{errors.number}</p>
-                                        )}
+                                        {errors.number && <p className="text-sm text-destructive">{errors.number}</p>}
                                     </div>
                                 </div>
 
@@ -127,9 +120,7 @@ export default function EditAccount({ account }: { account: Account }) {
                                         placeholder="12-34-56"
                                         className={errors.sort_code ? 'border-destructive' : ''}
                                     />
-                                    {errors.sort_code && (
-                                        <p className="text-sm text-destructive">{errors.sort_code}</p>
-                                    )}
+                                    {errors.sort_code && <p className="text-sm text-destructive">{errors.sort_code}</p>}
                                 </div>
 
                                 <div className="space-y-2">
@@ -142,16 +133,14 @@ export default function EditAccount({ account }: { account: Account }) {
                                         rows={3}
                                         className={errors.description ? 'border-destructive' : ''}
                                     />
-                                    {errors.description && (
-                                        <p className="text-sm text-destructive">{errors.description}</p>
-                                    )}
+                                    {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
                                 </div>
 
                                 <div className="grid gap-4 md:grid-cols-2">
                                     <div className="space-y-2">
                                         <Label htmlFor="balance_at_start">Starting Balance (Optional)</Label>
                                         <div className="relative">
-                                            <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                                            <DollarSign className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
                                             <Input
                                                 id="balance_at_start"
                                                 type="number"
@@ -162,17 +151,15 @@ export default function EditAccount({ account }: { account: Account }) {
                                                 className={`pl-10 ${errors.balance_at_start ? 'border-destructive' : ''}`}
                                             />
                                         </div>
-                                        {errors.balance_at_start && (
-                                            <p className="text-sm text-destructive">{errors.balance_at_start}</p>
-                                        )}
+                                        {errors.balance_at_start && <p className="text-sm text-destructive">{errors.balance_at_start}</p>}
                                     </div>
                                 </div>
 
                                 <Alert>
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertDescription>
-                                        Changing the starting balance will recalculate your current balance based on existing transactions.
-                                        Current balance: <strong>{formatCurrency(account.balance)}</strong>
+                                        Changing the starting balance will recalculate your current balance based on existing transactions. Current
+                                        balance: <strong>{formatCurrency(account.balance)}</strong>
                                     </AlertDescription>
                                 </Alert>
 

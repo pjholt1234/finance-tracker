@@ -26,7 +26,7 @@ class ImportFactory extends Factory
             'user_id' => User::factory(),
             'account_id' => Account::factory(),
             'csv_schema_id' => CsvSchema::factory(),
-            'filename' => $this->faker->word() . '.csv',
+            'filename' => $this->faker->word().'.csv',
             'status' => $this->faker->randomElement(['pending', 'processing', 'completed', 'failed']),
             'total_rows' => $this->faker->numberBetween(10, 1000),
             'processed_rows' => function (array $attributes) {
@@ -49,7 +49,7 @@ class ImportFactory extends Factory
      */
     public function completed(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'status' => 'completed',
             'started_at' => $this->faker->dateTimeBetween('-1 week', '-1 day'),
             'completed_at' => $this->faker->dateTimeBetween($attributes['started_at'], 'now'),
@@ -61,7 +61,7 @@ class ImportFactory extends Factory
      */
     public function failed(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'status' => 'failed',
             'error_message' => $this->faker->sentence(),
             'started_at' => $this->faker->dateTimeBetween('-1 week', '-1 day'),
@@ -74,7 +74,7 @@ class ImportFactory extends Factory
      */
     public function processing(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'status' => 'processing',
             'started_at' => $this->faker->dateTimeBetween('-1 hour', 'now'),
         ]);

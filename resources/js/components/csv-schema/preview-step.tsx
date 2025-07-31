@@ -1,9 +1,9 @@
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Eye } from 'lucide-react';
 import { CsvPreviewData } from '@/types/global';
+import { Eye } from 'lucide-react';
 
 interface PreviewStepProps {
     csvPreview: CsvPreviewData | null;
@@ -12,12 +12,7 @@ interface PreviewStepProps {
     errors: Partial<Record<string, string>>;
 }
 
-export function PreviewStep({
-    csvPreview,
-    transactionDataStart,
-    onTransactionDataStartChange,
-    errors
-}: PreviewStepProps) {
+export function PreviewStep({ csvPreview, transactionDataStart, onTransactionDataStartChange }: PreviewStepProps) {
     return (
         <Card>
             <CardHeader>
@@ -25,9 +20,7 @@ export function PreviewStep({
                     <Eye className="h-5 w-5" />
                     Preview CSV Data
                 </CardTitle>
-                <CardDescription>
-                    Review your CSV data and specify where transaction data begins
-                </CardDescription>
+                <CardDescription>Review your CSV data and specify where transaction data begins</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
@@ -41,7 +34,7 @@ export function PreviewStep({
                             onChange={(e) => {
                                 const value = e.target.value;
                                 if (value === '') {
-                                    onTransactionDataStartChange('' as any);
+                                    onTransactionDataStartChange('');
                                 } else {
                                     const numValue = parseInt(value);
                                     if (!isNaN(numValue) && numValue >= 1) {
@@ -75,13 +68,13 @@ export function PreviewStep({
                     </div>
 
                     {csvPreview && (
-                        <div className="border rounded-lg overflow-hidden">
+                        <div className="overflow-hidden rounded-lg border">
                             <div className="overflow-x-auto">
                                 <table className="w-full text-sm">
                                     <thead className="bg-muted">
                                         <tr>
                                             <th className="px-3 py-2 text-left font-medium">Row 1-{Math.min(10, csvPreview.rows.length)}</th>
-                                            {csvPreview.headers.map((header, index) => (
+                                            {csvPreview.headers.map((header: string, index: number) => (
                                                 <th key={index} className="px-3 py-2 text-left font-medium">
                                                     {header || `Column ${index + 1}`}
                                                 </th>
@@ -89,13 +82,14 @@ export function PreviewStep({
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {csvPreview.rows.slice(0, 10).map((row, rowIndex) => (
+                                        {csvPreview.rows.slice(0, 10).map((row: string[], rowIndex: number) => (
                                             <tr
                                                 key={rowIndex}
-                                                className={`border-t ${rowIndex + 1 >= (typeof transactionDataStart === 'number' ? transactionDataStart : 1)
-                                                    ? 'bg-green-50 dark:bg-green-950/20'
-                                                    : ''
-                                                    }`}
+                                                className={`border-t ${
+                                                    rowIndex + 1 >= (typeof transactionDataStart === 'number' ? transactionDataStart : 1)
+                                                        ? 'bg-green-50 dark:bg-green-950/20'
+                                                        : ''
+                                                }`}
                                             >
                                                 <td className="px-3 py-2 font-medium">
                                                     {rowIndex + 1}
@@ -105,7 +99,7 @@ export function PreviewStep({
                                                         </Badge>
                                                     )}
                                                 </td>
-                                                {row.map((cell, cellIndex) => (
+                                                {row.map((cell: string, cellIndex: number) => (
                                                     <td key={cellIndex} className="px-3 py-2">
                                                         {cell}
                                                     </td>

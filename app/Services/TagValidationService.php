@@ -4,17 +4,13 @@ namespace App\Services;
 
 use App\Models\Tag;
 use App\Models\User;
-use Illuminate\Validation\Validator;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Validator;
 
 class TagValidationService
 {
     /**
      * Validate tag criteria based on their type and match type.
-     *
-     * @param Validator $validator
-     * @param array $criterias
-     * @return void
      */
     public function validateCriterias(Validator $validator, array $criterias): void
     {
@@ -28,25 +24,22 @@ class TagValidationService
 
     /**
      * Validate range criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateRangeCriteria(Validator $validator, array $criteria, int $index): void
     {
-        if (!isset($criteria['match_type']) || $criteria['match_type'] !== 'range') {
+        if (! isset($criteria['match_type']) || $criteria['match_type'] !== 'range') {
             return;
         }
 
         if (empty($criteria['value_to'])) {
             $validator->errors()->add("criterias.{$index}.value_to", 'Range end value is required for range criteria.');
+
             return;
         }
 
-        if (!is_numeric($criteria['value']) || !is_numeric($criteria['value_to'])) {
+        if (! is_numeric($criteria['value']) || ! is_numeric($criteria['value_to'])) {
             $validator->errors()->add("criterias.{$index}.value", 'Range values must be numbers.');
+
             return;
         }
 
@@ -57,15 +50,10 @@ class TagValidationService
 
     /**
      * Validate description criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateDescriptionCriteria(Validator $validator, array $criteria, int $index): void
     {
-        if (!isset($criteria['type']) || $criteria['type'] !== 'description') {
+        if (! isset($criteria['type']) || $criteria['type'] !== 'description') {
             return;
         }
 
@@ -76,30 +64,27 @@ class TagValidationService
 
     /**
      * Validate amount criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateAmountCriteria(Validator $validator, array $criteria, int $index): void
     {
-        if (!isset($criteria['type']) || $criteria['type'] !== 'amount') {
+        if (! isset($criteria['type']) || $criteria['type'] !== 'amount') {
             return;
         }
 
         if (empty($criteria['value'])) {
             $validator->errors()->add("criterias.{$index}.value", 'Amount value is required.');
+
             return;
         }
 
-        if (!is_numeric($criteria['value'])) {
+        if (! is_numeric($criteria['value'])) {
             $validator->errors()->add("criterias.{$index}.value", 'Amount value must be a number.');
+
             return;
         }
 
         if (isset($criteria['match_type']) && in_array($criteria['match_type'], ['greater_than', 'less_than'])) {
-            if (!is_numeric($criteria['value'])) {
+            if (! is_numeric($criteria['value'])) {
                 $validator->errors()->add("criterias.{$index}.value", 'Amount value must be a number.');
             }
         }
@@ -107,19 +92,14 @@ class TagValidationService
 
     /**
      * Validate date criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateDateCriteria(Validator $validator, array $criteria, int $index): void
     {
-        if (!isset($criteria['type']) || $criteria['type'] !== 'date') {
+        if (! isset($criteria['type']) || $criteria['type'] !== 'date') {
             return;
         }
 
-        if (!isset($criteria['match_type'])) {
+        if (! isset($criteria['match_type'])) {
             return;
         }
 
@@ -138,36 +118,28 @@ class TagValidationService
 
     /**
      * Validate exact date criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateExactDateCriteria(Validator $validator, array $criteria, int $index): void
     {
         if (empty($criteria['value'])) {
             $validator->errors()->add("criterias.{$index}.value", 'Date value is required for exact date criteria.');
+
             return;
         }
 
-        if (!strtotime($criteria['value'])) {
+        if (! strtotime($criteria['value'])) {
             $validator->errors()->add("criterias.{$index}.value", 'Please enter a valid date (YYYY-MM-DD format).');
         }
     }
 
     /**
      * Validate day of month criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateDayOfMonthCriteria(Validator $validator, array $criteria, int $index): void
     {
         if (empty($criteria['day_of_month'])) {
             $validator->errors()->add("criterias.{$index}.day_of_month", 'Day of month is required for day of month criteria.');
+
             return;
         }
 
@@ -179,16 +151,12 @@ class TagValidationService
 
     /**
      * Validate day of week criteria.
-     *
-     * @param Validator $validator
-     * @param array $criteria
-     * @param int $index
-     * @return void
      */
     private function validateDayOfWeekCriteria(Validator $validator, array $criteria, int $index): void
     {
         if (empty($criteria['day_of_week'])) {
             $validator->errors()->add("criterias.{$index}.day_of_week", 'Day of week is required for day of week criteria.');
+
             return;
         }
 
@@ -200,10 +168,6 @@ class TagValidationService
 
     /**
      * Validate tag name uniqueness for creating a new tag.
-     *
-     * @param Validator $validator
-     * @param string $name
-     * @return void
      */
     public function validateTagNameUniqueness(Validator $validator, string $name): void
     {
@@ -216,11 +180,6 @@ class TagValidationService
 
     /**
      * Validate tag name uniqueness for updating an existing tag.
-     *
-     * @param Validator $validator
-     * @param string $name
-     * @param int $tagId
-     * @return void
      */
     public function validateTagNameUniquenessForUpdate(Validator $validator, string $name, int $tagId): void
     {
@@ -233,9 +192,6 @@ class TagValidationService
 
     /**
      * Clean and prepare tag data for validation.
-     *
-     * @param array $data
-     * @return array
      */
     public function prepareTagData(array $data): array
     {

@@ -11,7 +11,7 @@ class TransactionObserver
      */
     public function creating(Transaction $transaction): void
     {
-        if (!$transaction->unique_hash) {
+        if (! $transaction->unique_hash) {
             $transaction->unique_hash = Transaction::generateUniqueHash(
                 $transaction->user_id,
                 $transaction->date,

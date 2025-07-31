@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,7 +14,6 @@ interface TagCriteriaBuilderProps {
     transactionData?: TransactionData;
     onCriteriasChange: (criterias: TagCriteriaForm[]) => void;
     onNewCriteriaChange: (criteria: TagCriteriaForm) => void;
-    getMatchTypeOptions: (type: string) => { value: string; label: string }[];
     getCriteriaDescription: (criteria: TagCriteriaForm) => string;
     testCriteriaMatch: (criteria: TagCriteriaForm) => boolean;
 }
@@ -26,7 +24,6 @@ export function TagCriteriaBuilder({
     transactionData,
     onCriteriasChange,
     onNewCriteriaChange,
-    getMatchTypeOptions,
     getCriteriaDescription,
     testCriteriaMatch,
 }: TagCriteriaBuilderProps) {
@@ -34,6 +31,35 @@ export function TagCriteriaBuilder({
 
     const handleCriteriaChange = (field: string, value: string) => {
         onNewCriteriaChange({ ...newCriteria, [field]: value });
+    };
+
+    const getMatchTypeOptions = (type: string) => {
+        switch (type) {
+            case 'description':
+                return [
+                    { value: 'exact', label: 'Exact match' },
+                    { value: 'contains', label: 'Contains' },
+                    { value: 'starts_with', label: 'Starts with' },
+                    { value: 'ends_with', label: 'Ends with' },
+                ];
+            case 'amount':
+                return [
+                    { value: 'exact', label: 'Exact amount' },
+                    { value: 'greater_than', label: 'Greater than' },
+                    { value: 'less_than', label: 'Less than' },
+                    { value: 'range', label: 'Between amounts' },
+                ];
+            case 'date':
+                return [
+                    { value: 'exact', label: 'Exact date' },
+                    { value: 'before', label: 'Before date' },
+                    { value: 'after', label: 'After date' },
+                    { value: 'day_of_month', label: 'Day of month' },
+                    { value: 'day_of_week', label: 'Day of week' },
+                ];
+            default:
+                return [];
+        }
     };
 
     const addCriteria = () => {
@@ -122,7 +148,6 @@ export function TagCriteriaBuilder({
                             index={index}
                             transactionData={transactionData}
                             onRemove={removeCriteria}
-                            getMatchTypeOptions={getMatchTypeOptions}
                             getCriteriaDescription={getCriteriaDescription}
                             testCriteriaMatch={testCriteriaMatch}
                         />

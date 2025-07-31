@@ -14,7 +14,9 @@ class TransactionObserverTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected Account $account;
+
     protected Import $import;
 
     protected function setUp(): void

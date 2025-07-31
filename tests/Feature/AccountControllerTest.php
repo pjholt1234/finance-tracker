@@ -28,7 +28,7 @@ class AccountControllerTest extends TestCase
         $response = $this->actingAs($this->user)->get('/accounts');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn($page) => $page->component('accounts/index'));
+        $response->assertInertia(fn ($page) => $page->component('accounts/index'));
     }
 
     public function test_unauthenticated_user_cannot_access_accounts_index(): void
@@ -42,11 +42,11 @@ class AccountControllerTest extends TestCase
     {
         $account1 = Account::factory()->create([
             'user_id' => $this->user->id,
-            'name' => 'Account A'
+            'name' => 'Account A',
         ]);
         $account2 = Account::factory()->create([
             'user_id' => $this->user->id,
-            'name' => 'Account B'
+            'name' => 'Account B',
         ]);
         $otherUserAccount = Account::factory()->create();
 
@@ -54,8 +54,7 @@ class AccountControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) =>
-            $page->component('accounts/index')
+            fn ($page) => $page->component('accounts/index')
                 ->has('accounts', 2)
                 ->where('accounts.0.id', $account1->id)
                 ->where('accounts.1.id', $account2->id)
@@ -116,8 +115,7 @@ class AccountControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) =>
-            $page->component('accounts/show')
+            fn ($page) => $page->component('accounts/show')
                 ->where('account.id', $account->id)
         );
     }
@@ -139,8 +137,7 @@ class AccountControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) =>
-            $page->component('accounts/edit')
+            fn ($page) => $page->component('accounts/edit')
                 ->where('account.id', $account->id)
         );
     }

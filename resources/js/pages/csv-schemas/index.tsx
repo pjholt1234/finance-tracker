@@ -1,19 +1,13 @@
-import { Head, Link, router, usePage } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Plus, FileText, Calendar, DollarSign, Hash } from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import AppLayout from '@/layouts/app-layout';
-import { formatDate } from '@/utils/date';
+import { type BreadcrumbItem } from '@/types';
 import { CsvSchema } from '@/types/global';
-
+import { formatDate } from '@/utils/date';
+import { Head, Link, router } from '@inertiajs/react';
+import { Calendar, DollarSign, FileText, Hash, MoreHorizontal, Plus } from 'lucide-react';
 
 interface Props {
     schemas: CsvSchema[];
@@ -63,9 +57,7 @@ export default function Index({ schemas }: Props) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold tracking-tight">CSV Schemas</h1>
-                        <p className="text-muted-foreground">
-                            Manage your CSV import configurations
-                        </p>
+                        <p className="text-muted-foreground">Manage your CSV import configurations</p>
                     </div>
                     <Button asChild>
                         <Link href={route('csv-schemas.create')}>
@@ -79,9 +71,9 @@ export default function Index({ schemas }: Props) {
                 {schemas.length === 0 ? (
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center py-16">
-                            <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-                            <h3 className="text-lg font-semibold mb-2">No CSV schemas yet</h3>
-                            <p className="text-muted-foreground text-center mb-6">
+                            <FileText className="mb-4 h-12 w-12 text-muted-foreground" />
+                            <h3 className="mb-2 text-lg font-semibold">No CSV schemas yet</h3>
+                            <p className="mb-6 text-center text-muted-foreground">
                                 Create your first CSV schema to define how your transaction files should be imported.
                             </p>
                             <Button asChild>
@@ -98,14 +90,12 @@ export default function Index({ schemas }: Props) {
                             const amountConfig = getAmountConfiguration(schema);
 
                             return (
-                                <Card key={schema.id} className="hover:shadow-md transition-shadow">
+                                <Card key={schema.id} className="transition-shadow hover:shadow-md">
                                     <CardHeader className="pb-3">
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1">
                                                 <CardTitle className="text-lg">{schema.name}</CardTitle>
-                                                <CardDescription className="mt-1">
-                                                    Created {formatDate(schema.created_at)}
-                                                </CardDescription>
+                                                <CardDescription className="mt-1">Created {formatDate(schema.created_at)}</CardDescription>
                                             </div>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -115,19 +105,12 @@ export default function Index({ schemas }: Props) {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem asChild>
-                                                        <Link href={route('csv-schemas.show', schema.id)}>
-                                                            View Schema
-                                                        </Link>
+                                                        <Link href={route('csv-schemas.show', schema.id)}>View Schema</Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
-                                                        <Link href={route('csv-schemas.edit', schema.id)}>
-                                                            Edit Schema
-                                                        </Link>
+                                                        <Link href={route('csv-schemas.edit', schema.id)}>Edit Schema</Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem
-                                                        onClick={() => handleDelete(schema)}
-                                                        className="text-destructive"
-                                                    >
+                                                    <DropdownMenuItem onClick={() => handleDelete(schema)} className="text-destructive">
                                                         Delete Schema
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -138,12 +121,12 @@ export default function Index({ schemas }: Props) {
                                     <CardContent className="pt-0">
                                         <div className="space-y-3">
                                             <div className="flex items-center text-sm">
-                                                <Hash className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                <Hash className="mr-2 h-4 w-4 text-muted-foreground" />
                                                 <span>Data starts at row {schema.transaction_data_start}</span>
                                             </div>
 
                                             <div className="flex items-center text-sm">
-                                                <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
                                                 <span>Date: {schema.date_column}</span>
                                                 {schema.date_format && (
                                                     <Badge variant="secondary" className="ml-2 text-xs">
@@ -153,12 +136,12 @@ export default function Index({ schemas }: Props) {
                                             </div>
 
                                             <div className="flex items-center text-sm">
-                                                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
                                                 <span>Balance: {schema.balance_column}</span>
                                             </div>
 
                                             <div className="flex items-center text-sm">
-                                                <DollarSign className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                <DollarSign className="mr-2 h-4 w-4 text-muted-foreground" />
                                                 <div className="flex-1">
                                                     <div className="font-medium">{amountConfig.type}</div>
                                                     <div className="text-xs text-muted-foreground">{amountConfig.details}</div>
@@ -167,7 +150,7 @@ export default function Index({ schemas }: Props) {
 
                                             {schema.description_column && (
                                                 <div className="flex items-center text-sm">
-                                                    <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
+                                                    <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
                                                     <span>Description: {schema.description_column}</span>
                                                 </div>
                                             )}

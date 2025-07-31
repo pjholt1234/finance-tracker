@@ -1,7 +1,7 @@
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
 import { FormEvent } from 'react';
 
@@ -21,7 +21,7 @@ interface SaveStepProps {
     };
     errors: Partial<Record<string, string>>;
     processing: boolean;
-    onDataChange: (key: string, value: any) => void;
+    onDataChange: (key: string, value: string) => void;
     onSubmit: (e: FormEvent) => void;
     onBack: () => void;
 }
@@ -34,9 +34,7 @@ export function SaveStep({ data, errors, processing, onDataChange, onSubmit, onB
                     <CheckCircle className="h-5 w-5" />
                     Save Schema
                 </CardTitle>
-                <CardDescription>
-                    Give your CSV schema a name and save the configuration
-                </CardDescription>
+                <CardDescription>Give your CSV schema a name and save the configuration</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={onSubmit} className="space-y-4">
@@ -49,14 +47,12 @@ export function SaveStep({ data, errors, processing, onDataChange, onSubmit, onB
                             placeholder="e.g., Bank Statement Schema"
                             required
                         />
-                        {errors.name && (
-                            <p className="text-xs text-destructive">{errors.name}</p>
-                        )}
+                        {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                     </div>
 
                     {/* Summary */}
-                    <div className="bg-muted rounded-lg p-4">
-                        <h4 className="font-medium mb-3">Configuration Summary</h4>
+                    <div className="rounded-lg bg-muted p-4">
+                        <h4 className="mb-3 font-medium">Configuration Summary</h4>
                         <div className="space-y-2 text-sm">
                             <div className="flex justify-between">
                                 <span>File:</span>
@@ -122,4 +118,4 @@ export function SaveStep({ data, errors, processing, onDataChange, onSubmit, onB
             </CardContent>
         </Card>
     );
-} 
+}

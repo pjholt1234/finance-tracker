@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class TagCriteria extends Model
@@ -53,7 +53,7 @@ class TagCriteria extends Model
      */
     private function matchesDescription(?string $description): bool
     {
-        if (!$description || !$this->value) {
+        if (! $description || ! $this->value) {
             return false;
         }
 
@@ -71,7 +71,7 @@ class TagCriteria extends Model
      */
     private function matchesAmount(?float $amount): bool
     {
-        if ($amount === null || !$this->value) {
+        if ($amount === null || ! $this->value) {
             return false;
         }
 
@@ -91,7 +91,7 @@ class TagCriteria extends Model
      */
     private function matchesDate(?string $date): bool
     {
-        if (!$date) {
+        if (! $date) {
             return false;
         }
 
@@ -99,6 +99,7 @@ class TagCriteria extends Model
             $dateObj = \Carbon\Carbon::parse($date);
         } catch (\Exception $e) {
             \Log::warning("Invalid date format in matchesDate: {$date}");
+
             return false;
         }
 
@@ -160,10 +161,10 @@ class TagCriteria extends Model
             },
             'date' => match ($this->match_type) {
                 'day_of_month' => "{$typeName} on day {$this->day_of_month} of month",
-                'day_of_week' => "{$typeName} on " . $this->getDayOfWeekName($this->day_of_week),
+                'day_of_week' => "{$typeName} on ".$this->getDayOfWeekName($this->day_of_week),
                 default => "{$typeName} {$matchName}: {$this->value}",
             },
-            default => "Unknown criteria",
+            default => 'Unknown criteria',
         };
     }
 

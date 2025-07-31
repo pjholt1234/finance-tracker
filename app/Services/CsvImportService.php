@@ -5,11 +5,8 @@ namespace App\Services;
 use App\Models\CsvSchema;
 use App\Models\Import;
 use App\Models\Transaction;
-use App\Services\DateParsingService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Storage;
 
 class CsvImportService
 {
@@ -44,7 +41,7 @@ class CsvImportService
             Log::error('CSV Import failed', [
                 'import_id' => $import->id,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
             throw $e;
         }
@@ -78,7 +75,7 @@ class CsvImportService
 
         if ($encoding && $encoding !== 'UTF-8') {
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', $encoding);
-        } elseif (!$encoding) {
+        } elseif (! $encoding) {
             $fileContent = mb_convert_encoding($fileContent, 'UTF-8', 'Windows-1252');
         }
 
@@ -93,6 +90,7 @@ class CsvImportService
         $tempFile = tmpfile();
         fwrite($tempFile, $fileContent);
         rewind($tempFile);
+
         return $tempFile;
     }
 
@@ -160,9 +158,11 @@ class CsvImportService
             }
 
             $this->createTransaction($transactionData, $import);
+
             return 'imported';
         } catch (\Exception $e) {
             $this->logRowError($e, $import, $rowNumber, $row);
+
             return 'error';
         }
     }
@@ -174,6 +174,7 @@ class CsvImportService
     {
         return array_map(function ($cell) {
             $cell = preg_replace('/^\x{FEFF}/u', '', $cell);
+
             return mb_convert_encoding($cell, 'UTF-8', 'UTF-8');
         }, $row);
     }
@@ -205,7 +206,7 @@ class CsvImportService
             'import_id' => $import->id,
             'row_number' => $rowNumber,
             'error' => $e->getMessage(),
-            'row_data' => $row
+            'row_data' => $row,
         ]);
     }
 
@@ -259,6 +260,7 @@ class CsvImportService
     {
         $balanceColumnIndex = $this->getColumnIndex($schema->balance_column);
         $balanceValue = $row[$balanceColumnIndex] ?? '';
+
         return Transaction::currencyToPennies($balanceValue);
     }
 
@@ -267,7 +269,7 @@ class CsvImportService
      */
     private function extractAmounts(array $row, CsvSchema $schema): array
     {
-        if (!empty($schema->amount_column)) {
+        if (! empty($schema->amount_column)) {
             return $this->extractSingleAmount($row, $schema);
         } else {
             return $this->extractSeparateAmounts($row, $schema);
@@ -302,18 +304,18 @@ class CsvImportService
         $paidIn = null;
         $paidOut = null;
 
-        if (!empty($schema->paid_in_column)) {
+        if (! empty($schema->paid_in_column)) {
             $paidInColumnIndex = $this->getColumnIndex($schema->paid_in_column);
             $paidInValue = $row[$paidInColumnIndex] ?? '';
-            if (!empty($paidInValue)) {
+            if (! empty($paidInValue)) {
                 $paidIn = Transaction::currencyToPennies($paidInValue);
             }
         }
 
-        if (!empty($schema->paid_out_column)) {
+        if (! empty($schema->paid_out_column)) {
             $paidOutColumnIndex = $this->getColumnIndex($schema->paid_out_column);
             $paidOutValue = $row[$paidOutColumnIndex] ?? '';
-            if (!empty($paidOutValue)) {
+            if (! empty($paidOutValue)) {
                 $paidOut = Transaction::currencyToPennies($paidOutValue);
             }
         }
@@ -331,6 +333,7 @@ class CsvImportService
         }
 
         $descriptionColumnIndex = $this->getColumnIndex($schema->description_column);
+
         return $row[$descriptionColumnIndex] ?? '';
     }
 
@@ -428,15 +431,15 @@ class CsvImportService
                     'is_duplicate' => $isDuplicate,
                     'status' => $isDuplicate ? 'duplicate' : 'pending',
                     'tags' => [],
-                ]
+                ],
             ];
         } catch (\Exception $e) {
             return [
                 'error' => [
                     'row_number' => $rowNumber,
                     'error' => $e->getMessage(),
-                    'row_data' => $row
-                ]
+                    'row_data' => $row,
+                ],
             ];
         }
     }
@@ -492,6 +495,7 @@ class CsvImportService
         foreach ($approvedTransactions as $transactionData) {
             if ($this->isDuplicateTransaction($transactionData)) {
                 $duplicateRows++;
+
                 continue;
             }
 
@@ -513,7 +517,7 @@ class CsvImportService
      */
     private function filterApprovedTransactions(array $transactions): array
     {
-        return array_filter($transactions, fn($t) => $t['status'] === 'approved');
+        return array_filter($transactions, fn ($t) => $t['status'] === 'approved');
     }
 
     /**
@@ -536,6 +540,7 @@ class CsvImportService
         try {
             $transaction = $this->createTransactionFromData($transactionData, $import, $userId, $accountId);
             $this->attachTagsToTransaction($transaction, $transactionData);
+
             return true;
         } catch (\Illuminate\Database\QueryException $e) {
             return $this->handleTransactionCreationError($e, $transactionData, $import);
@@ -566,7 +571,7 @@ class CsvImportService
      */
     private function attachTagsToTransaction(Transaction $transaction, array $transactionData): void
     {
-        if (!empty($transactionData['tags'])) {
+        if (! empty($transactionData['tags'])) {
             $tagIds = array_column($transactionData['tags'], 'id');
             $transaction->tags()->attach($tagIds);
         }
@@ -582,6 +587,7 @@ class CsvImportService
                 'unique_hash' => $transactionData['unique_hash'],
                 'import_id' => $import->id,
             ]);
+
             return false;
         }
 
@@ -600,7 +606,7 @@ class CsvImportService
             'account_id' => $accountId,
             'filename' => $filename,
             'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString()
+            'trace' => $e->getTraceAsString(),
         ]);
     }
 

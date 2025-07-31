@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Sparkles } from 'lucide-react';
 import { Tag } from '@/types/global';
 

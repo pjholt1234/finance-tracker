@@ -4,7 +4,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Sparkles } from 'lucide-react';
 import { TAG_COLORS } from '@/utils/constants';
-import { generateRandomColor } from '@/utils/form-helpers';
 
 interface TagBasicInfoProps {
     name: string;

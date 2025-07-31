@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Transaction;
 use App\Models\CsvSchema;
+use App\Models\Transaction;
 use App\Observers\TransactionObserver;
 use App\Policies\CsvSchemaPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -25,7 +25,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Transaction::observe(TransactionObserver::class);
-        
+
         // Register policies
         Gate::policy(CsvSchema::class, CsvSchemaPolicy::class);
     }

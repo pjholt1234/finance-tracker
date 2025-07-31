@@ -45,16 +45,12 @@ export function TagCreateModal({
     });
 
     const [isCreating, setIsCreating] = useState(false);
-    const [isEditMode, setIsEditMode] = useState(false);
     const { showToast } = useToast();
     const { handleApiError, handleApiSuccess } = useErrorHandler();
 
     // Reset form when modal opens/closes
     useEffect(() => {
         if (open) {
-            const editMode = !!editingTag;
-            setIsEditMode(editMode);
-
             if (editingTag) {
                 // Load editing tag data
                 const mappedCriterias: TagCriteriaForm[] = (editingTag.criterias || []).map(criteria => ({
@@ -145,7 +141,7 @@ export function TagCreateModal({
         }
 
         switch (criteria.type) {
-            case 'description':
+            case 'description': {
                 const description = transactionData.description?.toLowerCase() || '';
                 const searchValue = criteria.value.toLowerCase();
 
@@ -161,8 +157,9 @@ export function TagCreateModal({
                     default:
                         return false;
                 }
+            }
 
-            case 'amount':
+            case 'amount': {
                 const amount = transactionData.amount || 0;
                 const criteriaAmount = parseFloat(criteria.value);
 
@@ -173,14 +170,16 @@ export function TagCreateModal({
                         return amount > criteriaAmount;
                     case 'less_than':
                         return amount < criteriaAmount;
-                    case 'range':
+                    case 'range': {
                         const endAmount = parseFloat(criteria.value_to || '0');
                         return amount >= criteriaAmount && amount <= endAmount;
+                    }
                     default:
                         return false;
                 }
+            }
 
-            case 'date':
+            case 'date': {
                 const transactionDate = new Date(transactionData.date || '');
                 const criteriaDate = new Date(criteria.value);
 
@@ -194,10 +193,11 @@ export function TagCreateModal({
                     case 'day_of_month':
                         return transactionDate.getDate() === parseInt(criteria.value);
                     case 'day_of_week':
-                        return transactionDate.getDay() === parseInt(criteria.value);
+                        return transactionDate.getDay() === parseInt(criteria.value) - 1;
                     default:
                         return false;
                 }
+            }
 
             default:
                 return false;
@@ -281,7 +281,6 @@ export function TagCreateModal({
                             transactionData={transactionData}
                             onCriteriasChange={(criterias) => setFormData(prev => ({ ...prev, criterias }))}
                             onNewCriteriaChange={setNewCriteria}
-                            getMatchTypeOptions={getMatchTypeOptions}
                             getCriteriaDescription={getCriteriaDescription}
                             testCriteriaMatch={testCriteriaMatch}
                         />

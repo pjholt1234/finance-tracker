@@ -1,44 +1,24 @@
-import { Head, Link, router, useForm } from '@inertiajs/react';
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TagSelect, TagSelectRef } from '@/components/ui/tag-select';
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ErrorMessage } from '@/components/ui/error-message';
-import { API_ENDPOINTS } from '@/utils/constants';
-import { buildApiParams } from '@/utils/form-helpers';
-import {
-    ArrowLeft,
-    CheckCircle,
-    XCircle,
-    AlertCircle,
-    FileText,
-    Calendar,
-    DollarSign,
-    Tag,
-    ChevronLeft,
-    ChevronRight,
-    Upload,
-    Edit3
-} from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import { formatDate } from '@/utils/date';
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogFooter,
-    DialogClose,
-} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Progress } from '@/components/ui/progress';
 import { Select } from '@/components/ui/select';
+import { TagSelect, TagSelectRef } from '@/components/ui/tag-select';
+import { Textarea } from '@/components/ui/textarea';
+import AppLayout from '@/layouts/app-layout';
 import { api, type ApiError } from '@/lib/api';
+import { type BreadcrumbItem } from '@/types';
 import { Tag as GlobalTag } from '@/types/global';
+import { API_ENDPOINTS } from '@/utils/constants';
+import { formatDate } from '@/utils/date';
+import { buildApiParams } from '@/utils/form-helpers';
+import { Head, Link, router, useForm } from '@inertiajs/react';
+import { AlertCircle, ArrowLeft, Calendar, CheckCircle, ChevronLeft, ChevronRight, DollarSign, Edit3, FileText, Upload, XCircle } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface CsvSchema {
     id: number;
@@ -102,11 +82,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function ImportReview({ preview, schema, account, filename, temp_path, tags }: Props) {
     const [transactions, setTransactions] = useState<PreviewTransaction[]>(
-        preview?.transactions?.map(t => ({
+        preview?.transactions?.map((t) => ({
             ...t,
             status: t.is_duplicate ? 'duplicate' : 'pending',
-            reference: t.reference || ''
-        })) || []
+            reference: t.reference || '',
+        })) || [],
     );
     const [availableTags, setAvailableTags] = useState<GlobalTag[]>(tags || []);
     const [suggestedTags, setSuggestedTags] = useState<GlobalTag[]>([]);
@@ -115,8 +95,12 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const [currentIndex, setCurrentIndex] = useState(0);
     const [showFinalReview, setShowFinalReview] = useState(false);
     const [tagModalOpen, setTagModalOpen] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [editingTag, setEditingTag] = useState<GlobalTag | null>(null);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [tagModalMode, setTagModalMode] = useState<'create' | 'edit'>('create');
+
+    // Tag suggestions
     const [criteriaLoading, setCriteriaLoading] = useState(false);
     const [criteriaError, setCriteriaError] = useState<string | null>(null);
     const [suggestionsLoading, setSuggestionsLoading] = useState(false);
@@ -133,7 +117,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const { processing } = useForm();
 
     // Skip duplicates when navigating - add null check
-    const nonDuplicateTransactions = (transactions || []).filter(t => !t.is_duplicate);
+    const nonDuplicateTransactions = (transactions || []).filter((t) => !t.is_duplicate);
     const currentTransaction = nonDuplicateTransactions.length > 0 ? nonDuplicateTransactions[currentIndex] : null;
 
     // Function to fetch tag suggestions based on current transaction
@@ -142,9 +126,12 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
         setSuggestionsLoading(true);
         try {
-            const amount = (transaction.paid_out && transaction.paid_out > 0)
-                ? transaction.paid_out / 100
-                : (transaction.paid_in ? transaction.paid_in / 100 : undefined);
+            const amount =
+                transaction.paid_out && transaction.paid_out > 0
+                    ? transaction.paid_out / 100
+                    : transaction.paid_in
+                      ? transaction.paid_in / 100
+                      : undefined;
 
             const params = buildApiParams({
                 description: transaction.description || '',
@@ -156,7 +143,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
             setSuggestedTags(response.data || []);
             setSuggestionsForTransaction(transaction.unique_hash);
-        } catch (error) {
+        } catch {
             setSuggestedTags([]);
         } finally {
             setSuggestionsLoading(false);
@@ -187,14 +174,14 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 return;
             }
 
-            const currentTagIds = new Set((currentTransaction.tags || []).map(tag => tag.id));
+            const currentTagIds = new Set((currentTransaction.tags || []).map((tag) => tag.id));
             const newSuggestedTags = suggestedTags
-                .filter(tag => !currentTagIds.has(tag.id) && !dismissedSuggestedTags.has(tag.id))
-                .map(tag => ({ ...tag, suggested: true }));
+                .filter((tag) => !currentTagIds.has(tag.id) && !dismissedSuggestedTags.has(tag.id))
+                .map((tag) => ({ ...tag, suggested: true }));
 
             if (newSuggestedTags.length > 0) {
                 updateCurrentTransaction({
-                    tags: [...(currentTransaction.tags || []), ...newSuggestedTags]
+                    tags: [...(currentTransaction.tags || []), ...newSuggestedTags],
                 });
             }
         }
@@ -202,14 +189,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
     // Function to handle new tag creation from TagSelect components
     const handleTagCreated = (newTag: GlobalTag) => {
-        setAvailableTags(prev => [...prev, newTag]);
-    };
-
-    // Open modal for editing a tag
-    const handleEditTag = (tag: GlobalTag) => {
-        setEditingTag(tag);
-        setTagModalMode('edit');
-        setTagModalOpen(true);
+        setAvailableTags((prev) => [...prev, newTag]);
     };
 
     const formatCurrency = (amount: number | undefined) => {
@@ -222,16 +202,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
         }).format(amount / 100);
     };
 
+    // Function to update the current transaction
     const updateCurrentTransaction = (updates: Partial<PreviewTransaction>) => {
         if (!currentTransaction) return;
-        setTransactions(prev => prev.map(t =>
-            t.unique_hash === currentTransaction.unique_hash ? { ...t, ...updates } : t
-        ));
-    };
-
-    const updateTransactionTags = (newTags: GlobalTag[]) => {
-        if (!currentTransaction) return;
-        updateCurrentTransaction({ tags: newTags });
+        setTransactions((prev) => prev.map((t) => (t.unique_hash === currentTransaction.unique_hash ? { ...t, ...updates } : t)));
     };
 
     const updateTransactionDescription = (description: string) => {
@@ -258,7 +232,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
     const handleNext = () => {
         if (currentIndex < nonDuplicateTransactions.length - 1) {
-            setCurrentIndex(prev => prev + 1);
+            setCurrentIndex((prev) => prev + 1);
         } else {
             setShowFinalReview(true);
         }
@@ -266,37 +240,40 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
     const handlePrevious = () => {
         if (currentIndex > 0) {
-            setCurrentIndex(prev => prev - 1);
+            setCurrentIndex((prev) => prev - 1);
         }
     };
 
-    const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        // Only handle global shortcuts when not focused on input elements
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-            return;
-        }
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent) => {
+            // Only handle global shortcuts when not focused on input elements
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
+            }
 
-        switch (e.key) {
-            case 'a':
-            case 'A':
-                e.preventDefault();
-                handleApprove();
-                break;
-            case 'd':
-            case 'D':
-                e.preventDefault();
-                handleDiscard();
-                break;
-            case 'ArrowLeft':
-                e.preventDefault();
-                handlePrevious();
-                break;
-            case 'ArrowRight':
-                e.preventDefault();
-                handleNext();
-                break;
-        }
-    }, [handleApprove, handleDiscard, handlePrevious, handleNext]);
+            switch (e.key) {
+                case 'a':
+                case 'A':
+                    e.preventDefault();
+                    handleApprove();
+                    break;
+                case 'd':
+                case 'D':
+                    e.preventDefault();
+                    handleDiscard();
+                    break;
+                case 'ArrowLeft':
+                    e.preventDefault();
+                    handlePrevious();
+                    break;
+                case 'ArrowRight':
+                    e.preventDefault();
+                    handleNext();
+                    break;
+            }
+        },
+        [handleApprove, handleDiscard, handlePrevious, handleNext],
+    );
 
     const handleTabNavigation = useCallback((e: KeyboardEvent) => {
         if (e.key === 'Tab') {
@@ -307,7 +284,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 approveRef.current,
                 discardRef.current,
                 prevRef.current,
-                nextRef.current
+                nextRef.current,
             ].filter(Boolean);
 
             // Find current focus index
@@ -370,10 +347,13 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     };
 
     const getStatusStats = () => {
-        const stats = (transactions || []).reduce((acc, t) => {
-            acc[t.status] = (acc[t.status] || 0) + 1;
-            return acc;
-        }, {} as Record<string, number>);
+        const stats = (transactions || []).reduce(
+            (acc, t) => {
+                acc[t.status] = (acc[t.status] || 0) + 1;
+                return acc;
+            },
+            {} as Record<string, number>,
+        );
 
         return {
             pending: stats.pending || 0,
@@ -408,7 +388,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             setCriteriaLoading(true);
             setCriteriaError(null);
             api.get(API_ENDPOINTS.TAG_CRITERIA(editingTag.id))
-                .then(res => {
+                .then((res) => {
                     if (res.data) {
                         setCriteria({
                             description_match: res.data.description_match || '',
@@ -451,7 +431,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     }, [editingTag, tagModalMode, tagModalOpen]);
 
     const handleCriteriaChange = (field: string, value: string) => {
-        setCriteria(prev => ({ ...prev, [field]: value }));
+        setCriteria((prev) => ({ ...prev, [field]: value }));
     };
 
     const handleSaveCriteria = async () => {
@@ -495,27 +475,19 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
                     {/* Header */}
                     <div>
-                        <h1 className="text-3xl font-bold mb-4">
+                        <h1 className="mb-4 text-3xl font-bold">
                             Review Transactions - {filename} • {schema.name}
                         </h1>
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-4">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setShowFinalReview(false)}
-                                >
-                                    <ArrowLeft className="h-4 w-4 mr-2" />
+                                <Button variant="outline" size="sm" onClick={() => setShowFinalReview(false)}>
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
                                     Back to Review
                                 </Button>
                             </div>
                             <div className="flex items-center gap-2">
-                                <Button
-                                    onClick={handleSubmit}
-                                    disabled={!canSubmit || processing}
-                                    className="bg-green-600 hover:bg-green-700"
-                                >
-                                    <Upload className="h-4 w-4 mr-2" />
+                                <Button onClick={handleSubmit} disabled={!canSubmit || processing} className="bg-green-600 hover:bg-green-700">
+                                    <Upload className="mr-2 h-4 w-4" />
                                     Import {stats.approved} Transactions
                                 </Button>
                             </div>
@@ -531,7 +503,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                            <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
                                 <div className="space-y-2">
                                     <p className="text-sm font-medium text-muted-foreground">Total Transactions</p>
                                     <p className="text-2xl font-bold">{preview?.total_rows || 0}</p>
@@ -556,35 +528,45 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                     <Card>
                         <CardHeader>
                             <CardTitle>All Transactions</CardTitle>
-                            <CardDescription>
-                                Review and edit transactions before final import
-                            </CardDescription>
+                            <CardDescription>Review and edit transactions before final import</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="space-y-4">
                                 {(transactions || []).map((transaction) => (
                                     <div
                                         key={transaction.unique_hash}
-                                        className={`p-4 border rounded-lg ${transaction.is_duplicate ? 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800' :
-                                            transaction.status === 'approved' ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' :
-                                                transaction.status === 'discarded' ? 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800' :
-                                                    'bg-card border-border'
-                                            }`}
+                                        className={`rounded-lg border p-4 ${
+                                            transaction.is_duplicate
+                                                ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'
+                                                : transaction.status === 'approved'
+                                                  ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                                                  : transaction.status === 'discarded'
+                                                    ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                                                    : 'border-border bg-card'
+                                        }`}
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1 space-y-3">
                                                 <div className="flex items-center gap-3">
                                                     <span className="text-sm text-muted-foreground">Row {transaction.row_number}</span>
-                                                    <Badge variant={
-                                                        transaction.is_duplicate ? "secondary" :
-                                                            transaction.status === 'approved' ? "default" :
-                                                                transaction.status === 'discarded' ? "destructive" :
-                                                                    "outline"
-                                                    }>
-                                                        {transaction.is_duplicate ? 'Duplicate' :
-                                                            transaction.status === 'approved' ? 'Approved' :
-                                                                transaction.status === 'discarded' ? 'Discarded' :
-                                                                    'Pending'}
+                                                    <Badge
+                                                        variant={
+                                                            transaction.is_duplicate
+                                                                ? 'secondary'
+                                                                : transaction.status === 'approved'
+                                                                  ? 'default'
+                                                                  : transaction.status === 'discarded'
+                                                                    ? 'destructive'
+                                                                    : 'outline'
+                                                        }
+                                                    >
+                                                        {transaction.is_duplicate
+                                                            ? 'Duplicate'
+                                                            : transaction.status === 'approved'
+                                                              ? 'Approved'
+                                                              : transaction.status === 'discarded'
+                                                                ? 'Discarded'
+                                                                : 'Pending'}
                                                     </Badge>
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -594,14 +576,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
                                                 <div className="flex items-center gap-4">
                                                     {transaction.paid_in && (
-                                                        <div className="text-green-600 font-medium">
-                                                            +{formatCurrency(transaction.paid_in)}
-                                                        </div>
+                                                        <div className="font-medium text-green-600">+{formatCurrency(transaction.paid_in)}</div>
                                                     )}
                                                     {transaction.paid_out && (
-                                                        <div className="text-red-600 font-medium">
-                                                            -{formatCurrency(transaction.paid_out)}
-                                                        </div>
+                                                        <div className="font-medium text-red-600">-{formatCurrency(transaction.paid_out)}</div>
                                                     )}
                                                     <div className="text-sm text-muted-foreground">
                                                         Balance: {formatCurrency(transaction.balance)}
@@ -615,10 +593,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             <Textarea
                                                                 value={transaction.description}
                                                                 onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => {
-                                                                    const updatedTransactions = (transactions || []).map(t =>
+                                                                    const updatedTransactions = (transactions || []).map((t) =>
                                                                         t.unique_hash === transaction.unique_hash
                                                                             ? { ...t, description: e.target.value }
-                                                                            : t
+                                                                            : t,
                                                                     );
                                                                     setTransactions(updatedTransactions);
                                                                 }}
@@ -634,10 +612,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             <Input
                                                                 value={transaction.reference || ''}
                                                                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                                                                    const updatedTransactions = (transactions || []).map(t =>
+                                                                    const updatedTransactions = (transactions || []).map((t) =>
                                                                         t.unique_hash === transaction.unique_hash
                                                                             ? { ...t, reference: e.target.value }
-                                                                            : t
+                                                                            : t,
                                                                     );
                                                                     setTransactions(updatedTransactions);
                                                                 }}
@@ -654,10 +632,8 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         tags={availableTags}
                                                         selectedTags={transaction.tags}
                                                         onTagsChange={(newTags) => {
-                                                            const updatedTransactions = (transactions || []).map(t =>
-                                                                t.unique_hash === transaction.unique_hash
-                                                                    ? { ...t, tags: newTags }
-                                                                    : t
+                                                            const updatedTransactions = (transactions || []).map((t) =>
+                                                                t.unique_hash === transaction.unique_hash ? { ...t, tags: newTags } : t,
                                                             );
                                                             setTransactions(updatedTransactions);
                                                         }}
@@ -668,7 +644,11 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         suggestionsLoading={suggestionsLoading}
                                                         transactionData={{
                                                             description: transaction.description,
-                                                            amount: transaction.paid_in ? transaction.paid_in / 100 : transaction.paid_out ? transaction.paid_out / 100 : undefined,
+                                                            amount: transaction.paid_in
+                                                                ? transaction.paid_in / 100
+                                                                : transaction.paid_out
+                                                                  ? transaction.paid_out / 100
+                                                                  : undefined,
                                                             date: transaction.date,
                                                         }}
                                                     />
@@ -682,10 +662,8 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         size="sm"
                                                         variant={transaction.status === 'approved' ? 'default' : 'outline'}
                                                         onClick={() => {
-                                                            const updatedTransactions = (transactions || []).map(t =>
-                                                                t.unique_hash === transaction.unique_hash
-                                                                    ? { ...t, status: 'approved' as const }
-                                                                    : t
+                                                            const updatedTransactions = (transactions || []).map((t) =>
+                                                                t.unique_hash === transaction.unique_hash ? { ...t, status: 'approved' as const } : t,
                                                             );
                                                             setTransactions(updatedTransactions);
                                                         }}
@@ -697,10 +675,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                         size="sm"
                                                         variant={transaction.status === 'discarded' ? 'destructive' : 'outline'}
                                                         onClick={() => {
-                                                            const updatedTransactions = (transactions || []).map(t =>
+                                                            const updatedTransactions = (transactions || []).map((t) =>
                                                                 t.unique_hash === transaction.unique_hash
                                                                     ? { ...t, status: 'discarded' as const }
-                                                                    : t
+                                                                    : t,
                                                             );
                                                             setTransactions(updatedTransactions);
                                                         }}
@@ -739,18 +717,17 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     const handleTagsChange = (newTags: GlobalTag[]) => {
         // Check if any suggested tags were removed (dismissed)
         const currentSuggestedTagIds = new Set(
-            (currentTransaction?.tags || [])
-                .filter(tag => (tag as any).suggested === true)
-                .map(tag => tag.id)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (currentTransaction?.tags || []).filter((tag) => (tag as any).suggested === true).map((tag) => tag.id),
         );
-        const newTagIds = new Set(newTags.map(tag => tag.id));
+        const newTagIds = new Set(newTags.map((tag) => tag.id));
 
         // Find dismissed suggested tags
-        const dismissedTags = Array.from(currentSuggestedTagIds).filter(id => !newTagIds.has(id));
+        const dismissedTags = Array.from(currentSuggestedTagIds).filter((id) => !newTagIds.has(id));
 
         // Add dismissed tags to the dismissed set
         if (dismissedTags.length > 0) {
-            setDismissedSuggestedTags(prev => new Set([...prev, ...dismissedTags]));
+            setDismissedSuggestedTags((prev) => new Set([...prev, ...dismissedTags]));
         }
 
         updateCurrentTransaction({ tags: newTags });
@@ -763,14 +740,14 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             <div className="flex h-full flex-1 flex-col gap-6 rounded-xl p-4">
                 {/* Header */}
                 <div>
-                    <h1 className="text-3xl font-bold mb-4">
+                    <h1 className="mb-4 text-3xl font-bold">
                         Review Transactions - {filename} • {schema.name}
                     </h1>
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <Link href={route('transaction-imports.create')}>
                                 <Button variant="outline" size="sm">
-                                    <ArrowLeft className="h-4 w-4 mr-2" />
+                                    <ArrowLeft className="mr-2 h-4 w-4" />
                                     Back to Import
                                 </Button>
                             </Link>
@@ -779,12 +756,8 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                             <span className="text-sm text-muted-foreground">
                                 {currentIndex + 1} of {nonDuplicateTransactions.length}
                             </span>
-                            <Button
-                                onClick={() => setShowFinalReview(true)}
-                                variant="outline"
-                                size="sm"
-                            >
-                                <Edit3 className="h-4 w-4 mr-2" />
+                            <Button onClick={() => setShowFinalReview(true)} variant="outline" size="sm">
+                                <Edit3 className="mr-2 h-4 w-4" />
                                 Final Review
                             </Button>
                         </div>
@@ -793,7 +766,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
 
                 {/* Progress Bar */}
                 <div className="space-y-2">
-                    <div className="flex justify-between items-center">
+                    <div className="flex items-center justify-between">
                         <span className="text-sm font-medium">Progress</span>
                         <span className="text-sm text-muted-foreground">
                             {currentIndex + 1} / {nonDuplicateTransactions.length}
@@ -810,17 +783,13 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 <FileText className="h-5 w-5" />
                                 Transaction {currentIndex + 1}
                             </span>
-                            <Badge variant="outline">
-                                Row {currentTransaction.row_number}
-                            </Badge>
+                            <Badge variant="outline">Row {currentTransaction.row_number}</Badge>
                         </CardTitle>
-                        <CardDescription>
-                            Review transaction details and assign tags
-                        </CardDescription>
+                        <CardDescription>Review transaction details and assign tags</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         {/* Transaction Details */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                             <div className="space-y-2">
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -836,14 +805,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 </div>
                                 <div className="space-y-1">
                                     {currentTransaction.paid_in && (
-                                        <div className="text-lg font-semibold text-green-600">
-                                            +{formatCurrency(currentTransaction.paid_in)}
-                                        </div>
+                                        <div className="text-lg font-semibold text-green-600">+{formatCurrency(currentTransaction.paid_in)}</div>
                                     )}
                                     {currentTransaction.paid_out && (
-                                        <div className="text-lg font-semibold text-red-600">
-                                            -{formatCurrency(currentTransaction.paid_out)}
-                                        </div>
+                                        <div className="text-lg font-semibold text-red-600">-{formatCurrency(currentTransaction.paid_out)}</div>
                                     )}
                                 </div>
                             </div>
@@ -892,7 +857,11 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                     suggestionsLoading={suggestionsLoading}
                                     transactionData={{
                                         description: currentTransaction.description,
-                                        amount: currentTransaction.paid_in ? currentTransaction.paid_in / 100 : currentTransaction.paid_out ? currentTransaction.paid_out / 100 : undefined,
+                                        amount: currentTransaction.paid_in
+                                            ? currentTransaction.paid_in / 100
+                                            : currentTransaction.paid_out
+                                              ? currentTransaction.paid_out / 100
+                                              : undefined,
                                         date: currentTransaction.date,
                                     }}
                                 />
@@ -900,7 +869,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex items-center justify-between pt-4 border-t">
+                        <div className="flex items-center justify-between border-t pt-4">
                             <Button
                                 ref={prevRef}
                                 variant="outline"
@@ -908,7 +877,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 disabled={currentIndex === 0}
                                 className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
-                                <ChevronLeft className="h-4 w-4 mr-2" />
+                                <ChevronLeft className="mr-2 h-4 w-4" />
                                 Previous
                             </Button>
 
@@ -918,7 +887,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                     className="bg-green-600 hover:bg-green-700 focus-visible:ring-2 focus-visible:ring-green-500 focus-visible:ring-offset-2"
                                     onClick={handleApprove}
                                 >
-                                    <CheckCircle className="h-4 w-4 mr-2" />
+                                    <CheckCircle className="mr-2 h-4 w-4" />
                                     Approve (A)
                                 </Button>
                                 <Button
@@ -927,7 +896,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                     onClick={handleDiscard}
                                     className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                 >
-                                    <XCircle className="h-4 w-4 mr-2" />
+                                    <XCircle className="mr-2 h-4 w-4" />
                                     Discard (D)
                                 </Button>
                             </div>
@@ -939,13 +908,15 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 className="focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                                 {currentIndex === nonDuplicateTransactions.length - 1 ? 'Finish' : 'Next'}
-                                <ChevronRight className="h-4 w-4 ml-2" />
+                                <ChevronRight className="ml-2 h-4 w-4" />
                             </Button>
                         </div>
 
                         {/* Keyboard Shortcuts Help */}
-                        <div className="text-xs text-muted-foreground pt-2 border-t">
-                            <p><strong>Keyboard shortcuts:</strong> A = Approve, D = Discard, ← → = Navigate, Tab = Next field</p>
+                        <div className="border-t pt-2 text-xs text-muted-foreground">
+                            <p>
+                                <strong>Keyboard shortcuts:</strong> A = Approve, D = Discard, ← → = Navigate, Tab = Next field
+                            </p>
                         </div>
                     </CardContent>
                 </Card>
@@ -962,19 +933,12 @@ export default function ImportReview({ preview, schema, account, filename, temp_
             </div>
             {/* Tag Criteria Modal */}
             <Dialog open={tagModalOpen} onOpenChange={setTagModalOpen}>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
                     <DialogHeader>
-                        <DialogTitle>
-                            {tagModalMode === 'create' ? 'Create Tag Criteria' : 'Edit Tag Criteria'}
-                        </DialogTitle>
+                        <DialogTitle>{tagModalMode === 'create' ? 'Create Tag Criteria' : 'Edit Tag Criteria'}</DialogTitle>
                     </DialogHeader>
 
-                    {criteriaError && (
-                        <ErrorMessage
-                            error={criteriaError}
-                            onDismiss={() => setCriteriaError(null)}
-                        />
-                    )}
+                    {criteriaError && <ErrorMessage error={criteriaError} onDismiss={() => setCriteriaError(null)} />}
 
                     <div className="space-y-4">
                         {/* Description Criteria */}
@@ -985,10 +949,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 value={criteria.description_match}
                                 onChange={(e) => handleCriteriaChange('description_match', e.target.value)}
                             />
-                            <Select
-                                value={criteria.match_type}
-                                onValueChange={(value) => handleCriteriaChange('match_type', value)}
-                            >
+                            <Select value={criteria.match_type} onValueChange={(value) => handleCriteriaChange('match_type', value)}>
                                 <option value="exact">Exact Match</option>
                                 <option value="contains">Contains</option>
                             </Select>
@@ -1019,26 +980,15 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Date Criteria</label>
                             <div className="grid grid-cols-2 gap-2">
-                                <Input
-                                    type="date"
-                                    value={criteria.date_start}
-                                    onChange={(e) => handleCriteriaChange('date_start', e.target.value)}
-                                />
-                                <Input
-                                    type="date"
-                                    value={criteria.date_end}
-                                    onChange={(e) => handleCriteriaChange('date_end', e.target.value)}
-                                />
+                                <Input type="date" value={criteria.date_start} onChange={(e) => handleCriteriaChange('date_start', e.target.value)} />
+                                <Input type="date" value={criteria.date_end} onChange={(e) => handleCriteriaChange('date_end', e.target.value)} />
                             </div>
                         </div>
 
                         {/* Logic Type */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium">Logic Type</label>
-                            <Select
-                                value={criteria.logic_type}
-                                onValueChange={(value) => handleCriteriaChange('logic_type', value)}
-                            >
+                            <Select value={criteria.logic_type} onValueChange={(value) => handleCriteriaChange('logic_type', value)}>
                                 <option value="and">AND (All criteria must match)</option>
                                 <option value="or">OR (Any criteria can match)</option>
                             </Select>
@@ -1049,10 +999,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                         <DialogClose asChild>
                             <Button variant="outline">Cancel</Button>
                         </DialogClose>
-                        <Button
-                            onClick={handleSaveCriteria}
-                            disabled={criteriaLoading}
-                        >
+                        <Button onClick={handleSaveCriteria} disabled={criteriaLoading}>
                             {criteriaLoading ? 'Saving...' : 'Save Criteria'}
                         </Button>
                     </DialogFooter>

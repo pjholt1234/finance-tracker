@@ -8,7 +8,6 @@ interface TagCriteriaRowProps {
     index: number;
     transactionData?: TransactionData;
     onRemove: (index: number) => void;
-    getMatchTypeOptions: (type: string) => { value: string; label: string }[];
     getCriteriaDescription: (criteria: TagCriteriaForm) => string;
     testCriteriaMatch: (criteria: TagCriteriaForm) => boolean;
 }
@@ -18,7 +17,6 @@ export function TagCriteriaRow({
     index,
     transactionData,
     onRemove,
-    getMatchTypeOptions,
     getCriteriaDescription,
     testCriteriaMatch,
 }: TagCriteriaRowProps) {

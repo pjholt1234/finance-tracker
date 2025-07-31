@@ -1,4 +1,4 @@
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEventHandler, useState } from 'react';
 import OtpInput from 'react-otp-input';
@@ -13,6 +13,7 @@ export default function TwoFactorChallenge() {
     const [code, setCode] = useState('');
     const [useRecoveryCode, setUseRecoveryCode] = useState(false);
     const [processing, setProcessing] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const [errors, setErrors] = useState<any>({});
 
     const { data, setData } = useForm({
@@ -26,19 +27,27 @@ export default function TwoFactorChallenge() {
         setErrors({});
 
         if (useRecoveryCode) {
-            router.post('/two-factor-challenge', {
-                recovery_code: data.recovery_code,
-            }, {
-                onFinish: () => setProcessing(false),
-                onError: (errors) => setErrors(errors),
-            });
+            router.post(
+                '/two-factor-challenge',
+                {
+                    recovery_code: data.recovery_code,
+                },
+                {
+                    onFinish: () => setProcessing(false),
+                    onError: (errors) => setErrors(errors),
+                },
+            );
         } else {
-            router.post('/two-factor-challenge', {
-                code: code,
-            }, {
-                onFinish: () => setProcessing(false),
-                onError: (errors) => setErrors(errors),
-            });
+            router.post(
+                '/two-factor-challenge',
+                {
+                    code: code,
+                },
+                {
+                    onFinish: () => setProcessing(false),
+                    onError: (errors) => setErrors(errors),
+                },
+            );
         }
     };
 
@@ -47,8 +56,8 @@ export default function TwoFactorChallenge() {
             title="Two-Factor Authentication"
             description={
                 useRecoveryCode
-                    ? "Please confirm access to your account by entering one of your emergency recovery codes."
-                    : "Please confirm access to your account by entering the authentication code provided by your authenticator application."
+                    ? 'Please confirm access to your account by entering one of your emergency recovery codes.'
+                    : 'Please confirm access to your account by entering the authentication code provided by your authenticator application.'
             }
         >
             <Head title="Two-Factor Challenge" />
@@ -106,7 +115,7 @@ export default function TwoFactorChallenge() {
                             setCode('');
                             setData('recovery_code', '');
                         }}
-                        className="text-sm text-blue-600 hover:text-blue-500 underline"
+                        className="text-sm text-blue-600 underline hover:text-blue-500"
                     >
                         {useRecoveryCode ? 'Use authentication code' : 'Use recovery code'}
                     </button>
@@ -118,4 +127,4 @@ export default function TwoFactorChallenge() {
             </form>
         </AuthLayout>
     );
-} 
+}

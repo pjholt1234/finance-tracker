@@ -50,9 +50,10 @@ class DateParsingService
     /**
      * Parse a date string and return it in Y-m-d format
      *
-     * @param string $dateString The date string to parse
-     * @param string|null $expectedFormat Optional expected format to try first
+     * @param  string  $dateString  The date string to parse
+     * @param  string|null  $expectedFormat  Optional expected format to try first
      * @return string Date in Y-m-d format
+     *
      * @throws Exception If date cannot be parsed
      */
     public function parseDate(string $dateString, ?string $expectedFormat = null): string
@@ -96,6 +97,7 @@ class DateParsingService
             // Only use general parsing if the string contains a year (4 digits)
             if (preg_match('/\b\d{4}\b/', $dateString)) {
                 $date = Carbon::parse($dateString);
+
                 return $date->format('Y-m-d');
             }
         } catch (Exception $e) {
@@ -107,9 +109,6 @@ class DateParsingService
 
     /**
      * Normalize date string for better parsing
-     *
-     * @param string $dateString
-     * @return string
      */
     private function normalizeDateString(string $dateString): string
     {
@@ -124,11 +123,6 @@ class DateParsingService
 
     /**
      * Check if a parsed date is valid for the given format
-     *
-     * @param Carbon $date
-     * @param string $format
-     * @param string $originalString
-     * @return bool
      */
     private function isValidDateForFormat(Carbon $date, string $format, string $originalString): bool
     {
@@ -159,7 +153,7 @@ class DateParsingService
     /**
      * Detect the most likely date format from a sample of date strings
      *
-     * @param array $dateStrings Array of date strings to analyze
+     * @param  array  $dateStrings  Array of date strings to analyze
      * @return string|null The most likely format or null if none found
      */
     public function detectDateFormat(array $dateStrings): ?string
@@ -190,15 +184,12 @@ class DateParsingService
 
         // Return the format that matched the most strings
         arsort($formatCounts);
+
         return array_key_first($formatCounts);
     }
 
     /**
      * Validate if a date string can be parsed
-     *
-     * @param string $dateString
-     * @param string|null $expectedFormat
-     * @return bool
      */
     public function isValidDate(string $dateString, ?string $expectedFormat = null): bool
     {
@@ -206,10 +197,12 @@ class DateParsingService
             // If expected format is provided, only check that format
             if ($expectedFormat) {
                 $date = Carbon::createFromFormat($expectedFormat, $dateString);
+
                 return $date && $this->isValidDateForFormat($date, $expectedFormat, $dateString);
             }
 
             $this->parseDate($dateString, $expectedFormat);
+
             return true;
         } catch (Exception $e) {
             return false;
@@ -218,8 +211,6 @@ class DateParsingService
 
     /**
      * Get all supported date formats
-     *
-     * @return array
      */
     public function getSupportedFormats(): array
     {

@@ -1,21 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import {
-    ArrowLeft,
-    Edit,
-    Calendar,
-    DollarSign,
-    Hash,
-    FileText,
-    Clock,
-} from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-import { formatDateTime } from '@/utils/date';
+import { type BreadcrumbItem } from '@/types';
 import { CsvSchema } from '@/types/global';
+import { formatDateTime } from '@/utils/date';
+import { Head, Link, router } from '@inertiajs/react';
+import { ArrowLeft, Calendar, Clock, DollarSign, Edit, FileText, Hash } from 'lucide-react';
 
 interface Props {
     schema: CsvSchema;
@@ -77,9 +69,7 @@ export default function Show({ schema }: Props) {
                         </Button>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight">{schema.name}</h1>
-                            <p className="text-muted-foreground">
-                                CSV Schema Configuration
-                            </p>
+                            <p className="text-muted-foreground">CSV Schema Configuration</p>
                         </div>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -149,9 +139,7 @@ export default function Show({ schema }: Props) {
                                 <Hash className="h-5 w-5" />
                                 Column Mapping
                             </CardTitle>
-                            <CardDescription>
-                                How CSV columns are mapped to transaction fields
-                            </CardDescription>
+                            <CardDescription>How CSV columns are mapped to transaction fields</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
@@ -159,9 +147,7 @@ export default function Show({ schema }: Props) {
                                     <Calendar className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm font-medium">Date Column</span>
                                 </div>
-                                <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                    Column {schema.date_column}
-                                </span>
+                                <span className="rounded bg-muted px-2 py-1 font-mono text-sm">Column {schema.date_column}</span>
                             </div>
 
                             <Separator />
@@ -171,9 +157,7 @@ export default function Show({ schema }: Props) {
                                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm font-medium">Balance Column</span>
                                 </div>
-                                <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                    Column {schema.balance_column}
-                                </span>
+                                <span className="rounded bg-muted px-2 py-1 font-mono text-sm">Column {schema.balance_column}</span>
                             </div>
 
                             <Separator />
@@ -197,9 +181,7 @@ export default function Show({ schema }: Props) {
                                             <FileText className="h-4 w-4 text-muted-foreground" />
                                             <span className="text-sm font-medium">Description Column</span>
                                         </div>
-                                        <span className="text-sm font-mono bg-muted px-2 py-1 rounded">
-                                            Column {schema.description_column}
-                                        </span>
+                                        <span className="rounded bg-muted px-2 py-1 font-mono text-sm">Column {schema.description_column}</span>
                                     </div>
                                 </>
                             )}
@@ -212,9 +194,7 @@ export default function Show({ schema }: Props) {
                                             <Calendar className="h-4 w-4 text-muted-foreground" />
                                             <span className="text-sm font-medium">Date Format</span>
                                         </div>
-                                        <Badge variant="secondary">
-                                            {schema.date_format}
-                                        </Badge>
+                                        <Badge variant="secondary">{schema.date_format}</Badge>
                                     </div>
                                 </>
                             )}

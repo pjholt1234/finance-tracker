@@ -1,22 +1,20 @@
-import { Head, useForm } from '@inertiajs/react';
-import { TAG_COLORS, VALIDATION_MESSAGES } from '@/utils/constants';
-import { generateRandomColor } from '@/utils/form-helpers';
-import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Link } from '@inertiajs/react';
-import { type BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import { FormEvent, useState, useEffect } from 'react';
-import { TagCriteria, TagFormData, Tag } from '@/types/global';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/toast';
-
+import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Tag, TagCriteria, TagFormData } from '@/types/global';
+import { VALIDATION_MESSAGES } from '@/utils/constants';
+import { generateRandomColor } from '@/utils/form-helpers';
+import { Head, Link, useForm } from '@inertiajs/react';
+import { ArrowLeft, Plus, Save, Trash2 } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
 
 export default function TagsEdit({ tag }: { tag: Tag }) {
     const { data, setData, put, processing, errors } = useForm<TagFormData>({
@@ -143,7 +141,10 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
     };
 
     const removeCriteria = (index: number) => {
-        setData('criterias', data.criterias.filter((_, i) => i !== index));
+        setData(
+            'criterias',
+            data.criterias.filter((_, i) => i !== index),
+        );
     };
 
     const getMatchTypeOptions = (type: string) => {
@@ -175,7 +176,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
 
     const getCriteriaDescription = (criteria: Criteria): string => {
         const typeName = criteria.type.charAt(0).toUpperCase() + criteria.type.slice(1);
-        const matchName = getMatchTypeOptions(criteria.type).find(opt => opt.value === criteria.match_type)?.label || criteria.match_type;
+        const matchName = getMatchTypeOptions(criteria.type).find((opt) => opt.value === criteria.match_type)?.label || criteria.match_type;
 
         switch (criteria.type) {
             case 'description':
@@ -227,23 +228,19 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                     </Button>
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Edit Tag</h1>
-                        <p className="text-muted-foreground">
-                            Update the details for "{tag.name}".
-                        </p>
+                        <p className="text-muted-foreground">Update the details for "{tag.name}".</p>
                     </div>
                 </div>
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {/* Tag Details and Criteria Management - Side by Side */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                         {/* Tag Details */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Tag Details</CardTitle>
-                                <CardDescription>
-                                    Update the tag name, color, and description.
-                                </CardDescription>
+                                <CardDescription>Update the tag name, color, and description.</CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 {/* Name */}
@@ -257,9 +254,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                         className={errors.name ? 'border-red-500' : ''}
                                         required
                                     />
-                                    {errors.name && (
-                                        <p className="text-sm text-red-500">{errors.name}</p>
-                                    )}
+                                    {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
                                 </div>
 
                                 {/* Color */}
@@ -271,30 +266,19 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                             type="color"
                                             value={data.color}
                                             onChange={(e) => setData('color', e.target.value)}
-                                            className="w-16 h-10 p-1 border rounded"
+                                            className="h-10 w-16 rounded border p-1"
                                         />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            onClick={handleGenerateRandomColor}
-                                        >
+                                        <Button type="button" variant="outline" onClick={handleGenerateRandomColor}>
                                             Random Color
                                         </Button>
                                         {data.color && (
                                             <div className="flex items-center space-x-2">
-                                                <div
-                                                    className="w-6 h-6 rounded border"
-                                                    style={{ backgroundColor: data.color }}
-                                                />
-                                                <span className="text-sm text-muted-foreground">
-                                                    {data.color}
-                                                </span>
+                                                <div className="h-6 w-6 rounded border" style={{ backgroundColor: data.color }} />
+                                                <span className="text-sm text-muted-foreground">{data.color}</span>
                                             </div>
                                         )}
                                     </div>
-                                    {errors.color && (
-                                        <p className="text-sm text-red-500">{errors.color}</p>
-                                    )}
+                                    {errors.color && <p className="text-sm text-red-500">{errors.color}</p>}
                                 </div>
 
                                 {/* Description */}
@@ -308,9 +292,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                         rows={3}
                                         className={errors.description ? 'border-red-500' : ''}
                                     />
-                                    {errors.description && (
-                                        <p className="text-sm text-red-500">{errors.description}</p>
-                                    )}
+                                    {errors.description && <p className="text-sm text-red-500">{errors.description}</p>}
                                 </div>
                             </CardContent>
                         </Card>
@@ -320,8 +302,8 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                             <CardHeader>
                                 <CardTitle>Auto-Apply Criteria</CardTitle>
                                 <CardDescription>
-                                    Define criteria to automatically apply this tag to matching transactions.
-                                    You can add multiple criteria types and combine them with AND/OR logic.
+                                    Define criteria to automatically apply this tag to matching transactions. You can add multiple criteria types and
+                                    combine them with AND/OR logic.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
@@ -332,42 +314,29 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                         <div className="space-y-2">
                                             {data.criterias.map((criteria, index) => (
                                                 <div key={index} className="space-y-2">
-                                                    <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                                                    <div className="flex items-center justify-between rounded-lg border bg-muted/50 p-3">
                                                         <div className="flex items-center space-x-2">
                                                             <Badge variant="outline">
                                                                 {criteria.type.charAt(0).toUpperCase() + criteria.type.slice(1)}
                                                             </Badge>
                                                             <span className="text-sm">{getCriteriaDescription(criteria)}</span>
                                                         </div>
-                                                        <Button
-                                                            type="button"
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            onClick={() => removeCriteria(index)}
-                                                        >
+                                                        <Button type="button" variant="ghost" size="sm" onClick={() => removeCriteria(index)}>
                                                             <Trash2 className="h-4 w-4" />
                                                         </Button>
                                                     </div>
                                                     {/* Show errors for this specific criteria */}
                                                     {errors[`criterias.${index}.value`] && (
-                                                        <p className="text-sm text-red-500 px-3">
-                                                            {errors[`criterias.${index}.value`]}
-                                                        </p>
+                                                        <p className="px-3 text-sm text-red-500">{errors[`criterias.${index}.value`]}</p>
                                                     )}
                                                     {errors[`criterias.${index}.value_to`] && (
-                                                        <p className="text-sm text-red-500 px-3">
-                                                            {errors[`criterias.${index}.value_to`]}
-                                                        </p>
+                                                        <p className="px-3 text-sm text-red-500">{errors[`criterias.${index}.value_to`]}</p>
                                                     )}
                                                     {errors[`criterias.${index}.day_of_month`] && (
-                                                        <p className="text-sm text-red-500 px-3">
-                                                            {errors[`criterias.${index}.day_of_month`]}
-                                                        </p>
+                                                        <p className="px-3 text-sm text-red-500">{errors[`criterias.${index}.day_of_month`]}</p>
                                                     )}
                                                     {errors[`criterias.${index}.day_of_week`] && (
-                                                        <p className="text-sm text-red-500 px-3">
-                                                            {errors[`criterias.${index}.day_of_week`]}
-                                                        </p>
+                                                        <p className="px-3 text-sm text-red-500">{errors[`criterias.${index}.day_of_week`]}</p>
                                                     )}
                                                 </div>
                                             ))}
@@ -379,14 +348,14 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                 {/* Add New Criteria */}
                                 <div className="space-y-4">
                                     <Label>Add New Criteria</Label>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                         {/* Criteria Type */}
                                         <div className="space-y-2">
                                             <Label>Type</Label>
                                             <Select
                                                 value={newCriteria.type}
                                                 onValueChange={(value: 'description' | 'amount' | 'date') =>
-                                                    setNewCriteria(prev => ({ ...prev, type: value, match_type: 'exact' }))
+                                                    setNewCriteria((prev) => ({ ...prev, type: value, match_type: 'exact' }))
                                                 }
                                             >
                                                 <SelectTrigger>
@@ -405,15 +374,13 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                             <Label>Match Type</Label>
                                             <Select
                                                 value={newCriteria.match_type}
-                                                onValueChange={(value) =>
-                                                    setNewCriteria(prev => ({ ...prev, match_type: value }))
-                                                }
+                                                onValueChange={(value) => setNewCriteria((prev) => ({ ...prev, match_type: value }))}
                                             >
                                                 <SelectTrigger>
                                                     <SelectValue />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {getMatchTypeOptions(newCriteria.type).map(option => (
+                                                    {getMatchTypeOptions(newCriteria.type).map((option) => (
                                                         <SelectItem key={option.value} value={option.value}>
                                                             {option.label}
                                                         </SelectItem>
@@ -427,17 +394,19 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                             <Label>Value</Label>
                                             <Input
                                                 value={newCriteria.value}
-                                                onChange={(e) => setNewCriteria(prev => ({ ...prev, value: e.target.value }))}
+                                                onChange={(e) => setNewCriteria((prev) => ({ ...prev, value: e.target.value }))}
                                                 placeholder={
-                                                    newCriteria.type === 'description' ? 'Enter text to match' :
-                                                        newCriteria.type === 'amount' ? 'Enter amount' :
-                                                            newCriteria.type === 'date' ? 'Enter date (YYYY-MM-DD)' : 'Enter value'
+                                                    newCriteria.type === 'description'
+                                                        ? 'Enter text to match'
+                                                        : newCriteria.type === 'amount'
+                                                          ? 'Enter amount'
+                                                          : newCriteria.type === 'date'
+                                                            ? 'Enter date (YYYY-MM-DD)'
+                                                            : 'Enter value'
                                                 }
                                                 className={errors['criterias.*.value'] ? 'border-red-500' : ''}
                                             />
-                                            {errors['criterias.*.value'] && (
-                                                <p className="text-sm text-red-500">{errors['criterias.*.value']}</p>
-                                            )}
+                                            {errors['criterias.*.value'] && <p className="text-sm text-red-500">{errors['criterias.*.value']}</p>}
                                         </div>
 
                                         {/* Value To (for ranges) */}
@@ -446,7 +415,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                                 <Label>To *</Label>
                                                 <Input
                                                     value={newCriteria.value_to || ''}
-                                                    onChange={(e) => setNewCriteria(prev => ({ ...prev, value_to: e.target.value }))}
+                                                    onChange={(e) => setNewCriteria((prev) => ({ ...prev, value_to: e.target.value }))}
                                                     placeholder="Maximum value"
                                                     className={errors['criterias.*.value_to'] ? 'border-red-500' : ''}
                                                     required
@@ -458,13 +427,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                         )}
                                     </div>
 
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={addCriteria}
-                                        disabled={!newCriteria.value}
-                                        className="w-full"
-                                    >
+                                    <Button type="button" variant="outline" onClick={addCriteria} disabled={!newCriteria.value} className="w-full">
                                         <Plus className="mr-2 h-4 w-4" />
                                         Add Criteria
                                     </Button>
@@ -477,7 +440,10 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                                         <Select
                                             value={data.criterias[0]?.logic_type || 'and'}
                                             onValueChange={(value: 'and' | 'or') =>
-                                                setData('criterias', data.criterias.map(c => ({ ...c, logic_type: value })))
+                                                setData(
+                                                    'criterias',
+                                                    data.criterias.map((c) => ({ ...c, logic_type: value })),
+                                                )
                                             }
                                         >
                                             <SelectTrigger className="w-full">
@@ -497,9 +463,7 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
                     {/* Actions */}
                     <div className="flex items-center justify-end space-x-3">
                         <Button variant="outline" asChild>
-                            <Link href={route('tags.index')}>
-                                Cancel
-                            </Link>
+                            <Link href={route('tags.index')}>Cancel</Link>
                         </Button>
                         <Button type="submit" disabled={processing}>
                             <Save className="mr-2 h-4 w-4" />
@@ -510,4 +474,4 @@ export default function TagsEdit({ tag }: { tag: Tag }) {
             </div>
         </AppLayout>
     );
-} 
+}

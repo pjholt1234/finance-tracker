@@ -1,14 +1,13 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Tag as TagIcon, Edit, Eye, Archive, ArchiveRestore } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
 import { ActionMenu } from '@/components/ui/action-menu';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CardGrid } from '@/components/ui/card-grid';
-import { type BreadcrumbItem } from '@/types';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
+import { Head, router } from '@inertiajs/react';
+import { Archive, ArchiveRestore, Edit, Eye, Plus, Tag as TagIcon } from 'lucide-react';
 
 interface Tag {
     id: number;
@@ -43,14 +42,11 @@ export default function TagsIndex({ activeTags, archivedTags }: Props) {
     };
 
     const renderTagCard = (tag: Tag) => (
-        <Card key={tag.id} className={`group hover:shadow-md transition-shadow ${tag.archived ? 'opacity-75' : ''}`}>
+        <Card key={tag.id} className={`group transition-shadow hover:shadow-md ${tag.archived ? 'opacity-75' : ''}`}>
             <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                     <div className="flex items-center space-x-2">
-                        <div
-                            className="w-4 h-4 rounded-full border-2 border-white shadow-sm"
-                            style={{ backgroundColor: tag.color }}
-                        />
+                        <div className="h-4 w-4 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: tag.color }} />
                         <CardTitle className="text-lg">{tag.name}</CardTitle>
                         {tag.archived && (
                             <Badge variant="outline" className="text-xs">
@@ -58,7 +54,7 @@ export default function TagsIndex({ activeTags, archivedTags }: Props) {
                             </Badge>
                         )}
                     </div>
-                    <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="flex items-center space-x-1 opacity-0 transition-opacity group-hover:opacity-100">
                         <ActionMenu
                             actions={[
                                 {
@@ -71,37 +67,33 @@ export default function TagsIndex({ activeTags, archivedTags }: Props) {
                                     icon: Edit,
                                     href: route('tags.edit', tag.id),
                                 },
-                                ...(tag.archived ? [
-                                    {
-                                        label: 'Unarchive',
-                                        icon: ArchiveRestore,
-                                        onClick: () => handleUnarchive(tag),
-                                    }
-                                ] : [
-                                    {
-                                        label: 'Archive',
-                                        icon: Archive,
-                                        onClick: () => handleArchive(tag),
-                                    }
-                                ]),
+                                ...(tag.archived
+                                    ? [
+                                          {
+                                              label: 'Unarchive',
+                                              icon: ArchiveRestore,
+                                              onClick: () => handleUnarchive(tag),
+                                          },
+                                      ]
+                                    : [
+                                          {
+                                              label: 'Archive',
+                                              icon: Archive,
+                                              onClick: () => handleArchive(tag),
+                                          },
+                                      ]),
                             ]}
                         />
                     </div>
                 </div>
-                {tag.description && (
-                    <CardDescription className="text-sm">
-                        {tag.description}
-                    </CardDescription>
-                )}
+                {tag.description && <CardDescription className="text-sm">{tag.description}</CardDescription>}
             </CardHeader>
             <CardContent>
                 <div className="flex items-center justify-between">
                     <Badge variant="secondary">
                         {tag.transactions_count} transaction{tag.transactions_count !== 1 ? 's' : ''}
                     </Badge>
-                    <div className="text-xs text-muted-foreground">
-                        Created {new Date(tag.created_at).toLocaleDateString()}
-                    </div>
+                    <div className="text-xs text-muted-foreground">Created {new Date(tag.created_at).toLocaleDateString()}</div>
                 </div>
             </CardContent>
         </Card>
@@ -128,41 +120,29 @@ export default function TagsIndex({ activeTags, archivedTags }: Props) {
                     <div className="space-y-8">
                         {/* Active Tags Section */}
                         <div>
-                            <div className="flex items-center justify-between mb-4">
+                            <div className="mb-4 flex items-center justify-between">
                                 <h2 className="text-xl font-semibold">Active Tags</h2>
                                 <Badge variant="secondary">
                                     {activeTags.length} tag{activeTags.length !== 1 ? 's' : ''}
                                 </Badge>
                             </div>
                             {activeTags.length > 0 ? (
-                                <CardGrid
-                                    items={activeTags}
-                                    renderItem={renderTagCard}
-                                    columns={{ sm: 1, md: 2, lg: 3 }}
-                                    className="gap-6"
-                                />
+                                <CardGrid items={activeTags} renderItem={renderTagCard} columns={{ sm: 1, md: 2, lg: 3 }} className="gap-6" />
                             ) : (
-                                <div className="text-center py-8 text-muted-foreground">
-                                    No active tags
-                                </div>
+                                <div className="py-8 text-center text-muted-foreground">No active tags</div>
                             )}
                         </div>
 
                         {/* Archived Tags Section */}
                         {archivedTags.length > 0 && (
                             <div>
-                                <div className="flex items-center justify-between mb-4">
+                                <div className="mb-4 flex items-center justify-between">
                                     <h2 className="text-xl font-semibold">Archived Tags</h2>
                                     <Badge variant="outline">
                                         {archivedTags.length} tag{archivedTags.length !== 1 ? 's' : ''}
                                     </Badge>
                                 </div>
-                                <CardGrid
-                                    items={archivedTags}
-                                    renderItem={renderTagCard}
-                                    columns={{ sm: 1, md: 2, lg: 3 }}
-                                    className="gap-6"
-                                />
+                                <CardGrid items={archivedTags} renderItem={renderTagCard} columns={{ sm: 1, md: 2, lg: 3 }} className="gap-6" />
                             </div>
                         )}
                     </div>
@@ -181,4 +161,4 @@ export default function TagsIndex({ activeTags, archivedTags }: Props) {
             </div>
         </AppLayout>
     );
-} 
+}

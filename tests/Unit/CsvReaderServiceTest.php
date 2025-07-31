@@ -4,7 +4,6 @@ namespace Tests\Unit;
 
 use App\Services\CsvReaderService;
 use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class CsvReaderServiceTest extends TestCase
@@ -14,15 +13,15 @@ class CsvReaderServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->csvReaderService = new CsvReaderService();
+        $this->csvReaderService = new CsvReaderService;
     }
 
     public function test_can_parse_csv_for_preview(): void
     {
         // Create a test CSV file
-        $csvContent = "Date,Description,Amount,Balance\n" .
-            "2024-01-01,Opening Balance,0.00,1000.00\n" .
-            "2024-01-02,Grocery Store,-45.67,954.33\n" .
+        $csvContent = "Date,Description,Amount,Balance\n".
+            "2024-01-01,Opening Balance,0.00,1000.00\n".
+            "2024-01-02,Grocery Store,-45.67,954.33\n".
             "2024-01-03,Salary Deposit,2500.00,3454.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
@@ -42,8 +41,8 @@ class CsvReaderServiceTest extends TestCase
     public function test_can_parse_csv_with_schema(): void
     {
         // Create a test CSV file
-        $csvContent = "Date,Description,Amount,Balance\n" .
-            "2024-01-01,Opening Balance,0.00,1000.00\n" .
+        $csvContent = "Date,Description,Amount,Balance\n".
+            "2024-01-01,Opening Balance,0.00,1000.00\n".
             "2024-01-02,Grocery Store,-45.67,954.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
@@ -70,8 +69,8 @@ class CsvReaderServiceTest extends TestCase
     public function test_can_parse_csv_with_separate_amount_columns(): void
     {
         // Create a test CSV file with separate paid in/out columns
-        $csvContent = "Date,Description,Paid In,Paid Out,Balance\n" .
-            "2024-01-01,Opening Balance,1000.00,,1000.00\n" .
+        $csvContent = "Date,Description,Paid In,Paid Out,Balance\n".
+            "2024-01-01,Opening Balance,1000.00,,1000.00\n".
             "2024-01-02,Grocery Store,,45.67,954.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
@@ -101,7 +100,7 @@ class CsvReaderServiceTest extends TestCase
     public function test_can_handle_column_indices(): void
     {
         // Create a test CSV file without headers
-        $csvContent = "2024-01-01,Opening Balance,0.00,1000.00\n" .
+        $csvContent = "2024-01-01,Opening Balance,0.00,1000.00\n".
             "2024-01-02,Grocery Store,-45.67,954.33\n";
 
         $file = $this->createTempCsvFile($csvContent);
@@ -128,9 +127,9 @@ class CsvReaderServiceTest extends TestCase
     public function test_detects_date_formats(): void
     {
         // Create a test CSV file with various date formats
-        $csvContent = "Date,Amount\n" .
-            "2024-01-15,100.00\n" .
-            "15/01/2024,200.00\n" .
+        $csvContent = "Date,Amount\n".
+            "2024-01-15,100.00\n".
+            "15/01/2024,200.00\n".
             "01/15/2024,300.00\n";
 
         $file = $this->createTempCsvFile($csvContent);
@@ -157,9 +156,9 @@ class CsvReaderServiceTest extends TestCase
     public function test_skips_empty_rows(): void
     {
         // Create a test CSV file with empty rows
-        $csvContent = "Date,Amount\n" .
-            "2024-01-01,100.00\n" .
-            ",,\n" .  // Empty row
+        $csvContent = "Date,Amount\n".
+            "2024-01-01,100.00\n".
+            ",,\n".  // Empty row
             "2024-01-02,200.00\n";
 
         $file = $this->createTempCsvFile($csvContent);

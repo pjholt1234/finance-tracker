@@ -42,7 +42,7 @@ class TagTest extends TestCase
             'color',
             'user_id',
             'created_at',
-            'updated_at'
+            'updated_at',
         ]);
 
         // Check that archived field is present in response

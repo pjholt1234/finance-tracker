@@ -1,25 +1,17 @@
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { ActionMenu } from '@/components/ui/action-menu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { PageHeader } from '@/components/ui/page-header';
-import { EmptyState } from '@/components/ui/empty-state';
-import { ActionMenu } from '@/components/ui/action-menu';
-import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
 import { CardGrid } from '@/components/ui/card-grid';
+import { ConfirmationDialog } from '@/components/ui/confirmation-dialog';
+import { EmptyState } from '@/components/ui/empty-state';
+import { PageHeader } from '@/components/ui/page-header';
 import { useCurrencyFormat } from '@/hooks/use-currency-format';
-import {
-    Plus,
-    Edit,
-    Trash2,
-    Eye,
-    CreditCard,
-    DollarSign,
-    Building2
-} from 'lucide-react';
-import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
+import { type BreadcrumbItem } from '@/types';
 import { Account } from '@/types/global';
+import { Head, Link, router } from '@inertiajs/react';
+import { Building2, CreditCard, DollarSign, Edit, Eye, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 
 interface Props {
     accounts: Account[];
@@ -45,7 +37,7 @@ export default function AccountsIndex({ accounts }: Props) {
     };
 
     const renderAccountCard = (account: Account) => (
-        <Card key={account.id} className="hover:shadow-md transition-shadow">
+        <Card key={account.id} className="transition-shadow hover:shadow-md">
             <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
@@ -83,9 +75,7 @@ export default function AccountsIndex({ accounts }: Props) {
                         <span className="text-sm font-medium">Current Balance</span>
                         <div className="flex items-center space-x-1">
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-semibold">
-                                {formatCurrency(account.balance)}
-                            </span>
+                            <span className="font-semibold">{formatCurrency(account.balance)}</span>
                         </div>
                     </div>
 
@@ -94,17 +84,11 @@ export default function AccountsIndex({ accounts }: Props) {
                         <span>{formatCurrency(account.balance_at_start)}</span>
                     </div>
 
-                    {account.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2">
-                            {account.description}
-                        </p>
-                    )}
+                    {account.description && <p className="line-clamp-2 text-sm text-muted-foreground">{account.description}</p>}
 
                     <div className="pt-2">
                         <Button variant="outline" size="sm" asChild className="w-full">
-                            <Link href={route('accounts.show', account.id)}>
-                                View Details
-                            </Link>
+                            <Link href={route('accounts.show', account.id)}>View Details</Link>
                         </Button>
                     </div>
                 </div>
@@ -139,11 +123,7 @@ export default function AccountsIndex({ accounts }: Props) {
                         }}
                     />
                 ) : (
-                    <CardGrid
-                        items={accounts}
-                        renderItem={renderAccountCard}
-                        columns={{ sm: 1, md: 2, lg: 3 }}
-                    />
+                    <CardGrid items={accounts} renderItem={renderAccountCard} columns={{ sm: 1, md: 2, lg: 3 }} />
                 )}
             </div>
 

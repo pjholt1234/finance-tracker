@@ -1,27 +1,19 @@
-import { useState, useEffect } from 'react';
-import { Head } from '@inertiajs/react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { TagSelect } from '@/components/ui/tag-select';
+import { Label } from '@/components/ui/label';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TagSelect } from '@/components/ui/tag-select';
+import AppLayout from '@/layouts/app-layout';
 import { api } from '@/lib/api';
+import { Account, Tag } from '@/types/global';
 import { API_ENDPOINTS } from '@/utils/constants';
 import { buildApiParams } from '@/utils/form-helpers';
-import { Account, Tag, Transaction } from '@/types/global';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: '/dashboard',
-    },
-];
+import { Head } from '@inertiajs/react';
+import { Calendar, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface DashboardData {
     accounts: Account[];
@@ -58,7 +50,7 @@ export default function Dashboard() {
     });
 
     // Fetch dashboard data
-    const fetchDashboardData = async () => {
+    const fetchDashboardData = useCallback(async () => {
         setLoading(true);
         try {
             const params = buildApiParams({
@@ -70,15 +62,16 @@ export default function Dashboard() {
 
             const response = await api.get(`${API_ENDPOINTS.DASHBOARD}?${params.toString()}`);
             setData(response.data);
-        } catch (error) {
+        } catch {
             // Don't set data to null on error, keep previous data if available
         } finally {
             setLoading(false);
         }
-    };
+    }, [filters.accountIds, filters.dateRange.from, filters.dateRange.to, filters.tagIds]);
+
     useEffect(() => {
         fetchDashboardData();
-    }, [filters]);
+    }, [fetchDashboardData]);
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('en-US', {
@@ -104,7 +97,7 @@ export default function Dashboard() {
                 <Head title="Dashboard" />
                 <div className="flex h-full flex-1 flex-col gap-4 rounded-xl">
                     <div className="text-center text-red-600">Failed to load dashboard data</div>
-                    <div className="text-center mt-4">
+                    <div className="mt-4 text-center">
                         <Button onClick={fetchDashboardData}>Retry</Button>
                     </div>
                 </div>
@@ -117,7 +110,7 @@ export default function Dashboard() {
             <AppLayout>
                 <Head title="Dashboard" />
 
-                <div className="flex h-full flex-1 flex-col gap-4 rounded-xl relative">
+                <div className="relative flex h-full flex-1 flex-col gap-4 rounded-xl">
                     {/* Header */}
                     <div>
                         <h1 className="text-3xl font-bold">Dashboard</h1>
@@ -133,16 +126,16 @@ export default function Dashboard() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                                 {/* Account Filter */}
                                 <div className="space-y-2">
                                     <Label>Account</Label>
                                     <Select
                                         value={filters.accountIds.length > 0 ? filters.accountIds[0].toString() : 'all'}
                                         onValueChange={(value) => {
-                                            setFilters(prev => ({
+                                            setFilters((prev) => ({
                                                 ...prev,
-                                                accountIds: value && value !== 'all' ? [parseInt(value)] : []
+                                                accountIds: value && value !== 'all' ? [parseInt(value)] : [],
                                             }));
                                         }}
                                     >
@@ -167,9 +160,9 @@ export default function Dashboard() {
                                         from={filters.dateRange.from}
                                         to={filters.dateRange.to}
                                         onSelect={(range: { from: Date | null; to: Date | null }) => {
-                                            setFilters(prev => ({
+                                            setFilters((prev) => ({
                                                 ...prev,
-                                                dateRange: range
+                                                dateRange: range,
                                             }));
                                         }}
                                     />
@@ -180,11 +173,11 @@ export default function Dashboard() {
                                     <Label>Tags</Label>
                                     <TagSelect
                                         tags={data.tags}
-                                        selectedTags={data.tags.filter(tag => filters.tagIds.includes(tag.id))}
+                                        selectedTags={data.tags.filter((tag) => filters.tagIds.includes(tag.id))}
                                         onTagsChange={(selectedTags) => {
-                                            setFilters(prev => ({
+                                            setFilters((prev) => ({
                                                 ...prev,
-                                                tagIds: selectedTags.map(tag => tag.id)
+                                                tagIds: selectedTags.map((tag) => tag.id),
                                             }));
                                         }}
                                         placeholder="Filter by tags"
@@ -195,16 +188,14 @@ export default function Dashboard() {
                     </Card>
 
                     {/* Stats Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Income</CardTitle>
                                 <TrendingUp className="h-4 w-4 text-green-600" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-green-600">
-                                    {formatCurrency(data.stats.income)}
-                                </div>
+                                <div className="text-2xl font-bold text-green-600">{formatCurrency(data.stats.income)}</div>
                             </CardContent>
                         </Card>
 
@@ -214,9 +205,7 @@ export default function Dashboard() {
                                 <TrendingDown className="h-4 w-4 text-red-600" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-red-600">
-                                    {formatCurrency(data.stats.outgoings)}
-                                </div>
+                                <div className="text-2xl font-bold text-red-600">{formatCurrency(data.stats.outgoings)}</div>
                             </CardContent>
                         </Card>
 
@@ -226,15 +215,13 @@ export default function Dashboard() {
                                 <DollarSign className="h-4 w-4 text-blue-600" />
                             </CardHeader>
                             <CardContent>
-                                <div className="text-2xl font-bold text-blue-600">
-                                    {formatCurrency(data.stats.totalBalance)}
-                                </div>
+                                <div className="text-2xl font-bold text-blue-600">{formatCurrency(data.stats.totalBalance)}</div>
                             </CardContent>
                         </Card>
                     </div>
 
                     {/* Charts */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                         {/* Tag Breakdown Chart */}
                         <Card>
                             <CardHeader>
@@ -274,13 +261,7 @@ export default function Dashboard() {
                                             formatter={(value: number) => formatCurrency(value)}
                                             labelFormatter={(label: string) => `Date: ${label}`}
                                         />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="balance"
-                                            stroke="#3b82f6"
-                                            strokeWidth={2}
-                                            name="Balance"
-                                        />
+                                        <Line type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} name="Balance" />
                                     </LineChart>
                                 </ResponsiveContainer>
                             </CardContent>

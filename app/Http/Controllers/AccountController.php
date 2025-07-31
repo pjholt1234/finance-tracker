@@ -5,12 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreAccountRequest;
 use App\Http\Requests\UpdateAccountRequest;
 use App\Models\Account;
+use App\Models\User;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Models\User;
 
 class AccountController extends Controller
 {
@@ -38,6 +37,7 @@ class AccountController extends Controller
     public function create(): Response
     {
         $this->authorize('create', Account::class);
+
         return Inertia::render('accounts/create');
     }
 
@@ -82,14 +82,14 @@ class AccountController extends Controller
             ->transactions()
             ->count();
 
-        if (!isset($accountData['imports'])) {
+        if (! isset($accountData['imports'])) {
             return Inertia::render('accounts/show', [
                 'account' => $accountData,
             ]);
         }
 
         foreach ($accountData['imports'] as $index => $import) {
-            if (!isset($account->imports[$index]->csvSchema)) {
+            if (! isset($account->imports[$index]->csvSchema)) {
                 continue;
             }
 

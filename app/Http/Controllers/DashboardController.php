@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Inertia\Inertia;
-use Inertia\Response;
-use Illuminate\Support\Facades\Auth;
 use App\Models\Account;
 use App\Models\Tag;
 use App\Models\Transaction;
 use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
@@ -47,7 +46,7 @@ class DashboardController extends Controller
             });
 
         // Apply filters
-        if (!empty($accountIds)) {
+        if (! empty($accountIds)) {
             $query->whereIn('account_id', $accountIds);
         }
 
@@ -59,7 +58,7 @@ class DashboardController extends Controller
             $query->where('date', '<=', $dateTo);
         }
 
-        if (!empty($tagIds)) {
+        if (! empty($tagIds)) {
             $query->whereHas('tags', function ($q) use ($tagIds) {
                 $q->whereIn('tags.id', $tagIds);
             });
@@ -78,7 +77,7 @@ class DashboardController extends Controller
 
         foreach ($accounts as $account) {
             // Skip if account is filtered out
-            if (!empty($accountIds) && !in_array($account->id, $accountIds)) {
+            if (! empty($accountIds) && ! in_array($account->id, $accountIds)) {
                 continue;
             }
 
@@ -96,7 +95,7 @@ class DashboardController extends Controller
 
         // Get tag breakdown
         $tagBreakdown = [];
-        if (!empty($tagIds)) {
+        if (! empty($tagIds)) {
             // When tags are filtered, only show breakdown for the selected tags
             $selectedTags = Tag::whereIn('id', $tagIds)->pluck('name', 'id');
 
@@ -166,7 +165,7 @@ class DashboardController extends Controller
             $q->where('user_id', $user->id);
         });
 
-        if (!empty($accountIds)) {
+        if (! empty($accountIds)) {
             $query->whereIn('account_id', $accountIds);
         }
 
@@ -196,7 +195,7 @@ class DashboardController extends Controller
             // Calculate balance for each account on this date
             foreach ($transactionsByAccount as $accountId => $accountTransactions) {
                 // Skip if account is filtered out
-                if (!empty($accountIds) && !in_array($accountId, $accountIds)) {
+                if (! empty($accountIds) && ! in_array($accountId, $accountIds)) {
                     continue;
                 }
 

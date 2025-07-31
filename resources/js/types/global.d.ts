@@ -77,7 +77,9 @@ interface TagCriteria {
     tag_id: number;
     type: string;
     match_type: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value: any;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     value_to: any;
     day_of_month: number | null;
     day_of_week: number | null;
@@ -148,15 +150,15 @@ interface TagCriteriaForm {
 // Export all interfaces at the bottom
 export {
     Account,
-    Import,
-    Transaction,
-    CsvSchema,
+    AccountFormData,
     CsvPreviewData,
+    CsvSchema,
+    Import,
+    PreviewTransaction,
     Tag,
     TagCriteria,
-    TransactionData,
-    PreviewTransaction,
-    AccountFormData,
-    TagFormData,
     TagCriteriaForm,
+    TagFormData,
+    Transaction,
+    TransactionData,
 };

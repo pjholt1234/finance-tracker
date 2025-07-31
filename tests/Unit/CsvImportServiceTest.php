@@ -2,12 +2,12 @@
 
 namespace Tests\Unit;
 
+use App\Models\Account;
 use App\Models\CsvSchema;
 use App\Models\Import;
 use App\Models\Tag;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\Account;
 use App\Services\CsvImportService;
 use App\Services\DateParsingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +23,7 @@ class CsvImportServiceTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $dateParsingService = new DateParsingService();
+        $dateParsingService = new DateParsingService;
         $this->csvImportService = new CsvImportService($dateParsingService);
     }
 

@@ -6,14 +6,13 @@ use App\Http\Requests\PreviewCsvSchemaRequest;
 use App\Http\Requests\StoreCsvSchemaRequest;
 use App\Http\Requests\UpdateCsvSchemaRequest;
 use App\Models\CsvSchema;
+use App\Models\User;
 use App\Services\CsvReaderService;
-use Illuminate\Http\Request;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
 use Inertia\Response;
-use App\Models\User;
 
 class CsvSchemaController extends Controller
 {
@@ -44,6 +43,7 @@ class CsvSchemaController extends Controller
     public function create(): Response
     {
         $this->authorize('create', CsvSchema::class);
+
         return Inertia::render('csv-schemas/create');
     }
 
@@ -62,7 +62,7 @@ class CsvSchemaController extends Controller
             ]);
         } catch (\Exception $e) {
             return back()->withErrors([
-                'csv_file' => 'Error reading CSV file: ' . $e->getMessage(),
+                'csv_file' => 'Error reading CSV file: '.$e->getMessage(),
             ]);
         }
     }
@@ -158,7 +158,7 @@ class CsvSchemaController extends Controller
     {
         $this->authorize('view', $csvSchema);
 
-        $baseName = $csvSchema->name . ' (copy)';
+        $baseName = $csvSchema->name.' (copy)';
         $uniqueName = $baseName;
         $counter = 1;
 
@@ -167,7 +167,7 @@ class CsvSchemaController extends Controller
 
         while ($user->csvSchemas()->where('name', $uniqueName)->exists()) {
             $counter++;
-            $uniqueName = $csvSchema->name . ' (copy ' . $counter . ')';
+            $uniqueName = $csvSchema->name.' (copy '.$counter.')';
         }
 
         $clonedSchema = $user->csvSchemas()->create([

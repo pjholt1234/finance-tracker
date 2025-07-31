@@ -8,13 +8,10 @@ use App\Models\CsvSchema;
 use App\Models\Import;
 use App\Services\CsvImportService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Inertia\Response;
-use Illuminate\Support\Facades\Log;
 
 class TransactionImportController extends Controller
 {
@@ -81,12 +78,12 @@ class TransactionImportController extends Controller
         } catch (\InvalidArgumentException $e) {
             if (str_contains($e->getMessage(), 'UTF-8') || str_contains($e->getMessage(), 'encoding')) {
                 return back()->withErrors([
-                    'csv_file' => 'The CSV file contains invalid characters or encoding. Please save your CSV file as UTF-8 encoded or try converting it to a different format.'
+                    'csv_file' => 'The CSV file contains invalid characters or encoding. Please save your CSV file as UTF-8 encoded or try converting it to a different format.',
                 ])->withInput();
             }
 
             return back()->withErrors([
-                'csv_file' => 'Invalid CSV file format: ' . $e->getMessage()
+                'csv_file' => 'Invalid CSV file format: '.$e->getMessage(),
             ])->withInput();
         } catch (\Exception $e) {
             Log::error('CSV Preview failed', [
@@ -95,11 +92,11 @@ class TransactionImportController extends Controller
                 'account_id' => $account->id,
                 'filename' => $file->getClientOriginalName(),
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return back()->withErrors([
-                'csv_file' => 'Failed to preview CSV file. Please check the file format and try again.'
+                'csv_file' => 'Failed to preview CSV file. Please check the file format and try again.',
             ])->withInput();
         }
     }
@@ -137,11 +134,11 @@ class TransactionImportController extends Controller
                 'account_id' => $account->id,
                 'filename' => $request->filename,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return back()->withErrors([
-                'transactions' => 'Failed to import transactions. Please try again.'
+                'transactions' => 'Failed to import transactions. Please try again.',
             ]);
         }
     }

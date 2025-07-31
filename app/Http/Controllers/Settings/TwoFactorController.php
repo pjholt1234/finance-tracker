@@ -26,7 +26,7 @@ class TwoFactorController extends Controller
         }
 
         $qrCodeUrl = null;
-        if (!$user->two_factor_confirmed_at) {
+        if (! $user->two_factor_confirmed_at) {
             try {
                 $qrCodeUrl = $user->twoFactorQrCodeUrl();
             } catch (\Exception $e) {

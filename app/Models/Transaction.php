@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
@@ -78,6 +78,7 @@ class Transaction extends Model
 
         if ($numericMatch && isset($matches[0])) {
             $numericValue = floatval($matches[0]);
+
             return (int) round($numericValue * 100);
         }
 

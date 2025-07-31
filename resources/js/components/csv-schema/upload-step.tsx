@@ -1,7 +1,7 @@
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Upload, FileText, CheckCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, FileText, Upload } from 'lucide-react';
 
 interface UploadStepProps {
     csvFile: File | null;
@@ -18,18 +18,14 @@ export function UploadStep({ csvFile, isLoading, errors, onFileUpload }: UploadS
                     <Upload className="h-5 w-5" />
                     Upload CSV File
                 </CardTitle>
-                <CardDescription>
-                    Select a CSV file containing your transaction data
-                </CardDescription>
+                <CardDescription>Select a CSV file containing your transaction data</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center">
-                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <div className="rounded-lg border-2 border-dashed border-muted-foreground/25 p-8 text-center">
+                        <FileText className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                         <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                                Drop your CSV file here or click to browse
-                            </p>
+                            <p className="text-sm text-muted-foreground">Drop your CSV file here or click to browse</p>
                             <Input
                                 type="file"
                                 accept=".csv"
@@ -39,7 +35,7 @@ export function UploadStep({ csvFile, isLoading, errors, onFileUpload }: UploadS
                                         onFileUpload(file);
                                     }
                                 }}
-                                className="max-w-xs mx-auto"
+                                className="mx-auto max-w-xs"
                                 disabled={isLoading}
                             />
                         </div>
@@ -47,9 +43,7 @@ export function UploadStep({ csvFile, isLoading, errors, onFileUpload }: UploadS
                     {isLoading && (
                         <Alert>
                             <Upload className="h-4 w-4 animate-spin" />
-                            <AlertDescription>
-                                Processing CSV file...
-                            </AlertDescription>
+                            <AlertDescription>Processing CSV file...</AlertDescription>
                         </Alert>
                     )}
                     {csvFile && !isLoading && (
@@ -70,4 +64,4 @@ export function UploadStep({ csvFile, isLoading, errors, onFileUpload }: UploadS
             </CardContent>
         </Card>
     );
-} 
+}

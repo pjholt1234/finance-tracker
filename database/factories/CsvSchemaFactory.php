@@ -22,7 +22,7 @@ class CsvSchemaFactory extends Factory
     {
         return [
             'user_id' => User::factory(),
-            'name' => $this->faker->words(2, true) . ' Schema',
+            'name' => $this->faker->words(2, true).' Schema',
             'transaction_data_start' => $this->faker->numberBetween(1, 5),
             'date_column' => 1, // Column 1
             'balance_column' => 2, // Column 2

@@ -5,7 +5,6 @@ namespace App\Http\Requests;
 use App\Models\Tag;
 use App\Services\TagValidationService;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
 
 class UpdateTagRequest extends FormRequest
 {
@@ -72,7 +71,7 @@ class UpdateTagRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $validationService = new TagValidationService();
+            $validationService = new TagValidationService;
 
             // Prepare and merge cleaned data
             $cleanedData = $validationService->prepareTagData($this->all());
@@ -84,7 +83,7 @@ class UpdateTagRequest extends FormRequest
             }
 
             // Validate tag name uniqueness for update only if name is present
-            if (isset($this->name) && !empty($this->name)) {
+            if (isset($this->name) && ! empty($this->name)) {
                 $tag = $this->route('tag');
                 $validationService->validateTagNameUniquenessForUpdate($validator, $this->name, $tag->id);
             }

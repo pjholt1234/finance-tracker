@@ -18,7 +18,7 @@ class RequireTwoFactor
         return $next($request);
         $user = $request->user();
 
-        if (!$user) {
+        if (! $user) {
             return $next($request);
         }
 

@@ -1,5 +1,4 @@
-import { useState, useRef, KeyboardEvent } from 'react';
-import { Button } from '@/components/ui/button';
+import { useRef, KeyboardEvent } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Plus } from 'lucide-react';
@@ -18,7 +17,6 @@ interface TagDropdownProps {
     onCreateTag: () => void;
     onKeyDown: (e: KeyboardEvent<HTMLInputElement>) => void;
     placeholder?: string;
-    isCreating?: boolean;
     transactionData?: TransactionData;
     className?: string;
 }
@@ -35,7 +33,6 @@ export function TagDropdown({
     onCreateTag,
     onKeyDown,
     placeholder = "Add tag",
-    isCreating = false,
     transactionData,
     className,
 }: TagDropdownProps) {

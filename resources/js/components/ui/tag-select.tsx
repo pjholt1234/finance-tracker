@@ -1,10 +1,9 @@
-import { useState, useRef, useEffect, useImperativeHandle, forwardRef, KeyboardEvent } from 'react';
+import React, { useState, useRef, useEffect, useImperativeHandle, forwardRef, KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tag, TransactionData } from '@/types/global';
 import { api } from '@/lib/api';
-import { useToast } from '@/components/ui/toast';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 import { VALIDATION_MESSAGES } from '@/utils/constants';
 import { TagCreateModal } from './tag-create-modal';
@@ -15,6 +14,7 @@ import { TagSuggestions } from './tag-suggestions';
 // Extend the Tag interface to include isSuggested property
 interface ExtendedTag extends Tag {
     isSuggested?: boolean;
+    suggested?: boolean; // For tags that come from API suggestions
 }
 
 interface TagSelectProps {
@@ -60,7 +60,6 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>((
 
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const { showToast } = useToast();
     const { handleApiError, handleApiSuccess } = useErrorHandler();
 
     // Filter tags based on search
@@ -254,7 +253,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>((
     // Use selectedTags directly - they now include suggested tags with a flag
     const allSelectedTags: ExtendedTag[] = (selectedTags || []).map(tag => ({
         ...tag,
-        isSuggested: (tag as any).suggested === true
+        isSuggested: (tag as ExtendedTag).suggested === true
     }));
 
     return (
@@ -301,7 +300,6 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>((
                         onCreateTag={handleCreateTag}
                         onKeyDown={handleKeyDown}
                         placeholder={placeholder}
-                        isCreating={isCreating}
                         transactionData={transactionData}
                         className="flex-1"
                     />

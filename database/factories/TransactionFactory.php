@@ -39,7 +39,7 @@ class TransactionFactory extends Factory
      */
     public function paidIn(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'paid_in' => $this->faker->numberBetween(100, 100000), // £1 to £1,000 in pennies
             'paid_out' => null,
         ]);
@@ -50,7 +50,7 @@ class TransactionFactory extends Factory
      */
     public function paidOut(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'paid_in' => null,
             'paid_out' => $this->faker->numberBetween(100, 100000), // £1 to £1,000 in pennies
         ]);
@@ -61,7 +61,7 @@ class TransactionFactory extends Factory
      */
     public function withoutDescription(): static
     {
-        return $this->state(fn(array $attributes) => [
+        return $this->state(fn (array $attributes) => [
             'description' => null,
         ]);
     }

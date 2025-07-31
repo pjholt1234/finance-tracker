@@ -1,11 +1,11 @@
-import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Edit, Tag as TagIcon, Calendar, Hash } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
-import { Tag, TagCriteria } from '@/types/global';
+import { type BreadcrumbItem } from '@/types';
+import { Tag } from '@/types/global';
+import { Head, Link } from '@inertiajs/react';
+import { ArrowLeft, Calendar, Edit, Hash, Tag as TagIcon } from 'lucide-react';
 
 interface Props {
     tag: Tag;
@@ -46,15 +46,10 @@ export default function TagsShow({ tag }: Props) {
                             </Link>
                         </Button>
                         <div className="flex items-center space-x-3">
-                            <div
-                                className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                                style={{ backgroundColor: tag.color }}
-                            />
+                            <div className="h-6 w-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: tag.color }} />
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight">{tag.name}</h1>
-                                {tag.description && (
-                                    <p className="text-muted-foreground">{tag.description}</p>
-                                )}
+                                {tag.description && <p className="text-muted-foreground">{tag.description}</p>}
                             </div>
                         </div>
                     </div>
@@ -78,34 +73,25 @@ export default function TagsShow({ tag }: Props) {
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Status</span>
-                                <Badge variant={tag.archived ? "outline" : "secondary"}>
-                                    {tag.archived ? 'Archived' : 'Active'}
-                                </Badge>
+                                <Badge variant={tag.archived ? 'outline' : 'secondary'}>{tag.archived ? 'Archived' : 'Active'}</Badge>
                             </div>
 
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Color</span>
                                 <div className="flex items-center space-x-2">
-                                    <div
-                                        className="w-4 h-4 rounded border"
-                                        style={{ backgroundColor: tag.color }}
-                                    />
+                                    <div className="h-4 w-4 rounded border" style={{ backgroundColor: tag.color }} />
                                     <span className="text-sm text-muted-foreground">{tag.color}</span>
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Created</span>
-                                <span className="text-sm text-muted-foreground">
-                                    {formatDate(tag.created_at)}
-                                </span>
+                                <span className="text-sm text-muted-foreground">{formatDate(tag.created_at)}</span>
                             </div>
 
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium">Last Updated</span>
-                                <span className="text-sm text-muted-foreground">
-                                    {formatDate(tag.updated_at)}
-                                </span>
+                                <span className="text-sm text-muted-foreground">{formatDate(tag.updated_at)}</span>
                             </div>
                         </CardContent>
                     </Card>
@@ -114,16 +100,14 @@ export default function TagsShow({ tag }: Props) {
                     <Card>
                         <CardHeader>
                             <CardTitle>Auto-apply Criteria</CardTitle>
-                            <CardDescription>
-                                Rules for automatically applying this tag to transactions
-                            </CardDescription>
+                            <CardDescription>Rules for automatically applying this tag to transactions</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {tag.criterias.length > 0 ? (
                                 <div className="space-y-3">
                                     {tag.criterias.map((criteria, index) => (
                                         <div key={criteria.id} className="space-y-2">
-                                            <div className="flex items-center justify-between p-3 border rounded-lg">
+                                            <div className="flex items-center justify-between rounded-lg border p-3">
                                                 <div className="space-y-1">
                                                     <div className="flex items-center space-x-2">
                                                         <Badge variant="outline" className="text-xs">
@@ -134,30 +118,34 @@ export default function TagsShow({ tag }: Props) {
                                                         </Badge>
                                                     </div>
                                                     <div className="text-sm">
-                                                        {criteria.type === "description" && (
-                                                            <span>"{criteria.value}"</span>
-                                                        )}
-                                                        {criteria.type === "amount" && (
+                                                        {criteria.type === 'description' && <span>"{criteria.value}"</span>}
+                                                        {criteria.type === 'amount' && (
                                                             <span>
                                                                 {criteria.match_type === 'range' && criteria.value_to
                                                                     ? `$${criteria.value} - $${criteria.value_to}`
-                                                                    : `$${criteria.value}`
-                                                                }
+                                                                    : `$${criteria.value}`}
                                                             </span>
                                                         )}
-                                                        {criteria.type === "date" && (
+                                                        {criteria.type === 'date' && (
                                                             <span>
                                                                 {criteria.match_type === 'day_of_month'
                                                                     ? `Day ${criteria.day_of_month || criteria.value} of month`
                                                                     : criteria.match_type === 'day_of_week'
-                                                                        ? (() => {
-                                                                            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                                                                      ? (() => {
+                                                                            const days = [
+                                                                                'Monday',
+                                                                                'Tuesday',
+                                                                                'Wednesday',
+                                                                                'Thursday',
+                                                                                'Friday',
+                                                                                'Saturday',
+                                                                                'Sunday',
+                                                                            ];
                                                                             const dayNumber = criteria.day_of_week || parseInt(criteria.value || '1');
                                                                             const dayName = days[dayNumber - 1] || 'Unknown';
                                                                             return dayName;
                                                                         })()
-                                                                        : criteria.value
-                                                                }
+                                                                      : criteria.value}
                                                             </span>
                                                         )}
                                                     </div>
@@ -175,10 +163,8 @@ export default function TagsShow({ tag }: Props) {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-6">
-                                    <p className="text-sm text-muted-foreground">
-                                        No auto-apply criteria configured
-                                    </p>
+                                <div className="py-6 text-center">
+                                    <p className="text-sm text-muted-foreground">No auto-apply criteria configured</p>
                                 </div>
                             )}
                         </CardContent>
@@ -189,58 +175,42 @@ export default function TagsShow({ tag }: Props) {
                 <Card>
                     <CardHeader>
                         <CardTitle>Recent Transactions</CardTitle>
-                        <CardDescription>
-                            Latest transactions tagged with "{tag.name}"
-                        </CardDescription>
+                        <CardDescription>Latest transactions tagged with "{tag.name}"</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {tag.transactions.length > 0 ? (
                             <div className="space-y-4">
                                 {tag.transactions.map((transaction) => (
-                                    <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
+                                    <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-4">
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2">
                                                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                <span className="text-sm font-medium">
-                                                    {formatDate(transaction.date)}
-                                                </span>
+                                                <span className="text-sm font-medium">{formatDate(transaction.date)}</span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground mt-1">
-                                                {transaction.description}
-                                            </p>
+                                            <p className="mt-1 text-sm text-muted-foreground">{transaction.description}</p>
                                             {transaction.reference && (
-                                                <div className="flex items-center space-x-1 mt-1">
+                                                <div className="mt-1 flex items-center space-x-1">
                                                     <Hash className="h-3 w-3 text-muted-foreground" />
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {transaction.reference}
-                                                    </span>
+                                                    <span className="text-xs text-muted-foreground">{transaction.reference}</span>
                                                 </div>
                                             )}
                                         </div>
                                         <div className="text-right">
                                             {(transaction.paid_in ?? 0) > 0 && (
-                                                <div className="text-sm font-medium text-green-600">
-                                                    +{transaction.paid_in}
-                                                </div>
+                                                <div className="text-sm font-medium text-green-600">+{transaction.paid_in}</div>
                                             )}
                                             {(transaction.paid_out ?? 0) > 0 && (
-                                                <div className="text-sm font-medium text-red-600">
-                                                    -{transaction.paid_out}
-                                                </div>
+                                                <div className="text-sm font-medium text-red-600">-{transaction.paid_out}</div>
                                             )}
-                                            <div className="text-xs text-muted-foreground">
-                                                Balance: {transaction.balance}
-                                            </div>
+                                            <div className="text-xs text-muted-foreground">Balance: {transaction.balance}</div>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : (
-                            <div className="text-center py-8">
-                                <TagIcon className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
-                                <p className="text-sm text-muted-foreground">
-                                    No transactions tagged with "{tag.name}" yet
-                                </p>
+                            <div className="py-8 text-center">
+                                <TagIcon className="mx-auto mb-2 h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">No transactions tagged with "{tag.name}" yet</p>
                             </div>
                         )}
                     </CardContent>

@@ -2,11 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Facades\DB;
 
 class Account extends Model
 {
@@ -72,11 +71,11 @@ class Account extends Model
 
         if ($latestTransaction && $latestTransaction->balance !== null) {
             $this->update([
-                'balance' => $latestTransaction->balance
+                'balance' => $latestTransaction->balance,
             ]);
         } else {
             $this->update([
-                'balance' => $this->balance_at_start
+                'balance' => $this->balance_at_start,
             ]);
         }
     }

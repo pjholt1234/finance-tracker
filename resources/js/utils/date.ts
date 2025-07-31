@@ -64,4 +64,4 @@ export function parseDate(dateString: string): Date | null {
     if (isNaN(date.getTime())) return null;
 
     return date;
-} 
+}

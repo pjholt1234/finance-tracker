@@ -1,15 +1,15 @@
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { LoaderCircle, Shield, ShieldCheck, ShieldOff, AlertTriangle } from 'lucide-react';
-import { FormEventHandler, useState } from 'react';
+import { AlertTriangle, LoaderCircle, Shield, ShieldCheck, ShieldOff } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { FormEventHandler, useState } from 'react';
 import OtpInput from 'react-otp-input';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import AppLayout from '@/layouts/app-layout';
 
 interface TwoFactorProps {
@@ -25,12 +25,14 @@ interface TwoFactorProps {
 }
 
 export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }: TwoFactorProps) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { flash } = usePage().props as any;
     const [code, setCode] = useState('');
     const [showRecoveryCodes, setShowRecoveryCodes] = useState(false);
 
     const enableForm = useForm({
-        code: '',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        code: '' as any,
     });
 
     const disableForm = useForm({
@@ -80,15 +82,13 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
 
     return (
         <AppLayout>
-            <div className="max-w-2xl mx-auto p-6">
+            <div className="mx-auto max-w-2xl p-6">
                 <Head title="Two-Factor Authentication" />
 
                 <div className="space-y-6">
                     <div>
                         <h3 className="text-lg font-medium">Two-Factor Authentication</h3>
-                        <p className="text-sm text-muted-foreground">
-                            Add additional security to your account using two-factor authentication.
-                        </p>
+                        <p className="text-sm text-muted-foreground">Add additional security to your account using two-factor authentication.</p>
                     </div>
 
                     <Separator />
@@ -106,7 +106,8 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                         <Alert variant="destructive">
                             <AlertTriangle className="h-4 w-4" />
                             <AlertDescription>
-                                <strong>Two-Factor Authentication Required:</strong> You must enable two-factor authentication to access other parts of the application.
+                                <strong>Two-Factor Authentication Required:</strong> You must enable two-factor authentication to access other parts
+                                of the application.
                             </AlertDescription>
                         </Alert>
                     )}
@@ -144,7 +145,8 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                                         Enable Two-Factor Authentication
                                     </CardTitle>
                                     <CardDescription>
-                                        When two-factor authentication is enabled, you will be prompted for a secure, random token during authentication. You may retrieve this token from your phone's Google Authenticator application.
+                                        When two-factor authentication is enabled, you will be prompted for a secure, random token during
+                                        authentication. You may retrieve this token from your phone's Google Authenticator application.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -165,13 +167,14 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                                     <CardHeader>
                                         <CardTitle>Finish enabling two-factor authentication</CardTitle>
                                         <CardDescription>
-                                            To finish enabling two-factor authentication, scan the following QR code using your phone's authenticator application or enter the setup key and provide the generated OTP code.
+                                            To finish enabling two-factor authentication, scan the following QR code using your phone's authenticator
+                                            application or enter the setup key and provide the generated OTP code.
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="space-y-6">
                                         {/* QR Code */}
                                         <div className="flex justify-center">
-                                            <div className="p-4 bg-white rounded-lg border">
+                                            <div className="rounded-lg border bg-white p-4">
                                                 <QRCodeSVG value={qrCodeUrl} size={200} />
                                             </div>
                                         </div>
@@ -182,7 +185,8 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                                                 <Label>Setup Key</Label>
                                                 <Input value={secretKey} readOnly className="font-mono text-sm" />
                                                 <p className="text-xs text-muted-foreground">
-                                                    Store this setup key in a password manager in case you need to set up your authenticator app again.
+                                                    Store this setup key in a password manager in case you need to set up your authenticator app
+                                                    again.
                                                 </p>
                                             </div>
                                         )}
@@ -208,9 +212,7 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                                                         }}
                                                     />
                                                 </div>
-                                                {confirmForm.errors.code && (
-                                                    <p className="text-sm text-red-600">{confirmForm.errors.code}</p>
-                                                )}
+                                                {confirmForm.errors.code && <p className="text-sm text-red-600">{confirmForm.errors.code}</p>}
                                             </div>
 
                                             <Button type="submit" disabled={confirmForm.processing || code.length !== 6}>
@@ -229,13 +231,17 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                                 <CardHeader>
                                     <CardTitle>Recovery Codes</CardTitle>
                                     <CardDescription>
-                                        Store these recovery codes in a secure password manager. They can be used to recover access to your account if your two-factor authentication device is lost.
+                                        Store these recovery codes in a secure password manager. They can be used to recover access to your account if
+                                        your two-factor authentication device is lost.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
-                                    <div className="grid grid-cols-2 gap-3 p-4 bg-gray-50 rounded-lg border">
+                                    <div className="grid grid-cols-2 gap-3 rounded-lg border bg-gray-50 p-4">
                                         {recoveryCodes.map((code, index) => (
-                                            <div key={index} className="font-mono text-sm text-gray-800 text-center py-1 px-2 bg-white rounded border">
+                                            <div
+                                                key={index}
+                                                className="rounded border bg-white px-2 py-1 text-center font-mono text-sm text-gray-800"
+                                            >
                                                 {code}
                                             </div>
                                         ))}
@@ -273,9 +279,7 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
                                                 onChange={(e) => disableForm.setData('password', e.target.value)}
                                                 required
                                             />
-                                            {disableForm.errors.password && (
-                                                <p className="text-sm text-red-600">{disableForm.errors.password}</p>
-                                            )}
+                                            {disableForm.errors.password && <p className="text-sm text-red-600">{disableForm.errors.password}</p>}
                                         </div>
 
                                         <Button type="submit" variant="destructive" disabled={disableForm.processing}>
@@ -291,4 +295,4 @@ export default function TwoFactor({ user, qrCodeUrl, secretKey, recoveryCodes }:
             </div>
         </AppLayout>
     );
-} 
+}

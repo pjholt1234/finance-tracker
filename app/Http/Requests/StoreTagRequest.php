@@ -4,8 +4,6 @@ namespace App\Http\Requests;
 
 use App\Services\TagValidationService;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 
 class StoreTagRequest extends FormRequest
 {
@@ -73,7 +71,7 @@ class StoreTagRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            $validationService = new TagValidationService();
+            $validationService = new TagValidationService;
 
             // Prepare and merge cleaned data
             $cleanedData = $validationService->prepareTagData($this->all());
@@ -85,7 +83,7 @@ class StoreTagRequest extends FormRequest
             }
 
             // Validate tag name uniqueness only if name is present
-            if (isset($this->name) && !empty($this->name)) {
+            if (isset($this->name) && ! empty($this->name)) {
                 $validationService->validateTagNameUniqueness($validator, $this->name);
             }
         });

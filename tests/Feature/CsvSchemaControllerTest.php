@@ -12,6 +12,7 @@ class CsvSchemaControllerTest extends TestCase
     use RefreshDatabase;
 
     protected User $user;
+
     protected User $otherUser;
 
     protected function setUp(): void
@@ -225,4 +226,4 @@ class CsvSchemaControllerTest extends TestCase
         $this->assertDatabaseHas('csv_schemas', ['name' => 'Collision Test (copy 3)']);
         $this->assertDatabaseCount('csv_schemas', 4); // original + 2 existing copies + 1 new copy
     }
-} 
+}

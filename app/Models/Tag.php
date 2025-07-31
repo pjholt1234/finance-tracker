@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -134,6 +134,7 @@ class Tag extends Model
                 'is_recommended' => true,
                 'is_user_added' => false,
             ]);
+
             return true;
         }
 
@@ -162,7 +163,7 @@ class Tag extends Model
             '#a855f7',
             '#d946ef',
             '#ec4899',
-            '#f43f5e'
+            '#f43f5e',
         ];
 
         return $colors[array_rand($colors)];
