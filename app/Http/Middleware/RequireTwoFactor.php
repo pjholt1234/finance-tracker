@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Support\Facades\App;
 
 class RequireTwoFactor
 {
@@ -15,7 +16,10 @@ class RequireTwoFactor
      */
     public function handle(Request $request, Closure $next): Response
     {
-        return $next($request);
+        if (App::environment('local')) {
+            return $next($request);
+        }
+
         $user = $request->user();
 
         if (! $user) {
