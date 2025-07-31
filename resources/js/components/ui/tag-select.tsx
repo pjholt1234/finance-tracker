@@ -1,25 +1,20 @@
-import { useState, useRef, useEffect, useImperativeHandle, forwardRef, ChangeEvent, KeyboardEvent } from 'react';
-import { Badge } from '@/components/ui/badge';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef, KeyboardEvent } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { X, ChevronDown, Plus, Sparkles, Edit3 } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Tag } from '@/types/global';
-import { api, ApiError } from '@/lib/api';
+import { Tag, TransactionData } from '@/types/global';
+import { api } from '@/lib/api';
 import { useToast } from '@/components/ui/toast';
 import { useErrorHandler } from '@/hooks/use-error-handler';
 import { VALIDATION_MESSAGES } from '@/utils/constants';
 import { TagCreateModal } from './tag-create-modal';
+import { TagItem } from './tag-item';
+import { TagDropdown } from './tag-dropdown';
+import { TagSuggestions } from './tag-suggestions';
 
 // Extend the Tag interface to include isSuggested property
 interface ExtendedTag extends Tag {
     isSuggested?: boolean;
-}
-
-interface TransactionData {
-    description?: string;
-    amount?: number;
-    date?: string;
 }
 
 interface TagSelectProps {
@@ -39,67 +34,56 @@ export interface TagSelectRef {
     focus: () => void;
 }
 
-export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
-    tags,
-    selectedTags,
-    onTagsChange,
-    onTagCreated,
-    placeholder = "Add tag",
-    className,
-    suggestedTags = [],
-    showSuggestions = false,
-    suggestionsLoading = false,
-    transactionData
-}, ref) => {
-    const [open, setOpen] = useState(false);
+export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>((
+    {
+        tags,
+        selectedTags,
+        onTagsChange,
+        onTagCreated,
+        placeholder = "Add tag",
+        className,
+        suggestedTags = [],
+        showSuggestions = false,
+        suggestionsLoading = false,
+        transactionData,
+    }: TagSelectProps,
+    ref
+) => {
     const [searchValue, setSearchValue] = useState('');
-    const [isCreating, setIsCreating] = useState(false);
-    const [availableTags, setAvailableTags] = useState(tags);
+    const [open, setOpen] = useState(false);
     const [highlightedIndex, setHighlightedIndex] = useState(-1);
+    const [availableTags, setAvailableTags] = useState<Tag[]>(tags || []);
+    const [isCreating, setIsCreating] = useState(false);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [editingTag, setEditingTag] = useState<Tag | null>(null);
     const [modalInitialTagName, setModalInitialTagName] = useState('');
+
+    const inputRef = useRef<HTMLInputElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
     const { showToast } = useToast();
     const { handleApiError, handleApiSuccess } = useErrorHandler();
 
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
-    const buttonRef = useRef<HTMLButtonElement>(null);
+    // Filter tags based on search
+    const filteredTags = availableTags.filter(tag =>
+        tag.name.toLowerCase().includes(searchValue.toLowerCase()) &&
+        !selectedTags.some(selected => selected.id === tag.id)
+    );
 
-    // Expose focus method to parent via ref
+    // Expose focus method to parent
     useImperativeHandle(ref, () => ({
         focus: () => {
-            if (buttonRef.current) {
-                buttonRef.current.focus();
+            if (inputRef.current) {
+                inputRef.current.focus();
+                setOpen(true);
             }
         }
     }));
 
-    // Filter available tags (exclude already selected ones) and limit to 5
-    const filteredTags = (availableTags || []).filter(tag => {
-        // Don't show if already selected
-        if ((selectedTags || []).some(selected => selected.id === tag.id)) {
-            return false;
-        }
-
-        // Show if it matches the search
-        return tag.name.toLowerCase().includes(searchValue.toLowerCase());
-    }).slice(0, 5);
-
-    const handleRemoveTag = (tagToRemove: ExtendedTag) => {
-        if (tagToRemove.isSuggested) {
-            // For suggested tags, just remove them from selected tags (dismissal)
-            onTagsChange((selectedTags || []).filter(tag => tag.id !== tagToRemove.id));
-        } else {
-            // For regular tags, remove them from selectedTags
-            onTagsChange((selectedTags || []).filter(tag => tag.id !== tagToRemove.id));
-        }
+    const handleRemoveTag = (tagToRemove: Tag) => {
+        onTagsChange(selectedTags.filter(tag => tag.id !== tagToRemove.id));
     };
 
-    const handleEditTag = async (tag: Tag, e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation(); // Prevent tag removal when clicking edit
-
+    const handleEditTag = async (tag: Tag) => {
         try {
             // Fetch the full tag data with criteria
             const response = await api.get(route('tags.api-show', tag.id));
@@ -109,31 +93,9 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
             setShowCreateModal(true);
             setOpen(false);
         } catch (error) {
-            handleApiError(error, 'Failed to create tag. Please try again.');
+            handleApiError(error, VALIDATION_MESSAGES.UNEXPECTED_ERROR);
         }
     };
-    // Use selectedTags directly - they now include suggested tags with a flag
-    const allSelectedTags: ExtendedTag[] = (selectedTags || []).map(tag => ({
-        ...tag,
-        isSuggested: (tag as any).suggested === true
-    }));
-
-    // No need to add suggested tags separately since they're now in selectedTags
-    const displayTags = allSelectedTags;
-
-    // Check if search value matches an existing tag exactly
-    const exactMatch = (availableTags || []).find(tag =>
-        tag.name.toLowerCase() === searchValue.toLowerCase()
-    );
-
-    // Show create option if search value is not empty and doesn't match existing tag
-    const showCreateOption = searchValue.trim() && !exactMatch;
-
-    // All selectable options (filtered tags + create option)
-    const allOptions = [
-        ...filteredTags,
-        ...(showCreateOption ? [{ id: -1, name: searchValue, color: '#6b7280', isCreate: true }] : [])
-    ];
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -167,9 +129,6 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
         setHighlightedIndex(-1);
     }, [searchValue]);
 
-    // Only show dropdown when there's search input
-    const shouldShowDropdown = open && searchValue.trim().length > 0;
-
     const handleSelectTag = (tag: Tag) => {
         onTagsChange([...(selectedTags || []), tag]);
         setSearchValue('');
@@ -180,6 +139,14 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                 inputRef.current.focus();
             }
         }, 0);
+    };
+
+    const handleSearchValueChange = (value: string) => {
+        setSearchValue(value);
+        // Auto-open dropdown when user starts typing
+        if (value.trim() && !open) {
+            setOpen(true);
+        }
     };
 
     const handleCreateTag = async () => {
@@ -203,96 +170,44 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
             });
 
             const newTag = response.data;
-
-            // Add to available tags
             setAvailableTags(prev => [...prev, newTag]);
+            onTagsChange([...(selectedTags || []), newTag]);
 
-            // Notify parent component of new tag
             if (onTagCreated) {
                 onTagCreated(newTag);
             }
 
-            // Add to selected tags
-            onTagsChange([...(selectedTags || []), newTag]);
-
-            // Show success toast
             handleApiSuccess(VALIDATION_MESSAGES.TAG_CREATED_SUCCESS);
-
-            // Clear search and keep focus on input
             setSearchValue('');
-            setHighlightedIndex(-1);
-            setTimeout(() => {
-                if (inputRef.current) {
-                    inputRef.current.focus();
-                }
-            }, 0);
+            setOpen(false);
         } catch (error) {
-            handleApiError(error, 'Failed to create tag. Please try again.');
+            handleApiError(error, VALIDATION_MESSAGES.UNEXPECTED_ERROR);
         } finally {
             setIsCreating(false);
         }
     };
 
-    const handleTagCreatedFromModal = (newTag: Tag) => {
-        // Add to available tags
-        setAvailableTags(prev => [...prev, newTag]);
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        const exactMatch = filteredTags.find(tag =>
+            tag.name.toLowerCase() === searchValue.toLowerCase()
+        );
+        const showCreateOption = searchValue.trim() && !exactMatch;
+        const allOptions = [...filteredTags, ...(showCreateOption ? [{ id: -1, name: searchValue, color: '#6b7280', isCreate: true }] : [])];
 
-        // Notify parent component of new tag
-        if (onTagCreated) {
-            onTagCreated(newTag);
-        }
-
-        // Add to selected tags
-        onTagsChange([...(selectedTags || []), newTag]);
-
-        // Clear search
-        setSearchValue('');
-        setHighlightedIndex(-1);
-    };
-
-    const handleTagUpdatedFromModal = (updatedTag: Tag) => {
-        // Update in available tags
-        setAvailableTags(prev => prev.map(tag => tag.id === updatedTag.id ? updatedTag : tag));
-
-        // Update in selected tags if it's selected
-        const isSelected = selectedTags.some(tag => tag.id === updatedTag.id);
-        if (isSelected) {
-            onTagsChange(selectedTags.map(tag => tag.id === updatedTag.id ? updatedTag : tag));
-        }
-
-        // Clear editing state
-        setEditingTag(null);
-    };
-
-    const handleButtonKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setOpen(true);
-        } else if (e.key === 'Tab') {
-            // Close dropdown when tabbing away
-            setOpen(false);
-            setSearchValue('');
-            setHighlightedIndex(-1);
-        }
-    };
-
-    const handleInputKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
         switch (e.key) {
-            case 'Tab':
-                // Close dropdown when tabbing away from input
-                setOpen(false);
-                setSearchValue('');
-                setHighlightedIndex(-1);
-                break;
             case 'ArrowDown':
                 e.preventDefault();
                 setHighlightedIndex(prev =>
-                    prev < allOptions.length - 1 ? prev + 1 : prev
+                    prev < allOptions.length - 1 ? prev + 1 : 0
                 );
+                if (!open) setOpen(true);
                 break;
             case 'ArrowUp':
                 e.preventDefault();
-                setHighlightedIndex(prev => prev > 0 ? prev - 1 : -1);
+                setHighlightedIndex(prev =>
+                    prev > 0 ? prev - 1 : allOptions.length - 1
+                );
+                if (!open) setOpen(true);
                 break;
             case 'Enter':
                 e.preventDefault();
@@ -304,7 +219,6 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                         handleSelectTag(selectedOption as Tag);
                     }
                 } else if (showCreateOption) {
-                    // If no option is highlighted but we can create, create the tag
                     handleCreateTag();
                 }
                 break;
@@ -312,196 +226,107 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>(({
                 setOpen(false);
                 setSearchValue('');
                 setHighlightedIndex(-1);
-                if (buttonRef.current) {
-                    buttonRef.current.focus();
-                }
                 break;
         }
     };
 
-    const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setSearchValue(value);
-        // Open dropdown when user starts typing
-        if (value.trim() && !open) {
-            setOpen(true);
+    const handleTagCreated = (newTag: Tag) => {
+        setAvailableTags(prev => [...prev, newTag]);
+        onTagsChange([...(selectedTags || []), newTag]);
+
+        if (onTagCreated) {
+            onTagCreated(newTag);
         }
+
+        setShowCreateModal(false);
+        setEditingTag(null);
+        setModalInitialTagName('');
     };
 
-    const handleOptionClick = (option: Tag | { id: number; name: string; color: string; isCreate: true }) => {
-        if ('isCreate' in option && option.isCreate) {
-            handleCreateTag();
-        } else {
-            handleSelectTag(option as Tag);
-        }
+    const handleTagUpdated = (updatedTag: Tag) => {
+        setAvailableTags(prev => prev.map(tag => tag.id === updatedTag.id ? updatedTag : tag));
+        onTagsChange(selectedTags.map(tag => tag.id === updatedTag.id ? updatedTag : tag));
+
+        setShowCreateModal(false);
+        setEditingTag(null);
     };
+
+    // Use selectedTags directly - they now include suggested tags with a flag
+    const allSelectedTags: ExtendedTag[] = (selectedTags || []).map(tag => ({
+        ...tag,
+        isSuggested: (tag as any).suggested === true
+    }));
 
     return (
-        <>
-            <div className={cn("flex items-start gap-2 flex-wrap", className)}>
-                <div className="flex-1 min-w-0">
-                    {/* Selected Tags */}
-                    {displayTags.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                            {displayTags.map((tag) => (
-                                <Badge
-                                    key={tag.id}
-                                    variant={tag.isSuggested ? "outline" : "secondary"}
-                                    className={cn(
-                                        "cursor-pointer hover:bg-secondary/80 group",
-                                        tag.isSuggested && "border-blue-300 bg-blue-50 hover:bg-blue-100 dark:border-blue-600 dark:bg-blue-950 dark:hover:bg-blue-900"
-                                    )}
-                                    onClick={() => handleRemoveTag(tag)}
-                                >
-                                    <div
-                                        className="w-2 h-2 rounded-full mr-1"
-                                        style={{ backgroundColor: tag.color }}
-                                    />
-                                    {tag.name}
-                                    {tag.isSuggested && <Sparkles className="ml-1 h-3 w-3 text-blue-500" />}
-                                    <button
-                                        type="button"
-                                        className="ml-1 h-3 w-3 text-white cursor-pointer p-0 border-0 bg-transparent"
-                                        onClick={(e) => handleEditTag(tag, e)}
-                                        onMouseDown={(e) => e.stopPropagation()}
-                                        onMouseUp={(e) => e.stopPropagation()}
-                                    >
-                                        <Edit3 className="h-3 w-3" />
-                                    </button>
-                                    <X className="ml-1 h-3 w-3" />
-                                </Badge>
-                            ))}
-                        </div>
-                    )}
+        <div className={cn("w-full", className)} ref={dropdownRef}>
+            {/* Selected tags */}
+            {allSelectedTags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-3">
+                    {allSelectedTags.map((tag) => (
+                        <TagItem
+                            key={tag.id}
+                            tag={tag}
+                            onRemove={handleRemoveTag}
+                            onEdit={handleEditTag}
+                            showEdit={true}
+                            size="sm"
+                        />
+                    ))}
+                </div>
+            )}
 
-                    <div className="relative" ref={dropdownRef}>
-                        <Button
-                            ref={buttonRef}
-                            variant="outline"
-                            onClick={() => {
-                                setOpen(true);
-                                // Focus input when button is clicked
-                                setTimeout(() => {
-                                    if (inputRef.current) {
-                                        inputRef.current.focus();
-                                    }
-                                }, 0);
-                            }}
-                            onKeyDown={handleButtonKeyDown}
-                            className={cn(
-                                "w-full justify-between min-w-40",
-                                "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                            )}
-                            type="button"
-                        >
-                            {placeholder}
-                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
+            {/* Tag suggestions */}
+            {showSuggestions && (
+                <TagSuggestions
+                    suggestedTags={suggestedTags}
+                    selectedTags={selectedTags}
+                    onSelectTag={handleSelectTag}
+                    loading={suggestionsLoading}
+                    className="mb-3"
+                />
+            )}
 
-                        {open && (
-                            <div className="absolute top-full left-0 z-50 w-full min-w-60 mt-1 bg-popover border border-border rounded-md shadow-lg">
-                                <div className="p-2">
-                                    <Input
-                                        ref={inputRef}
-                                        placeholder="Search or create tag..."
-                                        value={searchValue}
-                                        onChange={handleInputChange}
-                                        onKeyDown={handleInputKeyDown}
-                                        className="mb-2"
-                                    />
-                                </div>
-
-                                {shouldShowDropdown && (
-                                    <div className="max-h-60 overflow-y-auto">
-                                        {/* Available Tags Section */}
-                                        {filteredTags.length > 0 && (
-                                            <div className="px-2 pb-2">
-                                                <div className="text-xs font-medium text-muted-foreground mb-1 px-2">Available Tags</div>
-                                                {filteredTags.map((tag, index) => (
-                                                    <button
-                                                        key={tag.id}
-                                                        onClick={() => handleOptionClick(tag)}
-                                                        className={cn(
-                                                            "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left",
-                                                            "hover:bg-accent hover:text-accent-foreground",
-                                                            highlightedIndex === index && "bg-accent text-accent-foreground"
-                                                        )}
-                                                    >
-                                                        <div
-                                                            className="w-3 h-3 rounded-full"
-                                                            style={{ backgroundColor: tag.color }}
-                                                        />
-                                                        <span>{tag.name}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        )}
-
-                                        {/* Create New Tag Section */}
-                                        {showCreateOption && (
-                                            <div className="px-2 pb-2">
-                                                {filteredTags.length > 0 && (
-                                                    <div className="border-t border-border my-2" />
-                                                )}
-                                                <div className="text-xs font-medium text-muted-foreground mb-1 px-2">
-                                                    {transactionData ? 'Create Tag with Criteria' : 'Create New'}
-                                                </div>
-                                                <button
-                                                    onClick={() => handleOptionClick({ id: -1, name: searchValue, color: '#6b7280', isCreate: true })}
-                                                    disabled={isCreating}
-                                                    className={cn(
-                                                        "w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded text-left",
-                                                        "hover:bg-accent hover:text-accent-foreground",
-                                                        "disabled:opacity-50 disabled:cursor-not-allowed",
-                                                        highlightedIndex === filteredTags.length && "bg-accent text-accent-foreground"
-                                                    )}
-                                                >
-                                                    <Plus className="h-3 w-3" />
-                                                    <span>
-                                                        {isCreating ? 'Creating...' : transactionData
-                                                            ? `Create "${searchValue}" with criteria`
-                                                            : `Create "${searchValue}"`
-                                                        }
-                                                    </span>
-                                                </button>
-                                            </div>
-                                        )}
-
-                                        {filteredTags.length === 0 && !showCreateOption && (
-                                            <div className="px-4 py-3 text-sm text-muted-foreground text-center">
-                                                No tags found.
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                {open && !shouldShowDropdown && (
-                                    <div className="px-4 py-3 text-sm text-muted-foreground text-center">
-                                        Start typing to search or create tags.
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
+            {/* Add tag input/dropdown */}
+            <div className="relative">
+                <div className="flex items-center">
+                    <TagDropdown
+                        isOpen={open}
+                        searchValue={searchValue}
+                        onSearchChange={handleSearchValueChange}
+                        filteredTags={filteredTags}
+                        selectedTags={selectedTags}
+                        highlightedIndex={highlightedIndex}
+                        onHighlightChange={setHighlightedIndex}
+                        onSelectTag={handleSelectTag}
+                        onCreateTag={handleCreateTag}
+                        onKeyDown={handleKeyDown}
+                        placeholder={placeholder}
+                        isCreating={isCreating}
+                        transactionData={transactionData}
+                        className="flex-1"
+                    />
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setOpen(!open)}
+                        className="ml-2 px-2"
+                    >
+                        <ChevronDown className={cn("h-4 w-4 transition-transform", open && "rotate-180")} />
+                    </Button>
                 </div>
             </div>
 
-            {/* Tag Create/Edit Modal */}
+            {/* Tag creation modal */}
             <TagCreateModal
                 open={showCreateModal}
-                onOpenChange={(open) => {
-                    setShowCreateModal(open);
-                    if (!open) {
-                        setEditingTag(null);
-                        setModalInitialTagName('');
-                    }
-                }}
-                onTagCreated={handleTagCreatedFromModal}
-                onTagUpdated={handleTagUpdatedFromModal}
+                onOpenChange={setShowCreateModal}
+                onTagCreated={handleTagCreated}
+                onTagUpdated={handleTagUpdated}
                 transactionData={transactionData}
-                initialTagName={editingTag ? editingTag.name : modalInitialTagName}
+                initialTagName={modalInitialTagName}
                 editingTag={editingTag}
             />
-        </>
+        </div>
     );
 });

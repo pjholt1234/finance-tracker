@@ -134,6 +134,17 @@ interface TagFormData {
     criterias: TagCriteria[];
 }
 
+// Form-specific criteria interface (without database fields)
+interface TagCriteriaForm {
+    type: 'description' | 'amount' | 'date';
+    match_type: string;
+    value: string;
+    value_to?: string;
+    day_of_month?: number;
+    day_of_week?: number;
+    logic_type: 'and' | 'or';
+}
+
 // Export all interfaces at the bottom
 export {
     Account,
@@ -147,4 +158,5 @@ export {
     PreviewTransaction,
     AccountFormData,
     TagFormData,
+    TagCriteriaForm,
 };
