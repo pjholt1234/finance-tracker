@@ -130,8 +130,8 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 transaction.paid_out && transaction.paid_out > 0
                     ? transaction.paid_out / 100
                     : transaction.paid_in
-                      ? transaction.paid_in / 100
-                      : undefined;
+                        ? transaction.paid_in / 100
+                        : undefined;
 
             const params = buildApiParams({
                 description: transaction.description || '',
@@ -185,7 +185,7 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                 });
             }
         }
-    }, [suggestedTags, currentTransaction, dismissedSuggestedTags, suggestionsLoading]);
+    }, [suggestedTags, currentTransaction, dismissedSuggestedTags, suggestionsLoading, suggestionsForTransaction]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Function to handle new tag creation from TagSelect components
     const handleTagCreated = (newTag: GlobalTag) => {
@@ -203,10 +203,10 @@ export default function ImportReview({ preview, schema, account, filename, temp_
     };
 
     // Function to update the current transaction
-    const updateCurrentTransaction = (updates: Partial<PreviewTransaction>) => {
+    const updateCurrentTransaction = useCallback((updates: Partial<PreviewTransaction>) => {
         if (!currentTransaction) return;
         setTransactions((prev) => prev.map((t) => (t.unique_hash === currentTransaction.unique_hash ? { ...t, ...updates } : t)));
-    };
+    }, [currentTransaction]);
 
     const updateTransactionDescription = (description: string) => {
         if (!currentTransaction) return;
@@ -218,31 +218,31 @@ export default function ImportReview({ preview, schema, account, filename, temp_
         updateCurrentTransaction({ reference });
     };
 
-    const handleApprove = () => {
-        if (!currentTransaction) return;
-        updateCurrentTransaction({ status: 'approved' });
-        handleNext();
-    };
-
-    const handleDiscard = () => {
-        if (!currentTransaction) return;
-        updateCurrentTransaction({ status: 'discarded' });
-        handleNext();
-    };
-
-    const handleNext = () => {
+    const handleNext = useCallback(() => {
         if (currentIndex < nonDuplicateTransactions.length - 1) {
             setCurrentIndex((prev) => prev + 1);
         } else {
             setShowFinalReview(true);
         }
-    };
+    }, [currentIndex, nonDuplicateTransactions.length]);
 
-    const handlePrevious = () => {
+    const handlePrevious = useCallback(() => {
         if (currentIndex > 0) {
             setCurrentIndex((prev) => prev - 1);
         }
-    };
+    }, [currentIndex]);
+
+    const handleApprove = useCallback(() => {
+        if (!currentTransaction) return;
+        updateCurrentTransaction({ status: 'approved' });
+        handleNext();
+    }, [currentTransaction, updateCurrentTransaction, handleNext]);
+
+    const handleDiscard = useCallback(() => {
+        if (!currentTransaction) return;
+        updateCurrentTransaction({ status: 'discarded' });
+        handleNext();
+    }, [currentTransaction, updateCurrentTransaction, handleNext]);
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent) => {
@@ -535,15 +535,14 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                 {(transactions || []).map((transaction) => (
                                     <div
                                         key={transaction.unique_hash}
-                                        className={`rounded-lg border p-4 ${
-                                            transaction.is_duplicate
-                                                ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'
-                                                : transaction.status === 'approved'
-                                                  ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                                                  : transaction.status === 'discarded'
+                                        className={`rounded-lg border p-4 ${transaction.is_duplicate
+                                            ? 'border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-900/20'
+                                            : transaction.status === 'approved'
+                                                ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                                                : transaction.status === 'discarded'
                                                     ? 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
                                                     : 'border-border bg-card'
-                                        }`}
+                                            }`}
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1 space-y-3">
@@ -554,19 +553,19 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             transaction.is_duplicate
                                                                 ? 'secondary'
                                                                 : transaction.status === 'approved'
-                                                                  ? 'default'
-                                                                  : transaction.status === 'discarded'
-                                                                    ? 'destructive'
-                                                                    : 'outline'
+                                                                    ? 'default'
+                                                                    : transaction.status === 'discarded'
+                                                                        ? 'destructive'
+                                                                        : 'outline'
                                                         }
                                                     >
                                                         {transaction.is_duplicate
                                                             ? 'Duplicate'
                                                             : transaction.status === 'approved'
-                                                              ? 'Approved'
-                                                              : transaction.status === 'discarded'
-                                                                ? 'Discarded'
-                                                                : 'Pending'}
+                                                                ? 'Approved'
+                                                                : transaction.status === 'discarded'
+                                                                    ? 'Discarded'
+                                                                    : 'Pending'}
                                                     </Badge>
                                                     <div className="flex items-center gap-2">
                                                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -647,8 +646,8 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                                             amount: transaction.paid_in
                                                                 ? transaction.paid_in / 100
                                                                 : transaction.paid_out
-                                                                  ? transaction.paid_out / 100
-                                                                  : undefined,
+                                                                    ? transaction.paid_out / 100
+                                                                    : undefined,
                                                             date: transaction.date,
                                                         }}
                                                     />
@@ -860,8 +859,8 @@ export default function ImportReview({ preview, schema, account, filename, temp_
                                         amount: currentTransaction.paid_in
                                             ? currentTransaction.paid_in / 100
                                             : currentTransaction.paid_out
-                                              ? currentTransaction.paid_out / 100
-                                              : undefined,
+                                                ? currentTransaction.paid_out / 100
+                                                : undefined,
                                         date: currentTransaction.date,
                                     }}
                                 />

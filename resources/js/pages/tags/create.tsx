@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Head, useForm } from '@inertiajs/react';
 import { TAG_COLORS, VALIDATION_MESSAGES } from '@/utils/constants';
 import { generateRandomColor } from '@/utils/form-helpers';
