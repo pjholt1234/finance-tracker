@@ -10,7 +10,7 @@ import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { Account } from '@/types/global';
 import { FormEvent } from 'react';
-import currencyChangeHandler from '@/utils/currency-change-handler';
+import { handleCurrencyChange } from '@/utils/currency-change-handler';
 import { useCurrencyFormat } from '@/hooks';
 
 interface FormData {
@@ -157,7 +157,7 @@ export default function EditAccount({ account }: { account: Account }) {
                                                 type="number"
                                                 step="0.01"
                                                 value={data.balance_at_start === 0 ? '' : (data.balance_at_start / 100).toString()}
-                                                onChange={(e) => currencyChangeHandler(e, setData, 'balance_at_start')}
+                                                onChange={(e) => handleCurrencyChange(e, setData, 'balance_at_start')}
                                                 placeholder="0.00"
                                                 className={`pl-10 ${errors.balance_at_start ? 'border-destructive' : ''}`}
                                             />

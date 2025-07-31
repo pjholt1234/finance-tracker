@@ -9,7 +9,7 @@ import { ArrowLeft, AlertCircle, Building2, Hash, DollarSign } from 'lucide-reac
 import { type BreadcrumbItem } from '@/types';
 import AppLayout from '@/layouts/app-layout';
 import { FormEvent } from 'react';
-import currencyChangeHandler from '@/utils/currency-change-handler';
+import { handleCurrencyChange } from '@/utils/currency-change-handler';
 
 interface FormData {
     name: string;
@@ -132,7 +132,7 @@ export default function CreateAccount() {
                                                 type="number"
                                                 step="0.01"
                                                 value={data.balance_at_start === 0 ? '' : (data.balance_at_start / 100).toString()}
-                                                onChange={(e) => currencyChangeHandler(e, setData, 'balance_at_start')}
+                                                onChange={(e) => handleCurrencyChange(e, setData, 'balance_at_start')}
                                                 placeholder="0.00"
                                                 className={`pl-10 ${errors.balance_at_start ? 'border-destructive' : ''}`}
                                             />
