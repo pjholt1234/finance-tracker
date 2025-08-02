@@ -1,0 +1,61 @@
+FROM php:8.3-apache
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    git \
+    curl \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    zip \
+    unzip \
+    sqlite3 \
+    libsqlite3-dev \
+    nodejs \
+    npm \
+    vim \
+    nano \
+    libzip-dev
+
+# Clear cache
+RUN apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Install PHP extensions
+RUN docker-php-ext-install pdo_mysql pdo_sqlite mbstring exif pcntl bcmath gd zip
+
+# Install Redis extension
+RUN pecl install redis && docker-php-ext-enable redis
+
+# Enable Apache mod_rewrite and headers
+RUN a2enmod rewrite headers
+
+# Get latest Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+
+# Set working directory
+WORKDIR /var/www
+
+# Copy the entire application first
+COPY . .
+
+# Set proper permissions
+RUN chown -R www-data:www-data /var/www \
+    && chmod -R 755 /var/www/storage \
+    && chmod -R 755 /var/www/bootstrap/cache
+
+# Create SQLite database file if it doesn't exist
+RUN touch /var/www/database/database.sqlite \
+    && chown www-data:www-data /var/www/database/database.sqlite \
+    && chmod 664 /var/www/database/database.sqlite
+
+# Install composer dependencies (including dev dependencies for development)
+RUN composer install
+
+# Install npm dependencies
+RUN npm ci
+
+# Expose port 80
+EXPOSE 80
+
+# Start Apache
+CMD ["apache2-foreground"] 

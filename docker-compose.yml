@@ -1,0 +1,53 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: finance-tracker-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+      - ./storage:/var/www/storage
+      - sqlite_data:/var/www/database
+    ports:
+      - "8000:80"
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=/var/www/database/database.sqlite
+    networks:
+      - finance-tracker
+
+  # Redis for caching and sessions (recommended for production)
+  redis:
+    image: redis:7-alpine
+    container_name: finance-tracker-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - finance-tracker
+
+  # MailHog for local email testing (optional - remove in production)
+  mailhog:
+    image: mailhog/mailhog
+    container_name: finance-tracker-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - finance-tracker
+
+networks:
+  finance-tracker:
+    driver: bridge
+
+volumes:
+  sqlite_data:
+  redis_data:
