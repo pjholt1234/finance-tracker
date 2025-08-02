@@ -7,7 +7,7 @@ on:
   workflow_dispatch: # Allow manual triggers
 
 env:
-  AWS_REGION: us-east-1
+  AWS_REGION: eu-west-2
   ECR_REPOSITORY: finance-tracker
   ECS_SERVICE: finance-tracker-service
   ECS_CLUSTER: finance-tracker-cluster
@@ -118,4 +118,5 @@ jobs:
         echo "📦 Image: ${{ steps.build-image.outputs.IMAGE_URI }}"
         echo "🏷️ Git SHA: ${{ github.sha }}"
         echo "🔗 Service: ${{ env.ECS_SERVICE }}"
-        echo "🏢 Cluster: ${{ env.ECS_CLUSTER }}" 
+        echo "🏢 Cluster: ${{ env.ECS_CLUSTER }}"
+        echo "🇬🇧 Region: ${{ env.AWS_REGION }} (London)" 
