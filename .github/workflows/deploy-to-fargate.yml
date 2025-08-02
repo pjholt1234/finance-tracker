@@ -1,0 +1,121 @@
+name: Deploy to AWS Fargate
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allow manual triggers
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPOSITORY: finance-tracker
+  ECS_SERVICE: finance-tracker-service
+  ECS_CLUSTER: finance-tracker-cluster
+  ECS_TASK_DEFINITION: finance-tracker
+
+jobs:
+  deploy:
+    name: Deploy to Fargate
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Get AWS Account ID
+      id: account-id
+      run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+        echo "ECR_REGISTRY=$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.account-id.outputs.ECR_REGISTRY }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        # Build a docker container and push to ECR
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    - name: Create or update app key in AWS Systems Manager
+      run: |
+        # Generate Laravel app key if it doesn't exist
+        if ! aws ssm get-parameter --name "/finance-tracker/app-key" --region ${{ env.AWS_REGION }} &> /dev/null; then
+          APP_KEY=$(docker run --rm ${{ steps.build-image.outputs.IMAGE_URI }} php artisan key:generate --show)
+          aws ssm put-parameter \
+            --name "/finance-tracker/app-key" \
+            --value "$APP_KEY" \
+            --type "SecureString" \
+            --region ${{ env.AWS_REGION }}
+          echo "✅ App key created in Systems Manager"
+        else
+          echo "✅ App key already exists in Systems Manager"
+        fi
+
+    - name: Download current task definition
+      run: |
+        aws ecs describe-task-definition \
+          --task-definition ${{ env.ECS_TASK_DEFINITION }} \
+          --query taskDefinition > task-definition.json
+
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: task-definition.json
+        container-name: finance-tracker-app
+        image: ${{ steps.build-image.outputs.IMAGE_URI }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
+
+    - name: Run database migrations
+      run: |
+        # Get the task ARN of the running service
+        TASK_ARN=$(aws ecs list-tasks \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --service-name ${{ env.ECS_SERVICE }} \
+          --query 'taskArns[0]' \
+          --output text)
+        
+        if [ "$TASK_ARN" != "None" ] && [ "$TASK_ARN" != "" ]; then
+          # Run migrations in the container
+          aws ecs execute-command \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --task $TASK_ARN \
+            --container finance-tracker-app \
+            --interactive \
+            --command "php artisan migrate --force"
+        else
+          echo "⚠️ No running tasks found. Migrations will run on first container startup."
+        fi
+
+    - name: Deployment summary
+      run: |
+        echo "🚀 Deployment completed successfully!"
+        echo "📦 Image: ${{ steps.build-image.outputs.IMAGE_URI }}"
+        echo "🏷️ Git SHA: ${{ github.sha }}"
+        echo "🔗 Service: ${{ env.ECS_SERVICE }}"
+        echo "🏢 Cluster: ${{ env.ECS_CLUSTER }}" 

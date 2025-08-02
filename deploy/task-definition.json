@@ -1,0 +1,83 @@
+{
+    "family": "finance-tracker",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "512",
+    "memory": "1024",
+    "executionRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskExecutionRole",
+    "taskRoleArn": "arn:aws:iam::YOUR_ACCOUNT_ID:role/ecsTaskRole",
+    "containerDefinitions": [
+        {
+            "name": "finance-tracker-app",
+            "image": "YOUR_ACCOUNT_ID.dkr.ecr.YOUR_REGION.amazonaws.com/finance-tracker:latest",
+            "portMappings": [
+                {
+                    "containerPort": 80,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "environment": [
+                {
+                    "name": "APP_ENV",
+                    "value": "production"
+                },
+                {
+                    "name": "APP_DEBUG",
+                    "value": "false"
+                },
+                {
+                    "name": "APP_URL",
+                    "value": "https://your-domain.com"
+                },
+                {
+                    "name": "DB_CONNECTION",
+                    "value": "sqlite"
+                },
+                {
+                    "name": "DB_DATABASE",
+                    "value": "/var/www/database/database.sqlite"
+                },
+                {
+                    "name": "CACHE_STORE",
+                    "value": "file"
+                },
+                {
+                    "name": "SESSION_DRIVER",
+                    "value": "file"
+                },
+                {
+                    "name": "QUEUE_CONNECTION",
+                    "value": "sync"
+                }
+            ],
+            "secrets": [
+                {
+                    "name": "APP_KEY",
+                    "valueFrom": "arn:aws:ssm:YOUR_REGION:YOUR_ACCOUNT_ID:parameter/finance-tracker/app-key"
+                }
+            ],
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/finance-tracker",
+                    "awslogs-region": "YOUR_REGION",
+                    "awslogs-stream-prefix": "ecs",
+                    "awslogs-create-group": "true"
+                }
+            },
+            "healthCheck": {
+                "command": [
+                    "CMD-SHELL",
+                    "curl -f http://localhost/login || exit 1"
+                ],
+                "interval": 30,
+                "timeout": 5,
+                "retries": 3,
+                "startPeriod": 60
+            }
+        }
+    ]
+}
