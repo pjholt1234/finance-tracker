@@ -2,9 +2,8 @@ name: Deploy to AWS Fargate
 
 on:
   push:
-    branches:
-      - main
-  workflow_dispatch: # Allow manual triggers
+    branches: [ main ]
+  workflow_dispatch:
 
 env:
   AWS_REGION: eu-west-2
@@ -15,12 +14,12 @@ env:
 
 jobs:
   deploy:
-    name: Deploy to Fargate
+    name: Deploy
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
     - name: Configure AWS credentials
@@ -34,59 +33,135 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Get AWS Account ID
-      id: account-id
+    - name: Get RDS endpoint
+      id: rds-endpoint
       run: |
-        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-        echo "ACCOUNT_ID=$ACCOUNT_ID" >> $GITHUB_OUTPUT
-        echo "ECR_REGISTRY=$ACCOUNT_ID.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com" >> $GITHUB_OUTPUT
+        RDS_ENDPOINT=$(aws rds describe-db-instances --db-instance-identifier finance-tracker-db --query 'DBInstances[0].Endpoint.Address' --output text)
+        echo "rds-endpoint=$RDS_ENDPOINT" >> $GITHUB_OUTPUT
+        echo "RDS Endpoint: $RDS_ENDPOINT"
+
+    - name: Create/Update database credentials in SSM
+      run: |
+        # Store RDS endpoint
+        aws ssm put-parameter \
+          --name "/finance-tracker/DB_HOST" \
+          --value "${{ steps.rds-endpoint.outputs.rds-endpoint }}" \
+          --type "String" \
+          --overwrite
+        
+        # Store DB password (create if not exists)
+        aws ssm put-parameter \
+          --name "/finance-tracker/DB_PASSWORD" \
+          --value "FinanceTracker2024" \
+          --type "SecureString" \
+          --overwrite || \
+        aws ssm put-parameter \
+          --name "/finance-tracker/DB_PASSWORD" \
+          --value "FinanceTracker2024" \
+          --type "SecureString"
+
+    - name: Create/Update APP_KEY in SSM
+      run: |
+        # Check if APP_KEY exists, if not create one
+        aws ssm get-parameter --name "/finance-tracker/APP_KEY" --with-decryption || \
+        aws ssm put-parameter \
+          --name "/finance-tracker/APP_KEY" \
+          --value "base64:$(openssl rand -base64 32)" \
+          --type "SecureString"
 
     - name: Build, tag, and push image to Amazon ECR
       id: build-image
       env:
-        ECR_REGISTRY: ${{ steps.account-id.outputs.ECR_REGISTRY }}
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # Build a docker container and push to ECR
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-        docker tag $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:latest
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    - name: Create or update app key in AWS Systems Manager
-      run: |
-        # Generate Laravel app key if it doesn't exist
-        if ! aws ssm get-parameter --name "/finance-tracker/app-key" --region ${{ env.AWS_REGION }} &> /dev/null; then
-          APP_KEY=$(docker run --rm ${{ steps.build-image.outputs.IMAGE_URI }} php artisan key:generate --show)
-          aws ssm put-parameter \
-            --name "/finance-tracker/app-key" \
-            --value "$APP_KEY" \
-            --type "SecureString" \
-            --region ${{ env.AWS_REGION }}
-          echo "✅ App key created in Systems Manager"
-        else
-          echo "✅ App key already exists in Systems Manager"
-        fi
-
-    - name: Download current task definition
-      run: |
-        aws ecs describe-task-definition \
-          --task-definition ${{ env.ECS_TASK_DEFINITION }} \
-          --query taskDefinition > task-definition.json
-
-    - name: Fill in the new image ID in the Amazon ECS task definition
+    - name: Render ECS task definition
       id: task-def
-      uses: aws-actions/amazon-ecs-render-task-definition@v1
-      with:
-        task-definition: task-definition.json
-        container-name: finance-tracker-app
-        image: ${{ steps.build-image.outputs.IMAGE_URI }}
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        cat > task-definition.json << EOF
+        {
+          "family": "${{ env.ECS_TASK_DEFINITION }}",
+          "networkMode": "awsvpc",
+          "requiresCompatibilities": ["FARGATE"],
+          "cpu": "256",
+          "memory": "512",
+          "executionRoleArn": "arn:aws:iam::${{ steps.configure-aws-credentials.outputs.aws-account-id }}:role/ecsTaskExecutionRole",
+          "taskRoleArn": "arn:aws:iam::${{ steps.configure-aws-credentials.outputs.aws-account-id }}:role/ecsTaskRole",
+          "containerDefinitions": [
+            {
+              "name": "finance-tracker",
+              "image": "$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG",
+              "portMappings": [
+                {
+                  "containerPort": 80,
+                  "protocol": "tcp"
+                }
+              ],
+              "essential": true,
+              "environment": [
+                {
+                  "name": "APP_ENV",
+                  "value": "production"
+                },
+                {
+                  "name": "APP_DEBUG",
+                  "value": "false"
+                },
+                {
+                  "name": "DB_CONNECTION",
+                  "value": "mysql"
+                },
+                {
+                  "name": "DB_PORT",
+                  "value": "3306"
+                },
+                {
+                  "name": "DB_DATABASE",
+                  "value": "finance_tracker"
+                },
+                {
+                  "name": "DB_USERNAME",
+                  "value": "admin"
+                }
+              ],
+              "secrets": [
+                {
+                  "name": "APP_KEY",
+                  "valueFrom": "/finance-tracker/APP_KEY"
+                },
+                {
+                  "name": "DB_HOST",
+                  "valueFrom": "/finance-tracker/DB_HOST"
+                },
+                {
+                  "name": "DB_PASSWORD",
+                  "valueFrom": "/finance-tracker/DB_PASSWORD"
+                }
+              ],
+              "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                  "awslogs-group": "/ecs/finance-tracker",
+                  "awslogs-region": "${{ env.AWS_REGION }}",
+                  "awslogs-stream-prefix": "ecs"
+                }
+              }
+            }
+          ]
+        }
+        EOF
 
     - name: Deploy Amazon ECS task definition
       uses: aws-actions/amazon-ecs-deploy-task-definition@v1
       with:
-        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        task-definition: task-definition.json
         service: ${{ env.ECS_SERVICE }}
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
@@ -94,29 +169,14 @@ jobs:
     - name: Run database migrations
       run: |
         # Get the task ARN of the running service
-        TASK_ARN=$(aws ecs list-tasks \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --service-name ${{ env.ECS_SERVICE }} \
-          --query 'taskArns[0]' \
-          --output text)
+        TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name ${{ env.ECS_SERVICE }} --query 'taskArns[0]' --output text)
         
-        if [ "$TASK_ARN" != "None" ] && [ "$TASK_ARN" != "" ]; then
-          # Run migrations in the container
-          aws ecs execute-command \
-            --cluster ${{ env.ECS_CLUSTER }} \
-            --task $TASK_ARN \
-            --container finance-tracker-app \
-            --interactive \
-            --command "php artisan migrate --force"
-        else
-          echo "⚠️ No running tasks found. Migrations will run on first container startup."
-        fi
-
-    - name: Deployment summary
-      run: |
-        echo "🚀 Deployment completed successfully!"
-        echo "📦 Image: ${{ steps.build-image.outputs.IMAGE_URI }}"
-        echo "🏷️ Git SHA: ${{ github.sha }}"
-        echo "🔗 Service: ${{ env.ECS_SERVICE }}"
-        echo "🏢 Cluster: ${{ env.ECS_CLUSTER }}"
-        echo "🇬🇧 Region: ${{ env.AWS_REGION }} (London)" 
+        echo "Running migrations on task: $TASK_ARN"
+        
+        # Run migrations
+        aws ecs execute-command \
+          --cluster ${{ env.ECS_CLUSTER }} \
+          --task $TASK_ARN \
+          --container finance-tracker \
+          --interactive \
+          --command "php artisan migrate --force" 
