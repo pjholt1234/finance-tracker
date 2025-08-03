@@ -17,7 +17,7 @@ A modern, full-stack personal finance management application built with Laravel,
 
 ### 🏷️ Intelligent Tagging System
 - **Auto-Tagging**: Define criteria to automatically tag transactions
-- **Smart Suggestions**: AI-powered tag suggestions based on transaction data
+- **Smart Suggestions**: Tag suggestions based on transaction data
 - **Criteria Builder**: Create complex tagging rules with AND/OR logic
 - **Tag Categories**: Organize tags with colors and descriptions
 
@@ -56,6 +56,59 @@ A modern, full-stack personal finance management application built with Laravel,
 - **Prettier** - Code formatting
 - **Laravel Pint** - PHP code style fixer
 
+## ☁️ Infrastructure
+
+### Production (AWS)
+- **AWS Fargate** - Serverless container platform for running the application
+- **AWS RDS MySQL** - Managed MySQL database
+- **GitHub Actions CI/CD** - Automated testing and manual deployment pipeline
+- **AWS ECR** - Container registry for Docker images
+- **AWS Systems Manager** - Parameter Store for secure configuration management
+- **CloudWatch Logs** - Application logging and monitoring
+
+### Development (Local)
+- **Docker Compose** - Local development environment
+- **MySQL** - Local database for development
+- **Redis** - Caching and session storage
+- **MailHog** - Email testing and development
+- **Vite** - Development server with hot reloading
+
+### Key Features
+- **Automated Testing**: Runs comprehensive test suite on every push
+- **Code Quality**: Automated linting and formatting checks
+- **Manual Deployment**: Controlled production deployments via workflow dispatch
+- **Environment Management**: Separate environments for development and production
+- **Security**: Secrets management for sensitive configuration
+
+## 🚀 Deployment Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   GitHub Repo   │    │  GitHub Actions │    │   AWS ECR       │
+│                 │───▶│   CI/CD Pipeline│───▶│   Container     │
+│                 │    │                 │    │   Registry      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                       ┌─────────────────┐    ┌─────────────────┐
+                       │   AWS Fargate   │    │   AWS RDS       │
+                       │   ECS Service   │    │   MySQL         │
+                       │                 │    │   Database      │
+                       └─────────────────┘    └─────────────────┘
+                                │                        │
+                                └────────────┬───────────┘
+                                             ▼
+                                    ┌─────────────────┐
+                                    │   Application   │
+                                    │   Load Balancer │
+                                    └─────────────────┘
+                                             │
+                                             ▼
+                                    ┌─────────────────┐
+                                    │   Production    │
+                                    │   Application   │
+                                    └─────────────────┘
+```
 
 ## 🧪 Testing
 
@@ -71,3 +124,51 @@ npm run types
 # Run linting
 npm run lint
 ```
+
+## 🚀 Development Setup
+
+### Prerequisites
+- Docker and Docker Compose
+- Node.js 18+ and npm
+- PHP 8.3+
+
+### Local Development
+```bash
+# Clone the repository
+git clone <repository-url>
+cd finance-tracker
+
+# Start the development environment
+docker compose -f docker-compose.dev.yml up -d
+
+# Install dependencies
+docker compose -f docker-compose.dev.yml exec app composer install
+docker compose -f docker-compose.dev.yml exec app npm install
+
+# Run migrations
+docker compose -f docker-compose.dev.yml exec app php artisan migrate
+
+# Build assets
+docker compose -f docker-compose.dev.yml exec app npm run build
+
+# Access the application
+open http://localhost:8000
+```
+
+### Production Deployment
+1. **Manual Deployment**: Go to GitHub Actions → "Deploy to AWS Fargate" → "Run workflow"
+2. **Environment Variables**: Configured via AWS Systems Manager Parameter Store
+3. **Database Migrations**: Run automatically on container startup
+4. **Health Checks**: Application health monitored by ECS
+
+## 🔧 Configuration
+
+### Environment Variables
+- `APP_ENV`: Application environment (local, production)
+- `APP_URL`: Application URL for asset generation
+- `ASSET_URL`: Asset URL for HTTPS mixed content prevention
+- `DB_CONNECTION`: Database connection type
+- `DB_HOST`: Database host (from RDS)
+- `DB_DATABASE`: Database name
+- `DB_USERNAME`: Database username
+- `DB_PASSWORD`: Database password (from SSM)
