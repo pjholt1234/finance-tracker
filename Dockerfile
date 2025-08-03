@@ -1,45 +1,32 @@
-# Use PHP 8.3 with Apache
+# Use official PHP Apache image with pre-installed extensions
 FROM php:8.3-apache
 
-# Install system dependencies
+# Install system dependencies and PHP extensions in one layer
 RUN apt-get update && apt-get install -y \
-    git \
-    curl \
-    libpng-dev \
-    libonig-dev \
-    libxml2-dev \
-    libzip-dev \
-    libfreetype6-dev \
-    libjpeg62-turbo-dev \
-    zip \
-    unzip \
+    git curl zip unzip \
+    libpng-dev libjpeg-dev libfreetype6-dev \
+    libzip-dev libonig-dev \
     default-mysql-client \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Node.js 18.x
-RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
-
-# Configure and install GD extension with JPEG and PNG support
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd
-
-# Install other PHP extensions
-RUN docker-php-ext-install \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install -j$(nproc) \
     pdo_mysql \
-    pdo_sqlite \
     mbstring \
     exif \
     pcntl \
     bcmath \
-    zip
+    gd \
+    zip \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
+    && a2enmod rewrite headers \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Redis extension
-RUN pecl install redis && docker-php-ext-enable redis
-
-# Enable Apache mod_rewrite and headers
-RUN a2enmod rewrite headers
+# Install Node.js 18
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
+    && apt-get install -y nodejs \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -47,58 +34,21 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Set working directory
 WORKDIR /var/www
 
-# Copy Apache configuration
+# Copy Apache config
 COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy composer files first (for better Docker layer caching)
-COPY composer.json composer.lock ./
-
-# Set proper permissions for www-data user
-RUN chown -R www-data:www-data /var/www \
-    && chmod -R 755 /var/www
-
-# Switch to www-data user for composer install
-USER www-data
-
-# Install composer dependencies
+# Copy and install dependencies
+COPY composer.json composer.lock package*.json ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction
+RUN npm ci --only=production && npm run build && rm -rf node_modules
 
-# Copy package files
-COPY --chown=www-data:www-data package*.json ./
+# Copy application
+COPY . .
 
-# Install npm dependencies and build assets
-RUN npm ci --only=production \
-    && npm run build \
-    && rm -rf node_modules
-
-# Copy application code
-COPY --chown=www-data:www-data . .
-
-# Create storage directories and set permissions
-RUN mkdir -p storage/logs storage/framework/{cache,sessions,views} \
+# Set permissions
+RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
-# Switch back to root for final setup
-USER root
-
-# Add wait-for-it script for database connectivity
-ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh /usr/local/bin/wait-for-it
-RUN chmod +x /usr/local/bin/wait-for-it
-
-# Create startup script
-RUN echo '#!/bin/bash\n\
-    # Wait for database if DB_HOST is set\n\
-    if [ ! -z "$DB_HOST" ]; then\n\
-    echo "Waiting for database at $DB_HOST:${DB_PORT:-3306}..."\n\
-    /usr/local/bin/wait-for-it $DB_HOST:${DB_PORT:-3306} --timeout=60 --strict\n\
-    fi\n\
-    \n\
-    # Start Apache\n\
-    apache2-foreground' > /usr/local/bin/start.sh \
-    && chmod +x /usr/local/bin/start.sh
-
-# Expose port 80
+# Simple startup - remove database wait for now
 EXPOSE 80
-
-# Start Apache with database wait
-CMD ["/usr/local/bin/start.sh"] 
+CMD ["apache2-foreground"] 
