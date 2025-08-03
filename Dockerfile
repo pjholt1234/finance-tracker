@@ -37,18 +37,17 @@ WORKDIR /var/www
 # Copy Apache config
 COPY docker/apache/000-default.conf /etc/apache2/sites-available/000-default.conf
 
-# Copy and install dependencies
-COPY composer.json composer.lock package*.json ./
+# Copy application first
+COPY . .
+
+# Install dependencies
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 RUN npm ci --only=production && npm run build && rm -rf node_modules
-
-# Copy application
-COPY . .
 
 # Set permissions
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
-# Simple startup - remove database wait for now
+# Simple startup
 EXPOSE 80
 CMD ["apache2-foreground"] 
