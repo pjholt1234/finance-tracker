@@ -33,6 +33,13 @@ jobs:
       id: login-ecr
       uses: aws-actions/amazon-ecr-login@v2
 
+    - name: Get AWS Account ID
+      id: account
+      run: |
+        ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+        echo "account-id=$ACCOUNT_ID" >> $GITHUB_OUTPUT
+        echo "AWS Account ID: $ACCOUNT_ID"
+
     - name: Get RDS endpoint
       id: rds-endpoint
       run: |
@@ -84,6 +91,7 @@ jobs:
       env:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
+        ACCOUNT_ID: ${{ steps.account.outputs.account-id }}
       run: |
         cat > task-definition.json << EOF
         {
@@ -92,8 +100,8 @@ jobs:
           "requiresCompatibilities": ["FARGATE"],
           "cpu": "256",
           "memory": "512",
-          "executionRoleArn": "arn:aws:iam::${{ steps.configure-aws-credentials.outputs.aws-account-id }}:role/ecsTaskExecutionRole",
-          "taskRoleArn": "arn:aws:iam::${{ steps.configure-aws-credentials.outputs.aws-account-id }}:role/ecsTaskRole",
+          "executionRoleArn": "arn:aws:iam::${ACCOUNT_ID}:role/ecsTaskExecutionRole",
+          "taskRoleArn": "arn:aws:iam::${ACCOUNT_ID}:role/ecsTaskRole",
           "containerDefinitions": [
             {
               "name": "finance-tracker",
