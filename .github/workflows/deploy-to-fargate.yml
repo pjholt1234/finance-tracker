@@ -123,6 +123,10 @@ jobs:
                   "value": "false"
                 },
                 {
+                  "name": "APP_URL",
+                  "value": "https://finance-tracker.pjholt.com"
+                },
+                {
                   "name": "DB_CONNECTION",
                   "value": "mysql"
                 },
