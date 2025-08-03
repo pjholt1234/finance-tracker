@@ -174,32 +174,8 @@ jobs:
         cluster: ${{ env.ECS_CLUSTER }}
         wait-for-service-stability: true
 
-    - name: Enable execute command on service
+    - name: Deployment completed
       run: |
-        aws ecs update-service \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --service ${{ env.ECS_SERVICE }} \
-          --enable-execute-command \
-          --force-new-deployment
-
-    - name: Wait for new deployment
-      run: |
-        echo "Waiting for service to stabilize with execute command enabled..."
-        aws ecs wait services-stable \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --services ${{ env.ECS_SERVICE }}
-
-    - name: Run database migrations
-      run: |
-        # Get the task ARN of the running service
-        TASK_ARN=$(aws ecs list-tasks --cluster ${{ env.ECS_CLUSTER }} --service-name ${{ env.ECS_SERVICE }} --query 'taskArns[0]' --output text)
-        
-        echo "Running migrations on task: $TASK_ARN"
-        
-        # Run migrations
-        aws ecs execute-command \
-          --cluster ${{ env.ECS_CLUSTER }} \
-          --task $TASK_ARN \
-          --container finance-tracker \
-          --interactive \
-          --command "php artisan migrate --force" 
+        echo "🎉 Deployment completed successfully!"
+        echo "🗄️ Database migrations will run automatically on container startup"
+        echo "🌐 Application will be available once the container is healthy" 

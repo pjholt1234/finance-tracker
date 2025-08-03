@@ -7,6 +7,7 @@ RUN apt-get update && apt-get install -y \
     libpng-dev libjpeg-dev libfreetype6-dev \
     libzip-dev libonig-dev \
     default-mysql-client \
+    netcat-openbsd \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install -j$(nproc) \
     pdo_mysql \
@@ -48,6 +49,35 @@ RUN npm ci --only=production && npm run build && rm -rf node_modules
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
+# Create startup script with database migration
+RUN echo '#!/bin/bash\n\
+    echo "🚀 Starting Finance Tracker..."\n\
+    \n\
+    # Wait for database if DB_HOST is set\n\
+    if [ ! -z "$DB_HOST" ]; then\n\
+    echo "⏳ Waiting for database at $DB_HOST:${DB_PORT:-3306}..."\n\
+    timeout 60 bash -c "until nc -z $DB_HOST ${DB_PORT:-3306}; do sleep 1; done"\n\
+    if [ $? -eq 0 ]; then\n\
+    echo "✅ Database is ready!"\n\
+    \n\
+    # Run migrations\n\
+    echo "🗄️ Running database migrations..."\n\
+    php artisan migrate --force\n\
+    \n\
+    if [ $? -eq 0 ]; then\n\
+    echo "✅ Migrations completed successfully!"\n\
+    else\n\
+    echo "❌ Migration failed, but continuing..."\n\
+    fi\n\
+    else\n\
+    echo "⚠️ Database connection timeout, but continuing..."\n\
+    fi\n\
+    fi\n\
+    \n\
+    echo "🌐 Starting Apache..."\n\
+    apache2-foreground' > /usr/local/bin/start.sh \
+    && chmod +x /usr/local/bin/start.sh
+
 # Simple startup
 EXPOSE 80
-CMD ["apache2-foreground"] 
+CMD ["/usr/local/bin/start.sh"] 
