@@ -60,14 +60,14 @@ RUN echo '#!/bin/bash\n\
     if [ $? -eq 0 ]; then\n\
     echo "✅ Database is ready!"\n\
     \n\
-    # TEMPORARY: Run fresh migrations with corrected schema\n\
-    echo "🔥 Running FRESH database migrations (corrected schema)..."\n\
-    php artisan migrate:fresh --force\n\
+    # Run migrations\n\
+    echo "🗄️ Running database migrations..."\n\
+    php artisan migrate --force\n\
     \n\
     if [ $? -eq 0 ]; then\n\
-    echo "✅ Fresh migrations completed successfully!"\n\
+    echo "✅ Migrations completed successfully!"\n\
     else\n\
-    echo "❌ Fresh migration failed, but continuing..."\n\
+    echo "❌ Migration failed, but continuing..."\n\
     fi\n\
     else\n\
     echo "⚠️ Database connection timeout, but continuing..."\n\
