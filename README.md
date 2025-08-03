@@ -135,8 +135,14 @@ npm run lint
 ### Local Development
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone git@github.com:pjholt1234/finance-tracker.git
 cd finance-tracker
+
+# Copy environment file and configure
+cp .env.example .env
+
+# Generate application key
+docker compose -f docker-compose.dev.yml exec app php artisan key:generate
 
 # Start the development environment
 docker compose -f docker-compose.dev.yml up -d
@@ -154,6 +160,16 @@ docker compose -f docker-compose.dev.yml exec app npm run build
 # Access the application
 open http://localhost:8000
 ```
+
+### Environment Configuration
+The `.env.example` file is pre-configured for local development with:
+- **Database**: MySQL via Docker Compose (`127.0.0.1:3306`)
+- **Email**: MailHog for testing (`127.0.0.1:1025`)
+- **Cache**: Redis (`127.0.0.1:6379`)
+- **Sessions**: File-based storage
+- **Queues**: Synchronous processing
+
+You can customize these settings in your `.env` file based on your local setup preferences.
 
 ### Production Deployment
 1. **Manual Deployment**: Go to GitHub Actions → "Deploy to AWS Fargate" → "Run workflow"
