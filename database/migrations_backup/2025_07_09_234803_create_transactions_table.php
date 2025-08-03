@@ -22,8 +22,8 @@ return new class extends Migration
             $table->text('paid_out')->nullable(); // Encrypted paid out amount
             $table->text('description')->nullable(); // Encrypted description
 
-            // Import tracking - Use foreign key from the start
-            $table->foreignId('import_id')->constrained()->onDelete('cascade');
+            // Import tracking
+            $table->string('import_id'); // UUID or identifier for the import batch
 
             // Duplicate prevention
             $table->string('unique_hash')->unique(); // Hash of user_id + date + balance + paid_in + paid_out
