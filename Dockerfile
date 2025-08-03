@@ -49,7 +49,7 @@ RUN npm ci --only=production && npm run build && rm -rf node_modules
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 775 storage bootstrap/cache
 
-# Create startup script with database migration
+# Create startup script with database reset (TEMPORARY)
 RUN echo '#!/bin/bash\n\
     echo "🚀 Starting Finance Tracker..."\n\
     \n\
@@ -60,14 +60,14 @@ RUN echo '#!/bin/bash\n\
     if [ $? -eq 0 ]; then\n\
     echo "✅ Database is ready!"\n\
     \n\
-    # Run migrations\n\
-    echo "🗄️ Running database migrations..."\n\
-    php artisan migrate --force\n\
+    # TEMPORARY: Run fresh migrations to reset database\n\
+    echo "🔥 Running FRESH database migrations (this will drop all tables)..."\n\
+    php artisan migrate:fresh --force\n\
     \n\
     if [ $? -eq 0 ]; then\n\
-    echo "✅ Migrations completed successfully!"\n\
+    echo "✅ Fresh migrations completed successfully!"\n\
     else\n\
-    echo "❌ Migration failed, but continuing..."\n\
+    echo "❌ Fresh migration failed, but continuing..."\n\
     fi\n\
     else\n\
     echo "⚠️ Database connection timeout, but continuing..."\n\
