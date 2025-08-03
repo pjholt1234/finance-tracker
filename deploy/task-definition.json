@@ -30,7 +30,11 @@
                 },
                 {
                     "name": "APP_URL",
-                    "value": "https://your-domain.com"
+                    "value": "https://finance-tracker.pjholt.com"
+                },
+                {
+                    "name": "ASSET_URL",
+                    "value": "https://finance-tracker.pjholt.com"
                 },
                 {
                     "name": "DB_CONNECTION",
