@@ -211,10 +211,10 @@ class CsvImportServiceTest extends TestCase
         $user = User::factory()->create();
         $schema = CsvSchema::factory()->create([
             'user_id' => $user->id,
-            'date_column' => 'A',
-            'balance_column' => 'B',
-            'amount_column' => 'C',
-            'description_column' => 'D',
+            'date_column' => 1,
+            'balance_column' => 2,
+            'amount_column' => 3,
+            'description_column' => 4,
             'transaction_data_start' => 2,
         ]);
 

@@ -1,4 +1,5 @@
 // Lambda@Edge function for CloudFront Basic Auth
+/* eslint-env node */
 'use strict';
 
 exports.handler = (event, context, callback) => {
