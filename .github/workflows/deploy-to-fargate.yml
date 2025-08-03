@@ -1,8 +1,6 @@
 name: Deploy to AWS Fargate
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 env:
@@ -124,6 +122,10 @@ jobs:
                 },
                 {
                   "name": "APP_URL",
+                  "value": "https://finance-tracker.pjholt.com"
+                },
+                {
+                  "name": "ASSET_URL",
                   "value": "https://finance-tracker.pjholt.com"
                 },
                 {
