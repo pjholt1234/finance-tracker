@@ -129,6 +129,10 @@ jobs:
                   "value": "https://finance-tracker.pjholt.com"
                 },
                 {
+                  "name": "FORCE_SCHEME",
+                  "value": "https"
+                },
+                {
                   "name": "DB_CONNECTION",
                   "value": "mysql"
                 },

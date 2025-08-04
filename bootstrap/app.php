@@ -3,6 +3,7 @@
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTwoFactor;
+use App\Providers\AppServiceProvider;
 use App\Providers\AuthServiceProvider;
 use App\Providers\FortifyServiceProvider;
 use Illuminate\Foundation\Application;
@@ -21,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
-        // Trust proxies for HTTPS behind load balancer
+        // Trust all proxies for AWS ALB (which has dynamic IPs)
         $middleware->trustProxies(
             headers: 31 // Trust all X-Forwarded headers
         );
@@ -39,6 +40,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withProviders([
+        AppServiceProvider::class,
         AuthServiceProvider::class,
         FortifyServiceProvider::class,
     ])
