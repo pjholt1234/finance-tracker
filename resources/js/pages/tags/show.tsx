@@ -31,6 +31,10 @@ export default function TagsShow({ tag }: Props) {
         });
     };
 
+    // Add null checks for arrays
+    const criterias = tag.criterias || [];
+    const transactions = tag.transactions || [];
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={tag.name} />
@@ -103,9 +107,9 @@ export default function TagsShow({ tag }: Props) {
                             <CardDescription>Rules for automatically applying this tag to transactions</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            {tag.criterias.length > 0 ? (
+                            {criterias.length > 0 ? (
                                 <div className="space-y-3">
-                                    {tag.criterias.map((criteria, index) => (
+                                    {criterias.map((criteria, index) => (
                                         <div key={criteria.id} className="space-y-2">
                                             <div className="flex items-center justify-between rounded-lg border p-3">
                                                 <div className="space-y-1">
@@ -131,7 +135,7 @@ export default function TagsShow({ tag }: Props) {
                                                                 {criteria.match_type === 'day_of_month'
                                                                     ? `Day ${criteria.day_of_month || criteria.value} of month`
                                                                     : criteria.match_type === 'day_of_week'
-                                                                      ? (() => {
+                                                                        ? (() => {
                                                                             const days = [
                                                                                 'Monday',
                                                                                 'Tuesday',
@@ -145,14 +149,14 @@ export default function TagsShow({ tag }: Props) {
                                                                             const dayName = days[dayNumber - 1] || 'Unknown';
                                                                             return dayName;
                                                                         })()
-                                                                      : criteria.value}
+                                                                        : criteria.value}
                                                             </span>
                                                         )}
                                                     </div>
                                                 </div>
                                             </div>
                                             {/* Show operator between criteria */}
-                                            {index < tag.criterias.length - 1 && (
+                                            {index < criterias.length - 1 && (
                                                 <div className="flex justify-center">
                                                     <Badge variant="outline" className="text-xs font-medium">
                                                         {criteria.logic_type === 'or' ? 'OR' : 'AND'}
@@ -178,9 +182,9 @@ export default function TagsShow({ tag }: Props) {
                         <CardDescription>Latest transactions tagged with "{tag.name}"</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {tag.transactions.length > 0 ? (
+                        {transactions.length > 0 ? (
                             <div className="space-y-4">
-                                {tag.transactions.map((transaction) => (
+                                {transactions.map((transaction) => (
                                     <div key={transaction.id} className="flex items-center justify-between rounded-lg border p-4">
                                         <div className="flex-1">
                                             <div className="flex items-center space-x-2">
