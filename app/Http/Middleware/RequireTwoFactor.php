@@ -26,6 +26,11 @@ class RequireTwoFactor
             return $next($request);
         }
 
+        // Bypass 2FA for demo users
+        if ($user->is_demo) {
+            return $next($request);
+        }
+
         if ($user->two_factor_confirmed_at) {
             return $next($request);
         }
