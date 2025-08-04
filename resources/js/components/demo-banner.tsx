@@ -1,4 +1,4 @@
-import { Clock, Download, Info, RotateCcw } from 'lucide-react';
+import { Clock, Download, Info, RotateCcw, Play } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface DemoBannerProps {
@@ -8,9 +8,10 @@ interface DemoBannerProps {
         seconds: number;
         expired: boolean;
     };
+    onStartTour?: () => void;
 }
 
-export function DemoBanner({ timeUntilReset: initialTime }: DemoBannerProps) {
+export function DemoBanner({ timeUntilReset: initialTime, onStartTour }: DemoBannerProps) {
     const [timeUntilReset, setTimeUntilReset] = useState(initialTime);
 
     useEffect(() => {
@@ -95,6 +96,12 @@ export function DemoBanner({ timeUntilReset: initialTime }: DemoBannerProps) {
         document.body.removeChild(a);
     };
 
+    const handleStartTour = () => {
+        if (onStartTour) {
+            onStartTour();
+        }
+    };
+
     if (timeUntilReset.expired) {
         return (
             <div className="border-b bg-red-50 px-4 py-3">
@@ -123,6 +130,13 @@ export function DemoBanner({ timeUntilReset: initialTime }: DemoBannerProps) {
                     <span>This is sample data that resets every 24 hours. Your changes won't be permanently saved.</span>
                 </div>
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleStartTour}
+                        className="text-sm text-orange-700 underline hover:no-underline cursor-pointer flex items-center gap-1"
+                    >
+                        <Play className="h-3 w-3" />
+                        Start Tour
+                    </button>
                     <button
                         onClick={handleDownloadCSV}
                         className="text-sm text-orange-700 underline hover:no-underline cursor-pointer flex items-center gap-1"

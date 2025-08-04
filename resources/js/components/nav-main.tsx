@@ -28,7 +28,13 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={isActive(item.href)} tooltip={{ children: item.title }}>
+                        <SidebarMenuButton
+                            asChild
+                            isActive={isActive(item.href)}
+                            tooltip={{ children: item.title }}
+                            data-sidebar-item={item.title}
+                            className="transition-all duration-200"
+                        >
                             <Link href={item.href} prefetch>
                                 {item.icon && <item.icon />}
                                 <span>{item.title}</span>
