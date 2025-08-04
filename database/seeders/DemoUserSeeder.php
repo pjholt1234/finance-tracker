@@ -326,30 +326,35 @@ class DemoUserSeeder extends Seeder
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'SAFEWAY',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $groceries->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'TRADER JOE',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $groceries->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'WHOLE FOODS',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $groceries->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'KROGER',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $groceries->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'ALBERTSONS',
+                'logic_type' => 'or',
             ]);
         }
 
@@ -360,36 +365,42 @@ class DemoUserSeeder extends Seeder
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'RESTAURANT',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $dining->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'PIZZA',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $dining->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'COFFEE',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $dining->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'STARBUCKS',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $dining->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'MCDONALD',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $dining->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'BURGER',
+                'logic_type' => 'or',
             ]);
         }
 
@@ -400,30 +411,35 @@ class DemoUserSeeder extends Seeder
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'ELECTRIC',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $utilities->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'GAS COMPANY',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $utilities->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'WATER',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $utilities->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'INTERNET',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $utilities->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'CABLE',
+                'logic_type' => 'or',
             ]);
         }
 
@@ -434,18 +450,21 @@ class DemoUserSeeder extends Seeder
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'PAYROLL',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $salary->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'SALARY',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $salary->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'DEPOSIT',
+                'logic_type' => 'or',
             ]);
         }
 
@@ -456,30 +475,35 @@ class DemoUserSeeder extends Seeder
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'SHELL',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $gas->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'EXXON',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $gas->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'CHEVRON',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $gas->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'BP',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $gas->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'MOBIL',
+                'logic_type' => 'or',
             ]);
         }
 
@@ -490,30 +514,35 @@ class DemoUserSeeder extends Seeder
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'NETFLIX',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $entertainment->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'SPOTIFY',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $entertainment->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'AMAZON PRIME',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $entertainment->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'DISNEY',
+                'logic_type' => 'or',
             ]);
             TagCriteria::create([
                 'tag_id' => $entertainment->id,
                 'type' => 'description',
                 'match_type' => 'contains',
                 'value' => 'MOVIE',
+                'logic_type' => 'or',
             ]);
         }
     }
