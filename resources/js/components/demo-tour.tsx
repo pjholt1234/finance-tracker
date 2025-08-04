@@ -146,7 +146,6 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
                         playsInline
                         onLoadedData={handleCanPlay}
                         onError={handleError}
-                        controls
                     >
                         <source src={videoUrl} type={`video/${videoType}`} />
                         Your browser does not support the video tag.
@@ -309,14 +308,113 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
             {/* Tour Modal */}
             <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
                 <div
-                    className="bg-background border rounded-lg shadow-lg w-full max-w-2xl h-[90vh] pointer-events-auto flex flex-col overflow-hidden"
+                    className="bg-background border rounded-lg shadow-lg w-full max-w-2xl h-[90vh] pointer-events-auto flex flex-col overflow-hidden md:block"
                     style={{
                         marginLeft: 'max(calc(var(--sidebar-width, 280px) + 1rem), 1rem)',
                         marginRight: '1rem',
                         maxWidth: 'calc(100vw - 2rem)'
                     }}
                 >
-                    <div className="flex flex-col h-full">
+                    {/* Mobile Modal - Full screen on mobile */}
+                    <div className="md:hidden fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
+                        <div className="flex flex-col h-full">
+                            {/* Header */}
+                            <div className="flex items-center justify-between p-4 pb-2 flex-shrink-0">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                        <span className="text-orange-600 font-semibold text-sm">
+                                            {currentStep + 1}
+                                        </span>
+                                    </div>
+                                    <h2 className="text-lg font-semibold text-orange-600">Demo Tour</h2>
+                                    <span className="text-muted-foreground">•</span>
+                                    <p className="text-sm text-muted-foreground">
+                                        Step {currentStep + 1} of {tourSteps.length}
+                                    </p>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleClose}
+                                    className="h-8 w-8 p-0"
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            {/* Progress Bar */}
+                            <div className="px-4 mb-4 flex-shrink-0">
+                                <div className="w-full bg-gray-200 rounded-full h-2">
+                                    <div
+                                        className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                                        style={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Content - Scrollable Area */}
+                            <div className="flex-1 overflow-y-auto px-4">
+                                <div className="space-y-4">
+                                    <div>
+                                        <h3 className="text-lg font-semibold mb-2">{currentTourStep.title}</h3>
+                                        <p className="text-muted-foreground leading-relaxed text-sm">
+                                            {currentTourStep.description}
+                                        </p>
+                                    </div>
+
+                                    {/* Video Player */}
+                                    {currentTourStep.videoUrl && currentTourStep.videoType && (
+                                        <VideoPlayer
+                                            videoUrl={currentTourStep.videoUrl}
+                                            videoType={currentTourStep.videoType}
+                                            stepId={currentTourStep.id}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Navigation - Fixed at Bottom */}
+                            <div className="flex items-center justify-between p-4 pt-3 border-t flex-shrink-0">
+                                <Button
+                                    variant="ghost"
+                                    onClick={handleSkip}
+                                    className="text-muted-foreground hover:text-foreground text-sm"
+                                >
+                                    <SkipForward className="h-4 w-4 mr-2" />
+                                    Skip Tour
+                                </Button>
+
+                                <div className="flex items-center gap-2">
+                                    <Button
+                                        variant="outline"
+                                        onClick={handlePrevious}
+                                        disabled={isFirstStep}
+                                        className="flex items-center gap-1 text-sm"
+                                    >
+                                        <ChevronLeft className="h-4 w-4" />
+                                    </Button>
+
+                                    <Button
+                                        onClick={handleNext}
+                                        className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700 text-sm"
+                                    >
+                                        <span>{isLastStep ? 'Finish' : 'Next'}</span>
+                                        {!isLastStep && <ChevronRight className="h-4 w-4" />}
+                                    </Button>
+                                </div>
+                            </div>
+
+                            {/* Keyboard Shortcuts Hint */}
+                            <div className="px-4 pb-4 pt-2 border-t border-gray-100 flex-shrink-0">
+                                <p className="text-xs text-muted-foreground text-center">
+                                    Use arrow keys to navigate • Press Escape to close
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Desktop Modal */}
+                    <div className="hidden md:flex flex-col h-full">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 sm:p-6 pb-2 flex-shrink-0">
                             <div className="flex items-center gap-3">
