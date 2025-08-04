@@ -123,12 +123,24 @@ export function DemoBanner({ timeUntilReset: initialTime, onStartTour }: DemoBan
 
     return (
         <div className="border-b bg-orange-50 px-4 py-3">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2 text-sm text-orange-800">
-                    <Info className="h-4 w-4" />
-                    <span className="font-medium">Demo Mode:</span>
-                    <span>This is sample data that resets every 24 hours. Your changes won't be permanently saved.</span>
+            <div className="flex flex-col gap-2">
+                {/* First line - Demo info and timer */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-orange-800">
+                        <Info className="h-4 w-4" />
+                        <span className="font-medium">Demo Mode:</span>
+                        <span>This is sample data that resets every 24 hours. Your changes won't be permanently saved.</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-orange-700">
+                        <Clock className="h-4 w-4" />
+                        <span className="font-mono">
+                            {formatTime(timeUntilReset.hours)}:{formatTime(timeUntilReset.minutes)}:{formatTime(timeUntilReset.seconds)}
+                        </span>
+                        <span className="text-xs">until reset</span>
+                    </div>
                 </div>
+
+                {/* Second line - Actions */}
                 <div className="flex items-center gap-4">
                     <button
                         onClick={handleStartTour}
@@ -144,13 +156,6 @@ export function DemoBanner({ timeUntilReset: initialTime, onStartTour }: DemoBan
                         <Download className="h-3 w-3" />
                         Sample CSV
                     </button>
-                    <div className="flex items-center gap-2 text-sm text-orange-700">
-                        <Clock className="h-4 w-4" />
-                        <span className="font-mono">
-                            {formatTime(timeUntilReset.hours)}:{formatTime(timeUntilReset.minutes)}:{formatTime(timeUntilReset.seconds)}
-                        </span>
-                        <span className="text-xs">until reset</span>
-                    </div>
                 </div>
             </div>
         </div>
