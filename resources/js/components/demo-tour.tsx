@@ -200,6 +200,7 @@ interface DemoTourProps {
 
 export function DemoTour({ isOpen, onClose }: DemoTourProps) {
     const [currentStep, setCurrentStep] = useState(0);
+    const sidebarItemRef = useRef<string>('');
 
     const currentTourStep = tourSteps[currentStep];
     const isFirstStep = currentStep === 0;
@@ -250,17 +251,17 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
         if (isOpen) {
             // Reset to first step when tour opens
             setCurrentStep(0);
-            // Highlight the current sidebar item
-            highlightSidebarItem(currentTourStep.sidebarItem);
         }
-    }, [isOpen, currentTourStep.sidebarItem, highlightSidebarItem]);
+    }, [isOpen]);
 
     useEffect(() => {
-        if (isOpen) {
+        if (isOpen && currentTourStep.sidebarItem !== sidebarItemRef.current) {
             // Highlight the current sidebar item
+            sidebarItemRef.current = currentTourStep.sidebarItem;
             highlightSidebarItem(currentTourStep.sidebarItem);
         }
-    }, [currentStep, isOpen, currentTourStep.sidebarItem, highlightSidebarItem]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentStep, isOpen, highlightSidebarItem]);
 
     // Keyboard navigation
     useEffect(() => {
