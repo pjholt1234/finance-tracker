@@ -23,6 +23,8 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'is_demo',
+        'demo_last_reset',
     ];
 
     /**
@@ -48,6 +50,8 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'is_demo' => 'boolean',
+            'demo_last_reset' => 'datetime',
         ];
     }
 
@@ -89,5 +93,29 @@ class User extends Authenticatable
     public function tags(): HasMany
     {
         return $this->hasMany(Tag::class);
+    }
+
+    /**
+     * Scope to get demo users only.
+     */
+    public function scopeDemo($query)
+    {
+        return $query->where('is_demo', true);
+    }
+
+    /**
+     * Scope to get non-demo users only.
+     */
+    public function scopeNonDemo($query)
+    {
+        return $query->where('is_demo', false);
+    }
+
+    /**
+     * Check if the user is a demo user.
+     */
+    public function isDemoUser(): bool
+    {
+        return $this->is_demo;
     }
 }

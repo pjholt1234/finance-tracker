@@ -1,5 +1,5 @@
 import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
+import { LoaderCircle, Zap } from 'lucide-react';
 import { FormEventHandler } from 'react';
 
 import InputError from '@/components/input-error';
@@ -35,12 +35,37 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         });
     };
 
+    const handleDemoLogin = () => {
+        post(route('demo.login'));
+    };
+
     return (
         <AuthLayout title="Log in to your account" description="Enter your email and password below to log in">
             <Head title="Log in" />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
                 <div className="grid gap-6">
+                    {/* Demo Login Button */}
+                    <Button
+                        type="button"
+                        variant="outline"
+                        className="w-full border-orange-200 bg-orange-50 text-orange-700 hover:bg-orange-100 hover:text-orange-800"
+                        onClick={handleDemoLogin}
+                        disabled={processing}
+                    >
+                        <Zap className="mr-2 h-4 w-4" />
+                        Try Demo Account
+                    </Button>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">Or continue with email</span>
+                        </div>
+                    </div>
+
                     <div className="grid gap-2">
                         <Label htmlFor="email">Email address</Label>
                         <Input

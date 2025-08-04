@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\DemoUserNotification;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\RequireTwoFactor;
@@ -30,6 +31,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             ValidateCsrfToken::class,
             HandleAppearance::class,
+            DemoUserNotification::class,
             HandleInertiaRequests::class,
             AddLinkHeadersForPreloadedAssets::class,
         ]);
