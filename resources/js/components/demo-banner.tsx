@@ -1,8 +1,6 @@
 import { Clock, Download, Info, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-import { Button } from '@/components/ui/button';
-
 interface DemoBannerProps {
     timeUntilReset: {
         hours: number;
@@ -105,9 +103,12 @@ export function DemoBanner({ timeUntilReset: initialTime }: DemoBannerProps) {
                         <RotateCcw className="h-4 w-4" />
                         <span className="font-medium">Demo data has expired and will be reset on next action.</span>
                     </div>
-                    <Button size="sm" variant="outline" onClick={handleRefresh} className="text-red-700 border-red-200 hover:bg-red-100">
+                    <button
+                        onClick={handleRefresh}
+                        className="text-sm text-red-700 underline hover:no-underline cursor-pointer"
+                    >
                         Refresh Now
-                    </Button>
+                    </button>
                 </div>
             </div>
         );
@@ -121,16 +122,14 @@ export function DemoBanner({ timeUntilReset: initialTime }: DemoBannerProps) {
                     <span className="font-medium">Demo Mode:</span>
                     <span>This is sample data that resets every 24 hours. Your changes won't be permanently saved.</span>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        size="sm"
-                        variant="outline"
+                <div className="flex items-center gap-4">
+                    <button
                         onClick={handleDownloadCSV}
-                        className="text-orange-700 border-orange-200 hover:bg-orange-100"
+                        className="text-sm text-orange-700 underline hover:no-underline cursor-pointer flex items-center gap-1"
                     >
-                        <Download className="h-3 w-3 mr-1" />
+                        <Download className="h-3 w-3" />
                         Sample CSV
-                    </Button>
+                    </button>
                     <div className="flex items-center gap-2 text-sm text-orange-700">
                         <Clock className="h-4 w-4" />
                         <span className="font-mono">
