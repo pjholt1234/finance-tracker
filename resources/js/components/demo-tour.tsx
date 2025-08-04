@@ -17,7 +17,7 @@ const tourSteps: TourStep[] = [
         id: 'dashboard',
         title: 'Your Financial Command Center',
         description: 'This dashboard gives you a complete overview of your finances with account balances, spending patterns, and recent transaction activity. Track your financial health at a glance.',
-        videoUrl: '/videos/test-video.mp4',
+        videoUrl: '/videos/Dashboard.mp4',
         videoType: 'mp4',
         sidebarItem: 'Dashboard',
     },
@@ -25,7 +25,7 @@ const tourSteps: TourStep[] = [
         id: 'accounts',
         title: 'Manage Multiple Accounts',
         description: 'Keep track of all your financial accounts in one place. View balances, transaction history, and transfer between accounts with ease.',
-        videoUrl: '/videos/test-video.mp4',
+        videoUrl: '/videos/Accounts.mp4',
         videoType: 'mp4',
         sidebarItem: 'Accounts',
     },
@@ -33,7 +33,7 @@ const tourSteps: TourStep[] = [
         id: 'tags',
         title: 'Smart Transaction Categorization',
         description: 'Automatically organize your transactions with custom categories and intelligent tagging rules. Track spending patterns and generate detailed reports.',
-        videoUrl: '/videos/test-video.mp4',
+        videoUrl: '/videos/Tags.mp4',
         videoType: 'mp4',
         sidebarItem: 'Tags',
     },
@@ -41,7 +41,7 @@ const tourSteps: TourStep[] = [
         id: 'csv-schemas',
         title: 'Custom Import Formats',
         description: 'Define custom formats for importing bank statements from different institutions. Support various CSV structures and date formats.',
-        videoUrl: '/videos/test-video.mp4',
+        videoUrl: '/videos/Schemas.mp4',
         videoType: 'mp4',
         sidebarItem: 'CSV Schemas',
     },
@@ -49,7 +49,7 @@ const tourSteps: TourStep[] = [
         id: 'imports',
         title: 'Import History & Management',
         description: 'View and manage your imported statements. Track import history, review processed transactions, and handle any import issues.',
-        videoUrl: '/videos/test-video.mp4',
+        videoUrl: '/videos/Imports.mp4',
         videoType: 'mp4',
         sidebarItem: 'Imports',
     },
@@ -57,7 +57,7 @@ const tourSteps: TourStep[] = [
         id: 'import-statement',
         title: 'Upload & Process Statements',
         description: 'Upload bank statements and automatically process them with smart categorization. Import transactions quickly and accurately.',
-        videoUrl: '/videos/test-video.mp4',
+        videoUrl: '/videos/Importing.mp4',
         videoType: 'mp4',
         sidebarItem: 'Import Statement',
     },
@@ -73,6 +73,12 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    // Reset states when step changes
+    useEffect(() => {
+        setIsLoading(true);
+        setHasError(false);
+    }, [stepId]);
 
     const handleLoad = () => {
         setIsLoading(false);
@@ -110,6 +116,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
             case 'youtube':
                 return (
                     <iframe
+                        key={stepId} // Force re-render for each step
                         src={`${videoUrl}?autoplay=1&mute=1&loop=1&playlist=${videoUrl.split('/').pop()}`}
                         title="Feature demonstration"
                         className="w-full h-48 sm:h-64 rounded-lg"
@@ -124,6 +131,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
             case 'vimeo':
                 return (
                     <iframe
+                        key={stepId} // Force re-render for each step
                         src={`${videoUrl}?autoplay=1&muted=1&loop=1`}
                         title="Feature demonstration"
                         className="w-full h-48 sm:h-64 rounded-lg"
@@ -139,6 +147,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
             case 'webm':
                 return (
                     <video
+                        key={stepId} // Force re-render for each step
                         ref={videoRef}
                         className="w-full h-48 sm:h-64 rounded-lg"
                         muted
@@ -374,16 +383,7 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                             </div>
 
                             {/* Navigation - Fixed at Bottom */}
-                            <div className="flex items-center justify-between p-4 pt-3 border-t flex-shrink-0">
-                                <Button
-                                    variant="ghost"
-                                    onClick={handleSkip}
-                                    className="text-muted-foreground hover:text-foreground text-sm"
-                                >
-                                    <SkipForward className="h-4 w-4 mr-2" />
-                                    Skip Tour
-                                </Button>
-
+                            <div className="flex items-center justify-end p-4 pt-3 border-t flex-shrink-0">
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="outline"
@@ -471,16 +471,7 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                         </div>
 
                         {/* Navigation - Fixed at Bottom */}
-                        <div className="flex items-center justify-between p-4 sm:p-6 pt-3 border-t flex-shrink-0">
-                            <Button
-                                variant="ghost"
-                                onClick={handleSkip}
-                                className="text-muted-foreground hover:text-foreground text-sm"
-                            >
-                                <SkipForward className="h-4 w-4 mr-2" />
-                                Skip Tour
-                            </Button>
-
+                        <div className="flex items-center justify-end p-4 sm:p-6 pt-3 border-t flex-shrink-0">
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline"

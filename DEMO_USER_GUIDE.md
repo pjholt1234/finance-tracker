@@ -10,6 +10,31 @@ The Finance Tracker application includes a comprehensive demo user system that a
 - **Password**: `demo123`
 - **Login**: Click the "Try Demo Account" button on the login page
 
+## Interactive Demo Tour
+
+When you first log in as a demo user, you'll be greeted with an interactive tour that highlights the key features of the application:
+
+### Tour Features
+- **Automatic Launch**: Tour starts automatically when you first land on the dashboard
+- **Step-by-Step Guide**: Walks through all 6 main features with detailed explanations
+- **Visual Highlights**: Sidebar menu items are highlighted as the tour progresses
+- **Keyboard Navigation**: Use arrow keys to navigate, Escape to close
+- **Manual Trigger**: Click "Start Tour" in the demo banner to restart the tour anytime
+
+### Tour Steps
+1. **Dashboard** - Your financial command center with overview charts and insights
+2. **Accounts** - Manage multiple bank accounts and track balances
+3. **Tags** - Smart transaction categorization with automatic tagging
+4. **CSV Schemas** - Define custom formats for bank statement imports
+5. **Imports** - View and manage your imported statement history
+6. **Import Statement** - Upload and process bank statements with auto-categorization
+
+### Tour Controls
+- **Next/Previous**: Navigate through tour steps
+- **Skip Tour**: Dismiss the tour and explore on your own
+- **Keyboard Shortcuts**: Arrow keys for navigation, Escape to close
+- **Progress Indicator**: Visual progress bar shows your position in the tour
+
 ## Demo Features
 
 ### 🔄 Auto-Reset System
@@ -60,17 +85,32 @@ Date,Description,Paid In,Paid Out,Balance
 - `ELECTRIC BILL` → **Utilities** tag  
 - `SHELL GAS STATION` → **Gas** tag
 - `NETFLIX SUBSCRIPTION` → **Entertainment** tag
-- `PAYROLL DEPOSIT` → **Salary** tag
-- `PIZZA PALACE RESTAURANT` → **Dining Out** tag
 
-## How to Test CSV Import
+## Getting Started
 
-1. **Login as demo user**
-2. **Go to "Import Statement"** page
-3. **Upload** `demo-sample-transactions.csv`
-4. **Select** "Bank Statement Format" schema
-5. **Preview** the import - transactions will be auto-tagged
-6. **Finalize** the import to see tagged transactions
+1. **Login**: Click "Try Demo Account" on the login page
+2. **Take the Tour**: The interactive tour will start automatically
+3. **Explore Features**: Navigate through the sidebar to explore different sections
+4. **Try Importing**: Download the sample CSV and try the import feature
+5. **Experiment**: Make changes, create tags, and explore the interface
+6. **Reset**: Data automatically resets every 24 hours
+
+## Tips for Demo Users
+
+- **Tour Navigation**: Use the tour to understand each feature before exploring
+- **Sample Data**: All data is realistic and demonstrates real-world usage
+- **Auto-Tagging**: See how the system automatically categorizes transactions
+- **CSV Import**: Try importing the sample CSV to see the import process
+- **Responsive Design**: Test the interface on different screen sizes
+- **24-Hour Reset**: Don't worry about making changes - everything resets daily
+
+## Demo Banner Features
+
+The demo banner at the top of the page provides:
+- **Tour Trigger**: Click "Start Tour" to restart the interactive tour
+- **Sample CSV**: Download the sample CSV file for testing imports
+- **Reset Timer**: See when the demo data will automatically reset
+- **Demo Status**: Clear indication that you're in demo mode
 
 ## Management Commands
 
@@ -91,13 +131,6 @@ php artisan demo:reset --all
 # Clear and recreate demo user with fresh data
 php artisan db:seed --class=DemoUserSeeder
 ```
-
-## Demo Banner Features
-
-- **Orange banner** clearly indicates demo mode
-- **Countdown timer** shows time until reset
-- **Information text** explains demo limitations
-- **Expired state** shows when data needs refresh
 
 ## Security & Isolation
 
