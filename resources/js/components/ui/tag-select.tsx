@@ -154,6 +154,7 @@ export const TagSelect = forwardRef<TagSelectRef, TagSelectProps>((
         // If we have transaction data, show the modal for advanced tag creation
         if (transactionData) {
             setModalInitialTagName(searchValue.trim());
+            setEditingTag(null); // Reset editing tag state when creating new tag
             setShowCreateModal(true);
             setOpen(false);
             return;
