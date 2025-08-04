@@ -135,7 +135,7 @@ export default function TagsShow({ tag }: Props) {
                                                                 {criteria.match_type === 'day_of_month'
                                                                     ? `Day ${criteria.day_of_month || criteria.value} of month`
                                                                     : criteria.match_type === 'day_of_week'
-                                                                        ? (() => {
+                                                                      ? (() => {
                                                                             const days = [
                                                                                 'Monday',
                                                                                 'Tuesday',
@@ -149,7 +149,7 @@ export default function TagsShow({ tag }: Props) {
                                                                             const dayName = days[dayNumber - 1] || 'Unknown';
                                                                             return dayName;
                                                                         })()
-                                                                        : criteria.value}
+                                                                      : criteria.value}
                                                             </span>
                                                         )}
                                                     </div>

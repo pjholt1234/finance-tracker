@@ -1,7 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { ChevronLeft, ChevronRight, Play, SkipForward, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { ChevronLeft, ChevronRight, Play, X } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface TourStep {
     id: string;
@@ -16,7 +15,8 @@ const tourSteps: TourStep[] = [
     {
         id: 'dashboard',
         title: 'Your Financial Command Center',
-        description: 'This dashboard gives you a complete overview of your finances with account balances, spending patterns, and recent transaction activity. Track your financial health at a glance.',
+        description:
+            'This dashboard gives you a complete overview of your finances with account balances, spending patterns, and recent transaction activity. Track your financial health at a glance.',
         videoUrl: '/videos/Dashboard.mp4',
         videoType: 'mp4',
         sidebarItem: 'Dashboard',
@@ -24,7 +24,8 @@ const tourSteps: TourStep[] = [
     {
         id: 'accounts',
         title: 'Manage Multiple Accounts',
-        description: 'Keep track of all your financial accounts in one place. View balances, transaction history, and transfer between accounts with ease.',
+        description:
+            'Keep track of all your financial accounts in one place. View balances, transaction history, and transfer between accounts with ease.',
         videoUrl: '/videos/Accounts.mp4',
         videoType: 'mp4',
         sidebarItem: 'Accounts',
@@ -32,7 +33,8 @@ const tourSteps: TourStep[] = [
     {
         id: 'tags',
         title: 'Smart Transaction Categorization',
-        description: 'Automatically organize your transactions with custom categories and intelligent tagging rules. Track spending patterns and generate detailed reports.',
+        description:
+            'Automatically organize your transactions with custom categories and intelligent tagging rules. Track spending patterns and generate detailed reports.',
         videoUrl: '/videos/Tags.mp4',
         videoType: 'mp4',
         sidebarItem: 'Tags',
@@ -40,7 +42,8 @@ const tourSteps: TourStep[] = [
     {
         id: 'csv-schemas',
         title: 'Custom Import Formats',
-        description: 'Define custom formats for importing bank statements from different institutions. Support various CSV structures and date formats.',
+        description:
+            'Define custom formats for importing bank statements from different institutions. Support various CSV structures and date formats.',
         videoUrl: '/videos/Schemas.mp4',
         videoType: 'mp4',
         sidebarItem: 'CSV Schemas',
@@ -84,7 +87,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
         setIsLoading(false);
     };
 
-    const handleError = (error: any) => {
+    const handleError = () => {
         setIsLoading(false);
         setHasError(true);
     };
@@ -119,7 +122,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
                         key={stepId} // Force re-render for each step
                         src={`${videoUrl}?autoplay=1&mute=1&loop=1&playlist=${videoUrl.split('/').pop()}`}
                         title="Feature demonstration"
-                        className="w-full h-48 sm:h-64 rounded-lg"
+                        className="h-48 w-full rounded-lg sm:h-64"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -134,7 +137,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
                         key={stepId} // Force re-render for each step
                         src={`${videoUrl}?autoplay=1&muted=1&loop=1`}
                         title="Feature demonstration"
-                        className="w-full h-48 sm:h-64 rounded-lg"
+                        className="h-48 w-full rounded-lg sm:h-64"
                         frameBorder="0"
                         allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
@@ -149,7 +152,7 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
                     <video
                         key={stepId} // Force re-render for each step
                         ref={videoRef}
-                        className="w-full h-48 sm:h-64 rounded-lg"
+                        className="h-48 w-full rounded-lg sm:h-64"
                         muted
                         loop
                         playsInline
@@ -168,16 +171,12 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
 
     if (hasError) {
         return (
-            <div className="bg-gray-100 rounded-lg p-4 text-center">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-3">
+            <div className="rounded-lg bg-gray-100 p-4 text-center">
+                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-orange-100">
                     <Play className="h-8 w-8 text-orange-600" />
                 </div>
-                <p className="text-sm text-muted-foreground">
-                    Video unavailable
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                    Video content could not be loaded
-                </p>
+                <p className="text-sm text-muted-foreground">Video unavailable</p>
+                <p className="mt-1 text-xs text-muted-foreground">Video content could not be loaded</p>
             </div>
         );
     }
@@ -185,8 +184,8 @@ function VideoPlayer({ videoUrl, videoType, stepId }: VideoPlayerProps) {
     return (
         <div className="relative">
             {isLoading && (
-                <div className="absolute inset-0 bg-gray-100 rounded-lg flex items-center justify-center z-10">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600"></div>
+                <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-gray-100">
+                    <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-orange-600"></div>
                 </div>
             )}
             {renderVideo()}
@@ -201,11 +200,51 @@ interface DemoTourProps {
 
 export function DemoTour({ isOpen, onClose }: DemoTourProps) {
     const [currentStep, setCurrentStep] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
 
     const currentTourStep = tourSteps[currentStep];
     const isFirstStep = currentStep === 0;
     const isLastStep = currentStep === tourSteps.length - 1;
+
+    const highlightSidebarItem = useCallback((itemTitle: string) => {
+        // Remove previous highlights
+        document.querySelectorAll('.sidebar-item-highlight').forEach((el) => {
+            el.classList.remove('sidebar-item-highlight');
+        });
+
+        // Add highlight to current item
+        const sidebarItems = document.querySelectorAll('[data-sidebar-item]');
+        sidebarItems.forEach((item) => {
+            if (item.getAttribute('data-sidebar-item') === itemTitle) {
+                item.classList.add('sidebar-item-highlight');
+            }
+        });
+    }, []);
+
+    const handleNext = useCallback(() => {
+        if (isLastStep) {
+            // Remove highlights before closing
+            document.querySelectorAll('.sidebar-item-highlight').forEach((el) => {
+                el.classList.remove('sidebar-item-highlight');
+            });
+            onClose();
+        } else {
+            setCurrentStep((prev) => prev + 1);
+        }
+    }, [isLastStep, onClose]);
+
+    const handlePrevious = useCallback(() => {
+        if (!isFirstStep) {
+            setCurrentStep((prev) => prev - 1);
+        }
+    }, [isFirstStep]);
+
+    const handleClose = useCallback(() => {
+        // Remove any remaining highlights
+        document.querySelectorAll('.sidebar-item-highlight').forEach((el) => {
+            el.classList.remove('sidebar-item-highlight');
+        });
+        onClose();
+    }, [onClose]);
 
     useEffect(() => {
         if (isOpen) {
@@ -214,14 +253,14 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
             // Highlight the current sidebar item
             highlightSidebarItem(currentTourStep.sidebarItem);
         }
-    }, [isOpen]);
+    }, [isOpen, currentTourStep.sidebarItem, highlightSidebarItem]);
 
     useEffect(() => {
         if (isOpen) {
             // Highlight the current sidebar item
             highlightSidebarItem(currentTourStep.sidebarItem);
         }
-    }, [currentStep, isOpen]);
+    }, [currentStep, isOpen, currentTourStep.sidebarItem, highlightSidebarItem]);
 
     // Keyboard navigation
     useEffect(() => {
@@ -247,52 +286,7 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [isOpen, currentStep]);
-
-    const highlightSidebarItem = (itemTitle: string) => {
-        // Remove previous highlights
-        document.querySelectorAll('.sidebar-item-highlight').forEach(el => {
-            el.classList.remove('sidebar-item-highlight');
-        });
-
-        // Add highlight to current item
-        const sidebarItems = document.querySelectorAll('[data-sidebar-item]');
-        sidebarItems.forEach(item => {
-            if (item.getAttribute('data-sidebar-item') === itemTitle) {
-                item.classList.add('sidebar-item-highlight');
-            }
-        });
-    };
-
-    const handleNext = () => {
-        if (isLastStep) {
-            // Remove highlights before closing
-            document.querySelectorAll('.sidebar-item-highlight').forEach(el => {
-                el.classList.remove('sidebar-item-highlight');
-            });
-            onClose();
-        } else {
-            setCurrentStep(prev => prev + 1);
-        }
-    };
-
-    const handlePrevious = () => {
-        if (!isFirstStep) {
-            setCurrentStep(prev => prev - 1);
-        }
-    };
-
-    const handleSkip = () => {
-        onClose();
-    };
-
-    const handleClose = () => {
-        // Remove any remaining highlights
-        document.querySelectorAll('.sidebar-item-highlight').forEach(el => {
-            el.classList.remove('sidebar-item-highlight');
-        });
-        onClose();
-    };
+    }, [isOpen, handleClose, handleNext, handlePrevious]);
 
     if (!isOpen) return null;
 
@@ -300,40 +294,35 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
         <>
             {/* Custom overlay that doesn't cover the sidebar on desktop */}
             <div
-                className="fixed inset-0 bg-black/80 z-40 md:block hidden"
+                className="fixed inset-0 z-40 hidden bg-black/80 md:block"
                 style={{
                     left: 'var(--sidebar-width, 280px)',
-                    width: 'calc(100vw - var(--sidebar-width, 280px))'
+                    width: 'calc(100vw - var(--sidebar-width, 280px))',
                 }}
                 onClick={handleClose}
             />
 
             {/* Full overlay for mobile */}
-            <div
-                className="fixed inset-0 bg-black/80 z-40 md:hidden"
-                onClick={handleClose}
-            />
+            <div className="fixed inset-0 z-40 bg-black/80 md:hidden" onClick={handleClose} />
 
             {/* Tour Modal */}
-            <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
+            <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center p-4">
                 <div
-                    className="bg-background border rounded-lg shadow-lg w-full max-w-2xl h-[90vh] pointer-events-auto flex flex-col overflow-hidden md:block"
+                    className="pointer-events-auto flex h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-lg border bg-background shadow-lg md:block"
                     style={{
                         marginLeft: 'max(calc(var(--sidebar-width, 280px) + 1rem), 1rem)',
                         marginRight: '1rem',
-                        maxWidth: 'calc(100vw - 2rem)'
+                        maxWidth: 'calc(100vw - 2rem)',
                     }}
                 >
                     {/* Mobile Modal - Full screen on mobile */}
-                    <div className="md:hidden fixed inset-0 z-50 bg-background flex flex-col overflow-hidden">
-                        <div className="flex flex-col h-full">
+                    <div className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-background md:hidden">
+                        <div className="flex h-full flex-col">
                             {/* Header */}
-                            <div className="flex items-center justify-between p-4 pb-2 flex-shrink-0">
+                            <div className="flex flex-shrink-0 items-center justify-between p-4 pb-2">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                        <span className="text-orange-600 font-semibold text-sm">
-                                            {currentStep + 1}
-                                        </span>
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
+                                        <span className="text-sm font-semibold text-orange-600">{currentStep + 1}</span>
                                     </div>
                                     <h2 className="text-lg font-semibold text-orange-600">Demo Tour</h2>
                                     <span className="text-muted-foreground">•</span>
@@ -341,21 +330,16 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                                         Step {currentStep + 1} of {tourSteps.length}
                                     </p>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={handleClose}
-                                    className="h-8 w-8 p-0"
-                                >
+                                <Button variant="ghost" size="sm" onClick={handleClose} className="h-8 w-8 p-0">
                                     <X className="h-4 w-4" />
                                 </Button>
                             </div>
 
                             {/* Progress Bar */}
-                            <div className="px-4 mb-4 flex-shrink-0">
-                                <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="mb-4 flex-shrink-0 px-4">
+                                <div className="h-2 w-full rounded-full bg-gray-200">
                                     <div
-                                        className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                                        className="h-2 rounded-full bg-orange-500 transition-all duration-300"
                                         style={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
                                     />
                                 </div>
@@ -365,10 +349,8 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                             <div className="flex-1 overflow-y-auto px-4">
                                 <div className="space-y-4">
                                     <div>
-                                        <h3 className="text-lg font-semibold mb-2">{currentTourStep.title}</h3>
-                                        <p className="text-muted-foreground leading-relaxed text-sm">
-                                            {currentTourStep.description}
-                                        </p>
+                                        <h3 className="mb-2 text-lg font-semibold">{currentTourStep.title}</h3>
+                                        <p className="text-sm leading-relaxed text-muted-foreground">{currentTourStep.description}</p>
                                     </div>
 
                                     {/* Video Player */}
@@ -383,7 +365,7 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                             </div>
 
                             {/* Navigation - Fixed at Bottom */}
-                            <div className="flex items-center justify-end p-4 pt-3 border-t flex-shrink-0">
+                            <div className="flex flex-shrink-0 items-center justify-end border-t p-4 pt-3">
                                 <div className="flex items-center gap-2">
                                     <Button
                                         variant="outline"
@@ -394,10 +376,7 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                                         <ChevronLeft className="h-4 w-4" />
                                     </Button>
 
-                                    <Button
-                                        onClick={handleNext}
-                                        className="flex items-center gap-1 bg-orange-600 hover:bg-orange-700 text-sm"
-                                    >
+                                    <Button onClick={handleNext} className="flex items-center gap-1 bg-orange-600 text-sm hover:bg-orange-700">
                                         <span>{isLastStep ? 'Finish' : 'Next'}</span>
                                         {!isLastStep && <ChevronRight className="h-4 w-4" />}
                                     </Button>
@@ -405,23 +384,19 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                             </div>
 
                             {/* Keyboard Shortcuts Hint */}
-                            <div className="px-4 pb-4 pt-2 border-t border-gray-100 flex-shrink-0">
-                                <p className="text-xs text-muted-foreground text-center">
-                                    Use arrow keys to navigate • Press Escape to close
-                                </p>
+                            <div className="flex-shrink-0 border-t border-gray-100 px-4 pt-2 pb-4">
+                                <p className="text-center text-xs text-muted-foreground">Use arrow keys to navigate • Press Escape to close</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Desktop Modal */}
-                    <div className="hidden md:flex flex-col h-full">
+                    <div className="hidden h-full flex-col md:flex">
                         {/* Header */}
-                        <div className="flex items-center justify-between p-4 sm:p-6 pb-2 flex-shrink-0">
+                        <div className="flex flex-shrink-0 items-center justify-between p-4 pb-2 sm:p-6">
                             <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                                    <span className="text-orange-600 font-semibold text-sm">
-                                        {currentStep + 1}
-                                    </span>
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-orange-100">
+                                    <span className="text-sm font-semibold text-orange-600">{currentStep + 1}</span>
                                 </div>
                                 <h2 className="text-lg font-semibold text-orange-600">Demo Tour</h2>
                                 <span className="text-muted-foreground">•</span>
@@ -429,21 +404,16 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                                     Step {currentStep + 1} of {tourSteps.length}
                                 </p>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleClose}
-                                className="h-8 w-8 p-0"
-                            >
+                            <Button variant="ghost" size="sm" onClick={handleClose} className="h-8 w-8 p-0">
                                 <X className="h-4 w-4" />
                             </Button>
                         </div>
 
                         {/* Progress Bar */}
-                        <div className="px-4 sm:px-6 mb-4 flex-shrink-0">
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="mb-4 flex-shrink-0 px-4 sm:px-6">
+                            <div className="h-2 w-full rounded-full bg-gray-200">
                                 <div
-                                    className="bg-orange-500 h-2 rounded-full transition-all duration-300"
+                                    className="h-2 rounded-full bg-orange-500 transition-all duration-300"
                                     style={{ width: `${((currentStep + 1) / tourSteps.length) * 100}%` }}
                                 />
                             </div>
@@ -453,10 +423,8 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                         <div className="flex-1 overflow-y-auto px-4 sm:px-6">
                             <div className="space-y-4">
                                 <div>
-                                    <h3 className="text-lg sm:text-xl font-semibold mb-2">{currentTourStep.title}</h3>
-                                    <p className="text-muted-foreground leading-relaxed text-sm sm:text-base">
-                                        {currentTourStep.description}
-                                    </p>
+                                    <h3 className="mb-2 text-lg font-semibold sm:text-xl">{currentTourStep.title}</h3>
+                                    <p className="text-sm leading-relaxed text-muted-foreground sm:text-base">{currentTourStep.description}</p>
                                 </div>
 
                                 {/* Video Player */}
@@ -471,22 +439,19 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                         </div>
 
                         {/* Navigation - Fixed at Bottom */}
-                        <div className="flex items-center justify-end p-4 sm:p-6 pt-3 border-t flex-shrink-0">
+                        <div className="flex flex-shrink-0 items-center justify-end border-t p-4 pt-3 sm:p-6">
                             <div className="flex items-center gap-2">
                                 <Button
                                     variant="outline"
                                     onClick={handlePrevious}
                                     disabled={isFirstStep}
-                                    className="flex items-center gap-1 sm:gap-2 text-sm"
+                                    className="flex items-center gap-1 text-sm sm:gap-2"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                     <span className="hidden sm:inline">Previous</span>
                                 </Button>
 
-                                <Button
-                                    onClick={handleNext}
-                                    className="flex items-center gap-1 sm:gap-2 bg-orange-600 hover:bg-orange-700 text-sm"
-                                >
+                                <Button onClick={handleNext} className="flex items-center gap-1 bg-orange-600 text-sm hover:bg-orange-700 sm:gap-2">
                                     <span>{isLastStep ? 'Finish' : 'Next'}</span>
                                     {!isLastStep && <ChevronRight className="h-4 w-4" />}
                                 </Button>
@@ -494,14 +459,12 @@ export function DemoTour({ isOpen, onClose }: DemoTourProps) {
                         </div>
 
                         {/* Keyboard Shortcuts Hint */}
-                        <div className="px-4 sm:px-6 pb-4 sm:pb-6 pt-2 border-t border-gray-100 flex-shrink-0">
-                            <p className="text-xs text-muted-foreground text-center">
-                                Use arrow keys to navigate • Press Escape to close
-                            </p>
+                        <div className="flex-shrink-0 border-t border-gray-100 px-4 pt-2 pb-4 sm:px-6 sm:pb-6">
+                            <p className="text-center text-xs text-muted-foreground">Use arrow keys to navigate • Press Escape to close</p>
                         </div>
                     </div>
                 </div>
             </div>
         </>
     );
-} 
+}

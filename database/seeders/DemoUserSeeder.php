@@ -275,7 +275,7 @@ class DemoUserSeeder extends Seeder
             unset($transactionData['tags']);
 
             $transactionData['user_id'] = $demoUser->id;
-            $transactionData['import_id'] = 'demo-seed-' . now()->timestamp;
+            $transactionData['import_id'] = 'demo-seed-'.now()->timestamp;
             $transactionData['unique_hash'] = Transaction::generateUniqueHash(
                 $transactionData['user_id'],
                 $transactionData['date']->format('Y-m-d'),
@@ -287,7 +287,7 @@ class DemoUserSeeder extends Seeder
             $transaction = Transaction::create($transactionData);
 
             // Attach tags
-            if (!empty($tags)) {
+            if (! empty($tags)) {
                 $transaction->tags()->attach($tags, [
                     'is_recommended' => false,
                     'is_user_added' => true,

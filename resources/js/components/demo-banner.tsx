@@ -1,4 +1,4 @@
-import { Clock, Download, Info, RotateCcw, Play } from 'lucide-react';
+import { Clock, Download, Info, Play, RotateCcw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface DemoBannerProps {
@@ -110,10 +110,7 @@ export function DemoBanner({ timeUntilReset: initialTime, onStartTour }: DemoBan
                         <RotateCcw className="h-4 w-4" />
                         <span className="font-medium">Demo data has expired and will be reset on next action.</span>
                     </div>
-                    <button
-                        onClick={handleRefresh}
-                        className="text-sm text-red-700 underline hover:no-underline cursor-pointer"
-                    >
+                    <button onClick={handleRefresh} className="cursor-pointer text-sm text-red-700 underline hover:no-underline">
                         Refresh Now
                     </button>
                 </div>
@@ -144,14 +141,14 @@ export function DemoBanner({ timeUntilReset: initialTime, onStartTour }: DemoBan
                 <div className="flex items-center gap-4">
                     <button
                         onClick={handleStartTour}
-                        className="text-sm text-orange-700 underline hover:no-underline cursor-pointer flex items-center gap-1"
+                        className="flex cursor-pointer items-center gap-1 text-sm text-orange-700 underline hover:no-underline"
                     >
                         <Play className="h-3 w-3" />
                         Start Tour
                     </button>
                     <button
                         onClick={handleDownloadCSV}
-                        className="text-sm text-orange-700 underline hover:no-underline cursor-pointer flex items-center gap-1"
+                        className="flex cursor-pointer items-center gap-1 text-sm text-orange-700 underline hover:no-underline"
                     >
                         <Download className="h-3 w-3" />
                         Sample CSV
@@ -160,4 +157,4 @@ export function DemoBanner({ timeUntilReset: initialTime, onStartTour }: DemoBan
             </div>
         </div>
     );
-} 
+}

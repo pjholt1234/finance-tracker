@@ -18,14 +18,14 @@ class DemoUserController extends Controller
     {
         $demoUser = User::where('email', 'demo@financetracker.com')->first();
 
-        if (!$demoUser) {
+        if (! $demoUser) {
             // If demo user doesn't exist, create it
-            $seeder = new DemoUserSeeder();
+            $seeder = new DemoUserSeeder;
             $seeder->run();
             $demoUser = User::where('email', 'demo@financetracker.com')->first();
         } else {
             // Check if demo data needs to be reset (every 24 hours)
-            if (!$demoUser->demo_last_reset || $demoUser->demo_last_reset->diffInHours(now()) >= 24) {
+            if (! $demoUser->demo_last_reset || $demoUser->demo_last_reset->diffInHours(now()) >= 24) {
                 $this->resetDemoData($demoUser);
             }
         }
@@ -53,7 +53,7 @@ class DemoUserController extends Controller
             ]);
 
             // Re-seed demo data
-            $seeder = new DemoUserSeeder();
+            $seeder = new DemoUserSeeder;
             $seeder->run();
         });
     }
@@ -67,6 +67,7 @@ class DemoUserController extends Controller
 
         if ($demoUser) {
             $this->resetDemoData($demoUser);
+
             return back()->with('status', 'Demo data has been reset successfully.');
         }
 

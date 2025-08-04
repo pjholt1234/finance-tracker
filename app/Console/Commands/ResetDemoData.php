@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Http\Controllers\Auth\DemoUserController;
 use App\Models\User;
 use Database\Seeders\DemoUserSeeder;
 use Illuminate\Console\Command;
@@ -38,12 +37,13 @@ class ResetDemoData extends Command
 
         if ($demoUsers->isEmpty()) {
             $this->info('No demo users found.');
+
             return;
         }
 
         foreach ($demoUsers as $demoUser) {
             $shouldReset = $force ||
-                !$demoUser->demo_last_reset ||
+                ! $demoUser->demo_last_reset ||
                 $demoUser->demo_last_reset->diffInHours(now()) >= 24;
 
             if ($shouldReset) {
@@ -62,7 +62,7 @@ class ResetDemoData extends Command
                     ]);
 
                     // Re-seed demo data
-                    $seeder = new DemoUserSeeder();
+                    $seeder = new DemoUserSeeder;
                     $seeder->setCommand($this);
                     $seeder->run();
                 });

@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use App\Models\Tag;
 use App\Models\TagCriteria;
 use App\Models\User;
 use Illuminate\Database\Seeder;
@@ -16,8 +15,9 @@ class DemoTagCriteriaSeeder extends Seeder
     {
         $demoUser = User::where('email', 'demo@financetracker.com')->first();
 
-        if (!$demoUser) {
+        if (! $demoUser) {
             $this->command->error('Demo user not found. Please run DemoUserSeeder first.');
+
             return;
         }
 

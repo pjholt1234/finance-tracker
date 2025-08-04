@@ -6,10 +6,20 @@ import { DemoBanner } from '@/components/demo-banner';
 import { DemoTour } from '@/components/demo-tour';
 import { type BreadcrumbItem } from '@/types';
 import { usePage } from '@inertiajs/react';
-import { type PropsWithChildren, useState, useEffect } from 'react';
+import { type PropsWithChildren, useEffect, useState } from 'react';
+
+interface PageProps {
+    isDemoUser: boolean;
+    demoTimeUntilReset: {
+        hours: number;
+        minutes: number;
+        seconds: number;
+        expired: boolean;
+    };
+}
 
 export default function AppSidebarLayout({ children, breadcrumbs = [] }: PropsWithChildren<{ breadcrumbs?: BreadcrumbItem[] }>) {
-    const { isDemoUser, demoTimeUntilReset } = usePage().props as any;
+    const { isDemoUser, demoTimeUntilReset } = usePage().props as unknown as PageProps;
     const [showTour, setShowTour] = useState(false);
 
     useEffect(() => {
@@ -40,23 +50,13 @@ export default function AppSidebarLayout({ children, breadcrumbs = [] }: PropsWi
         <AppShell variant="sidebar">
             <AppSidebar />
             <AppContent variant="sidebar" className="overflow-x-hidden">
-                {isDemoUser && (
-                    <DemoBanner
-                        timeUntilReset={demoTimeUntilReset}
-                        onStartTour={handleStartTour}
-                    />
-                )}
+                {isDemoUser && <DemoBanner timeUntilReset={demoTimeUntilReset} onStartTour={handleStartTour} />}
                 <AppSidebarHeader breadcrumbs={breadcrumbs} />
                 <main className="flex-1 px-6 py-6 md:px-4">{children}</main>
             </AppContent>
 
             {/* Demo Tour Modal */}
-            {isDemoUser && (
-                <DemoTour
-                    isOpen={showTour}
-                    onClose={handleCloseTour}
-                />
-            )}
+            {isDemoUser && <DemoTour isOpen={showTour} onClose={handleCloseTour} />}
         </AppShell>
     );
 }
