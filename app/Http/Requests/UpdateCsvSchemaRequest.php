@@ -23,7 +23,7 @@ class UpdateCsvSchemaRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'required|string|max:255',
+            'name' => 'required|string|max:255|unique:csv_schemas,name',
             'transaction_data_start' => 'required|integer|min:1',
             'date_column' => 'required|integer|min:1',
             'balance_column' => 'required|integer|min:1',
