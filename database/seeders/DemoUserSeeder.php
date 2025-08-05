@@ -307,11 +307,6 @@ class DemoUserSeeder extends Seeder
             'balance_column' => 5,
             'date_format' => 'Y-m-d',
         ]);
-
-        $this->command->info('Demo user created with sample data!');
-        $this->command->info('Email: demo@financetracker.com');
-        $this->command->info('Password: demo123');
-        $this->command->info('Sample CSV file: demo-sample-transactions.csv');
     }
 
     /**

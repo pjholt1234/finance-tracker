@@ -16,8 +16,6 @@ class DemoTagCriteriaSeeder extends Seeder
         $demoUser = User::where('email', 'demo@financetracker.com')->first();
 
         if (! $demoUser) {
-            $this->command->error('Demo user not found. Please run DemoUserSeeder first.');
-
             return;
         }
 
@@ -260,8 +258,5 @@ class DemoTagCriteriaSeeder extends Seeder
                 'logic_type' => 'or',
             ]);
         }
-
-        $this->command->info('Demo tag criteria created successfully!');
-        $this->command->info('Tags will now automatically apply to matching transactions using OR logic.');
     }
 }
