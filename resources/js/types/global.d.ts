@@ -21,6 +21,8 @@ interface Account {
     formatted_balance: string;
     formatted_balance_at_start: string;
     user_id: number;
+    csv_schema_id?: number;
+    csv_schema?: CsvSchema;
     created_at: string;
     updated_at: string;
     imports?: Import[];
@@ -127,6 +129,7 @@ interface AccountFormData {
     sort_code?: string;
     description?: string;
     balance_at_start: number;
+    csv_schema_id?: number;
 }
 
 interface TagFormData {

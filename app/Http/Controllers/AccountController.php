@@ -38,7 +38,13 @@ class AccountController extends Controller
     {
         $this->authorize('create', Account::class);
 
-        return Inertia::render('accounts/create');
+        /** @var User $user */
+        $user = Auth::user();
+        $csvSchemas = $user->csvSchemas()->orderBy('name')->get();
+
+        return Inertia::render('accounts/create', [
+            'csvSchemas' => $csvSchemas,
+        ]);
     }
 
     /**
@@ -57,6 +63,7 @@ class AccountController extends Controller
             'description' => $validated['description'],
             'balance_at_start' => $validated['balance_at_start'] ?? 0,
             'balance' => $validated['balance_at_start'] ?? 0,
+            'csv_schema_id' => $validated['csv_schema_id'] ?? null,
         ]);
 
         return redirect()->route('accounts.index')
@@ -70,7 +77,7 @@ class AccountController extends Controller
     {
         $this->authorize('view', $account);
 
-        $account->load(['imports.csvSchema', 'transactions' => function ($query) {
+        $account->load(['imports.csvSchema', 'csvSchema', 'transactions' => function ($query) {
             $query->latest()->limit(10);
         }]);
 
@@ -108,8 +115,13 @@ class AccountController extends Controller
     {
         $this->authorize('update', $account);
 
+        /** @var User $user */
+        $user = Auth::user();
+        $csvSchemas = $user->csvSchemas()->orderBy('name')->get();
+
         return Inertia::render('accounts/edit', [
             'account' => $account,
+            'csvSchemas' => $csvSchemas,
         ]);
     }
 
@@ -128,6 +140,7 @@ class AccountController extends Controller
             'sort_code' => $validated['sort_code'],
             'description' => $validated['description'],
             'balance_at_start' => $validated['balance_at_start'] ?? 0,
+            'csv_schema_id' => $validated['csv_schema_id'] ?? null,
         ]);
 
         return redirect()->route('accounts.index')

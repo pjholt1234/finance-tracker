@@ -3,12 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
+import { CsvSchema } from '@/types/global';
 import { handleCurrencyChange } from '@/utils/currency-change-handler';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, Building2, DollarSign, Hash } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Building2, DollarSign, FileText, Hash } from 'lucide-react';
 import { FormEvent } from 'react';
 
 interface FormData {
@@ -17,8 +19,13 @@ interface FormData {
     sort_code: string;
     description: string;
     balance_at_start: number;
+    csv_schema_id?: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+interface Props {
+    csvSchemas: CsvSchema[];
 }
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -32,13 +39,14 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-export default function CreateAccount() {
+export default function CreateAccount({ csvSchemas }: Props) {
     const { data, setData, post, processing, errors } = useForm<FormData>({
         name: '',
         number: '',
         sort_code: '',
         description: '',
         balance_at_start: 0,
+        csv_schema_id: undefined,
     });
 
     const handleSubmit = (e: FormEvent) => {
@@ -130,6 +138,32 @@ export default function CreateAccount() {
                                         </div>
                                         {errors.balance_at_start && <p className="text-sm text-destructive">{errors.balance_at_start}</p>}
                                     </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="csv_schema_id">CSV Schema (Optional)</Label>
+                                    <div className="relative">
+                                        <FileText className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                                        <Select
+                                            value={data.csv_schema_id?.toString() || undefined}
+                                            onValueChange={(value) => setData('csv_schema_id', value ? parseInt(value) : undefined)}
+                                        >
+                                            <SelectTrigger className={`pl-10 ${errors.csv_schema_id ? 'border-destructive' : ''}`}>
+                                                <SelectValue placeholder="Select a CSV schema for imports..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {csvSchemas.map((schema) => (
+                                                    <SelectItem key={schema.id} value={schema.id.toString()}>
+                                                        {schema.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {errors.csv_schema_id && <p className="text-sm text-destructive">{errors.csv_schema_id}</p>}
+                                    <p className="text-sm text-muted-foreground">
+                                        Associate a CSV schema to automatically use it when importing transactions for this account.
+                                    </p>
                                 </div>
 
                                 <div>

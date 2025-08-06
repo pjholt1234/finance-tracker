@@ -19,6 +19,7 @@ class Account extends Model
         'description',
         'balance_at_start',
         'balance',
+        'csv_schema_id',
     ];
 
     protected $casts = [
@@ -26,6 +27,14 @@ class Account extends Model
         'balance_at_start' => 'integer',
         'balance' => 'integer',
     ];
+
+    /**
+     * Get the CSV schema associated with this account.
+     */
+    public function csvSchema(): BelongsTo
+    {
+        return $this->belongsTo(CsvSchema::class);
+    }
 
     /**
      * Get the user that owns the account.

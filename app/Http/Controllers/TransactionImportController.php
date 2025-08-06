@@ -31,7 +31,7 @@ class TransactionImportController extends Controller
         /** @var User $user */
         $user = Auth::user();
         $schemas = $user->csvSchemas()->latest()->get();
-        $accounts = $user->accounts()->orderBy('name')->get();
+        $accounts = $user->accounts()->with('csvSchema')->orderBy('name')->get();
 
         return Inertia::render('transactions/import', [
             'schemas' => $schemas,
@@ -83,7 +83,7 @@ class TransactionImportController extends Controller
             }
 
             return back()->withErrors([
-                'csv_file' => 'Invalid CSV file format: '.$e->getMessage(),
+                'csv_file' => 'Invalid CSV file format: ' . $e->getMessage(),
             ])->withInput();
         } catch (\Exception $e) {
             Log::error('CSV Preview failed', [

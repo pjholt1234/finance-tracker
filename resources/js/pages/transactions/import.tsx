@@ -55,6 +55,13 @@ export default function Import({ schemas, accounts }: Props) {
         setData('account_id', accountId);
         const account = accounts.find((a) => a.id.toString() === accountId);
         setSelectedAccount(account || null);
+
+        // Pre-populate schema if account has one associated
+        if (account?.csv_schema_id) {
+            setData('csv_schema_id', account.csv_schema_id.toString());
+            const schema = schemas.find((s) => s.id === account.csv_schema_id);
+            setSelectedSchema(schema || null);
+        }
     };
 
     const handleFileUpload = (file: File) => {

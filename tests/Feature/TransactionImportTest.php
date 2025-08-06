@@ -49,11 +49,40 @@ class TransactionImportTest extends TestCase
         $response->assertRedirect('/login');
     }
 
-    public function test_authenticated_user_can_access_import_create()
+    public function test_authenticated_user_can_access_import_create(): void
     {
-        $response = $this->actingAs($this->user)->get('/imports/create');
+        $response = $this->actingAs($this->user)->get(route('transaction-imports.create'));
 
         $response->assertStatus(200);
+        $response->assertInertia(fn($page) => $page->component('transactions/import'));
+    }
+
+    public function test_import_create_loads_accounts_with_csv_schemas(): void
+    {
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $account = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->get(route('transaction-imports.create'));
+
+        $response->assertStatus(200);
+        $response->assertInertia(
+            fn($page) =>
+            $page->component('transactions/import')
+                ->has('accounts')
+                ->where('accounts', function ($accounts) use ($account, $csvSchema) {
+                    $accountData = $accounts->firstWhere('id', $account->id);
+                    return $accountData &&
+                        $accountData['csv_schema_id'] === $csvSchema->id &&
+                        isset($accountData['csv_schema']) &&
+                        $accountData['csv_schema']['id'] === $csvSchema->id;
+                })
+        );
     }
 
     public function test_user_can_upload_csv_file_for_import()
@@ -70,7 +99,7 @@ class TransactionImportTest extends TestCase
         ]);
 
         $response->assertStatus(200); // Now returns the import-review page instead of redirecting
-        $response->assertInertia(fn ($page) => $page->component('transactions/import-review'));
+        $response->assertInertia(fn($page) => $page->component('transactions/import-review'));
     }
 
     public function test_csv_file_is_required_for_import()

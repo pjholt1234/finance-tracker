@@ -3,14 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useCurrencyFormat } from '@/hooks';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Account } from '@/types/global';
+import { Account, CsvSchema } from '@/types/global';
 import { handleCurrencyChange } from '@/utils/currency-change-handler';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { AlertCircle, ArrowLeft, Building2, DollarSign, Hash } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Building2, DollarSign, FileText, Hash } from 'lucide-react';
 import { FormEvent } from 'react';
 
 interface FormData {
@@ -19,8 +20,14 @@ interface FormData {
     sort_code: string;
     description: string;
     balance_at_start: number;
+    csv_schema_id?: number;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
+}
+
+interface Props {
+    account: Account;
+    csvSchemas: CsvSchema[];
 }
 
 const breadcrumbs = (account: Account): BreadcrumbItem[] => [
@@ -38,13 +45,14 @@ const breadcrumbs = (account: Account): BreadcrumbItem[] => [
     },
 ];
 
-export default function EditAccount({ account }: { account: Account }) {
+export default function EditAccount({ account, csvSchemas }: Props) {
     const { data, setData, put, processing, errors } = useForm<FormData>({
         name: account.name,
         number: account.number.toString(),
         sort_code: account.sort_code || '',
         description: account.description || '',
         balance_at_start: account.balance_at_start || 0,
+        csv_schema_id: account.csv_schema_id || undefined,
     });
 
     const { formatCurrency } = useCurrencyFormat();
@@ -134,6 +142,32 @@ export default function EditAccount({ account }: { account: Account }) {
                                         className={errors.description ? 'border-destructive' : ''}
                                     />
                                     {errors.description && <p className="text-sm text-destructive">{errors.description}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="csv_schema_id">CSV Schema (Optional)</Label>
+                                    <div className="relative">
+                                        <FileText className="absolute top-3 left-3 h-4 w-4 text-muted-foreground" />
+                                        <Select
+                                            value={data.csv_schema_id?.toString() || undefined}
+                                            onValueChange={(value) => setData('csv_schema_id', value ? parseInt(value) : undefined)}
+                                        >
+                                            <SelectTrigger className={`pl-10 ${errors.csv_schema_id ? 'border-destructive' : ''}`}>
+                                                <SelectValue placeholder="Select a CSV schema for imports..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {csvSchemas.map((schema) => (
+                                                    <SelectItem key={schema.id} value={schema.id.toString()}>
+                                                        {schema.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {errors.csv_schema_id && <p className="text-sm text-destructive">{errors.csv_schema_id}</p>}
+                                    <p className="text-sm text-muted-foreground">
+                                        Associate a CSV schema to automatically use it when importing transactions for this account.
+                                    </p>
                                 </div>
 
                                 <div className="grid gap-4 md:grid-cols-2">

@@ -157,6 +157,45 @@ export default function AccountShow({ account }: Props) {
                     </Card>
                 </div>
 
+                {/* Account Details */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Account Details</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid gap-4 md:grid-cols-2">
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Account Name</Label>
+                                <p className="text-sm">{account.name}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Account Number</Label>
+                                <p className="text-sm">{account.number}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Sort Code</Label>
+                                <p className="text-sm">{account.sort_code}</p>
+                            </div>
+                            <div>
+                                <Label className="text-sm font-medium text-muted-foreground">Created</Label>
+                                <p className="text-sm">{formatDate(account.created_at)}</p>
+                            </div>
+                            {account.csv_schema_id && (
+                                <div>
+                                    <Label className="text-sm font-medium text-muted-foreground">CSV Schema</Label>
+                                    <p className="text-sm">{account.csv_schema?.name || 'Unknown Schema'}</p>
+                                </div>
+                            )}
+                            {account.description && (
+                                <div className="md:col-span-2">
+                                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
+                                    <p className="text-sm">{account.description}</p>
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <div className="grid gap-6 lg:grid-cols-2">
                     {/* Recent Transactions */}
                     <Card>
@@ -248,39 +287,6 @@ export default function AccountShow({ account }: Props) {
                         </CardContent>
                     </Card>
                 </div>
-
-                {/* Account Details */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Account Details</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div>
-                                <Label className="text-sm font-medium text-muted-foreground">Account Name</Label>
-                                <p className="text-sm">{account.name}</p>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium text-muted-foreground">Account Number</Label>
-                                <p className="text-sm">{account.number}</p>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium text-muted-foreground">Sort Code</Label>
-                                <p className="text-sm">{account.sort_code}</p>
-                            </div>
-                            <div>
-                                <Label className="text-sm font-medium text-muted-foreground">Created</Label>
-                                <p className="text-sm">{formatDate(account.created_at)}</p>
-                            </div>
-                            {account.description && (
-                                <div className="md:col-span-2">
-                                    <Label className="text-sm font-medium text-muted-foreground">Description</Label>
-                                    <p className="text-sm">{account.description}</p>
-                                </div>
-                            )}
-                        </div>
-                    </CardContent>
-                </Card>
             </div>
         </AppLayout>
     );

@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Import;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\CsvSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -28,7 +29,7 @@ class AccountControllerTest extends TestCase
         $response = $this->actingAs($this->user)->get('/accounts');
 
         $response->assertStatus(200);
-        $response->assertInertia(fn ($page) => $page->component('accounts/index'));
+        $response->assertInertia(fn($page) => $page->component('accounts/index'));
     }
 
     public function test_unauthenticated_user_cannot_access_accounts_index(): void
@@ -54,7 +55,7 @@ class AccountControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn ($page) => $page->component('accounts/index')
+            fn($page) => $page->component('accounts/index')
                 ->has('accounts', 2)
                 ->where('accounts.0.id', $account1->id)
                 ->where('accounts.1.id', $account2->id)
@@ -115,7 +116,7 @@ class AccountControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn ($page) => $page->component('accounts/show')
+            fn($page) => $page->component('accounts/show')
                 ->where('account.id', $account->id)
         );
     }
@@ -137,7 +138,7 @@ class AccountControllerTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn ($page) => $page->component('accounts/edit')
+            fn($page) => $page->component('accounts/edit')
                 ->where('account.id', $account->id)
         );
     }
@@ -247,9 +248,82 @@ class AccountControllerTest extends TestCase
     {
         $account = Account::factory()->create(['user_id' => $this->user->id]);
 
-        $response = $this->actingAs($this->user)
-            ->post(route('accounts.recalculate-balance', $account));
+        $response = $this->actingAs($this->user)->post(route('accounts.recalculate-balance', $account->id));
 
         $response->assertRedirect();
+    }
+
+    public function test_store_creates_account_with_csv_schema(): void
+    {
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'Test Account',
+            'number' => 12345678,
+            'sort_code' => '12-34-56',
+            'description' => 'Test account description',
+            'balance_at_start' => 100000, // £1000 in pennies
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        $response->assertRedirect(route('accounts.index'));
+
+        $this->assertDatabaseHas('accounts', [
+            'name' => 'Test Account',
+            'number' => 12345678,
+            'sort_code' => '12-34-56',
+            'description' => 'Test account description',
+            'balance_at_start' => 100000, // £1000 in pence
+            'user_id' => $this->user->id,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+    }
+
+    public function test_update_modifies_account_with_csv_schema(): void
+    {
+        $account = Account::factory()->create(['user_id' => $this->user->id]);
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->put(route('accounts.update', $account->id), [
+            'name' => 'Updated Account',
+            'number' => $account->number,
+            'sort_code' => '98-76-54',
+            'description' => 'Updated description',
+            'balance_at_start' => 200000,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        $response->assertRedirect(route('accounts.index'));
+
+        $this->assertDatabaseHas('accounts', [
+            'id' => $account->id,
+            'name' => 'Updated Account',
+            'sort_code' => '98-76-54',
+            'description' => 'Updated description',
+            'balance_at_start' => 200000,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+    }
+
+    public function test_user_cannot_associate_other_users_csv_schema(): void
+    {
+        $otherUser = User::factory()->create();
+        $otherUserSchema = CsvSchema::factory()->create([
+            'user_id' => $otherUser->id,
+        ]);
+
+        $response = $this->actingAs($this->user)->post(route('accounts.store'), [
+            'name' => 'Test Account',
+            'number' => 12345678,
+            'sort_code' => '12-34-56',
+            'balance_at_start' => 100000,
+            'csv_schema_id' => $otherUserSchema->id,
+        ]);
+
+        $response->assertSessionHasErrors(['csv_schema_id']);
     }
 }

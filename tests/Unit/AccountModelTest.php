@@ -6,6 +6,7 @@ use App\Models\Account;
 use App\Models\Import;
 use App\Models\Transaction;
 use App\Models\User;
+use App\Models\CsvSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -84,26 +85,101 @@ class AccountModelTest extends TestCase
             'user_id' => $this->user->id,
         ]);
 
-        $import = Import::factory()->create([
-            'user_id' => $this->user->id,
-            'account_id' => $account->id,
-        ]);
-
         $transaction1 = Transaction::factory()->create([
             'user_id' => $this->user->id,
             'account_id' => $account->id,
-            'import_id' => $import->id,
         ]);
 
         $transaction2 = Transaction::factory()->create([
             'user_id' => $this->user->id,
             'account_id' => $account->id,
-            'import_id' => $import->id,
         ]);
 
         $this->assertCount(2, $account->transactions);
         $this->assertTrue($account->transactions->contains($transaction1));
         $this->assertTrue($account->transactions->contains($transaction2));
+    }
+
+    public function test_account_belongs_to_csv_schema(): void
+    {
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $account = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        $this->assertInstanceOf(CsvSchema::class, $account->csvSchema);
+        $this->assertEquals($csvSchema->id, $account->csvSchema->id);
+    }
+
+    public function test_account_can_have_null_csv_schema(): void
+    {
+        $account = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => null,
+        ]);
+
+        $this->assertNull($account->csvSchema);
+    }
+
+    public function test_csv_schema_has_many_accounts(): void
+    {
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $account1 = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        $account2 = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        $this->assertCount(2, $csvSchema->accounts);
+        $this->assertTrue($csvSchema->accounts->contains($account1));
+        $this->assertTrue($csvSchema->accounts->contains($account2));
+    }
+
+    public function test_can_assign_csv_schema_to_account(): void
+    {
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $account = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => null,
+        ]);
+
+        // Assign the CSV schema to the account
+        $account->update(['csv_schema_id' => $csvSchema->id]);
+
+        $this->assertEquals($csvSchema->id, $account->fresh()->csv_schema_id);
+        $this->assertInstanceOf(CsvSchema::class, $account->fresh()->csvSchema);
+    }
+
+    public function test_can_remove_csv_schema_from_account(): void
+    {
+        $csvSchema = CsvSchema::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        $account = Account::factory()->create([
+            'user_id' => $this->user->id,
+            'csv_schema_id' => $csvSchema->id,
+        ]);
+
+        // Remove the CSV schema from the account
+        $account->update(['csv_schema_id' => null]);
+
+        $this->assertNull($account->fresh()->csv_schema_id);
+        $this->assertNull($account->fresh()->csvSchema);
     }
 
     public function test_for_user_scope(): void
