@@ -104,34 +104,46 @@ class DashboardController extends Controller
                     // Only include tags that were selected in the filter
                     return $selectedTags->has($tag->id);
                 })->map(function ($tag) use ($transaction) {
+                    $income = $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0;
+                    $outgoings = $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0;
                     return [
                         'tag' => $tag->name,
-                        'income' => $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0,
-                        'outgoings' => $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0,
+                        'income' => $income,
+                        'outgoings' => $outgoings,
+                        'net' => $income - $outgoings,
                     ];
                 });
             })->groupBy('tag')->map(function ($items, $tagName) {
+                $totalIncome = $items->sum('income');
+                $totalOutgoings = $items->sum('outgoings');
                 return [
                     'tag' => $tagName,
-                    'income' => $items->sum('income'),
-                    'outgoings' => $items->sum('outgoings'),
+                    'income' => $totalIncome,
+                    'outgoings' => $totalOutgoings,
+                    'net' => $totalIncome - $totalOutgoings,
                 ];
             })->values();
         } else {
             // When no tags are filtered, show all tags from transactions
             $tagStats = $transactions->flatMap(function ($transaction) {
                 return $transaction->tags->map(function ($tag) use ($transaction) {
+                    $income = $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0;
+                    $outgoings = $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0;
                     return [
                         'tag' => $tag->name,
-                        'income' => $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0,
-                        'outgoings' => $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0,
+                        'income' => $income,
+                        'outgoings' => $outgoings,
+                        'net' => $income - $outgoings,
                     ];
                 });
             })->groupBy('tag')->map(function ($items, $tagName) {
+                $totalIncome = $items->sum('income');
+                $totalOutgoings = $items->sum('outgoings');
                 return [
                     'tag' => $tagName,
-                    'income' => $items->sum('income'),
-                    'outgoings' => $items->sum('outgoings'),
+                    'income' => $totalIncome,
+                    'outgoings' => $totalOutgoings,
+                    'net' => $totalIncome - $totalOutgoings,
                 ];
             })->values();
         }

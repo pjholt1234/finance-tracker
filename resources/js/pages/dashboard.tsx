@@ -13,7 +13,7 @@ import { buildApiParams } from '@/utils/form-helpers';
 import { Head } from '@inertiajs/react';
 import { Calendar, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
 
 interface DashboardData {
     accounts: Account[];
@@ -27,6 +27,7 @@ interface DashboardData {
         tag: string;
         income: number;
         outgoings: number;
+        net: number;
     }>;
     balanceOverTime: Array<{
         date: string;
@@ -225,8 +226,8 @@ export default function Dashboard() {
                         {/* Tag Breakdown Chart */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Income & Outgoings by Tag</CardTitle>
-                                <CardDescription>Breakdown of transactions by tag</CardDescription>
+                                <CardTitle>Net Amount by Tag</CardTitle>
+                                <CardDescription>Net income/outgoings breakdown by tag</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <ResponsiveContainer width="100%" height={300}>
@@ -235,11 +236,34 @@ export default function Dashboard() {
                                         <XAxis dataKey="tag" />
                                         <YAxis />
                                         <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            labelFormatter={(label: string) => `Tag: ${label}`}
+                                            content={({ active, payload, label }) => {
+                                                if (active && payload && payload.length) {
+                                                    const data = payload[0].payload;
+                                                    return (
+                                                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                                            <p className="font-medium text-gray-900">{`Tag: ${label}`}</p>
+                                                            <p className="text-green-600">{`Income: ${formatCurrency(data.income)}`}</p>
+                                                            <p className="text-red-600">{`Outgoings: ${formatCurrency(data.outgoings)}`}</p>
+                                                            <p className={`font-bold ${data.net >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                                                                {`Net: ${formatCurrency(data.net)}`}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
+                                                return null;
+                                            }}
                                         />
-                                        <Bar dataKey="income" fill="#22c55e" name="Income" />
-                                        <Bar dataKey="outgoings" fill="#ef4444" name="Outgoings" />
+                                        <Bar
+                                            dataKey="net"
+                                            name="Net Amount"
+                                        >
+                                            {data.tagBreakdown.map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={entry.net >= 0 ? "#22c55e" : "#ef4444"}
+                                                />
+                                            ))}
+                                        </Bar>
                                     </BarChart>
                                 </ResponsiveContainer>
                             </CardContent>
