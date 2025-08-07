@@ -38,7 +38,7 @@ class TagCrudTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn ($page) => $page
+            fn($page) => $page
                 ->component('tags/index')
                 ->has('activeTags', 3)
                 ->has('archivedTags', 1)
@@ -51,7 +51,7 @@ class TagCrudTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn ($page) => $page
+            fn($page) => $page
                 ->component('tags/create')
         );
     }
@@ -87,7 +87,7 @@ class TagCrudTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn ($page) => $page
+            fn($page) => $page
                 ->component('tags/edit')
                 ->has('tag')
                 ->where('tag.id', $tag->id)
@@ -322,5 +322,58 @@ class TagCrudTest extends TestCase
         $response = $this->actingAs($this->user)->post(route('tags.unarchive', $tag));
 
         $response->assertStatus(403);
+    }
+
+    public function test_tag_criteria_logic_type_consistency()
+    {
+        $tag = Tag::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+
+        // Create initial criteria with different logic types
+        $tag->criterias()->create([
+            'type' => 'description',
+            'match_type' => 'contains',
+            'value' => 'test',
+            'logic_type' => 'and',
+        ]);
+
+        $tag->criterias()->create([
+            'type' => 'amount',
+            'match_type' => 'greater_than',
+            'value' => '100',
+            'logic_type' => 'or',
+        ]);
+
+        // Update the tag with new criteria, setting the first one to 'or'
+        $updatedData = [
+            'name' => 'Updated Tag',
+            'criterias' => [
+                [
+                    'type' => 'description',
+                    'match_type' => 'contains',
+                    'value' => 'updated',
+                    'logic_type' => 'or',
+                ],
+                [
+                    'type' => 'amount',
+                    'match_type' => 'less_than',
+                    'value' => '200',
+                    'logic_type' => 'and', // This should be overridden to 'or'
+                ],
+            ],
+        ];
+
+        $response = $this->actingAs($this->user)->put(route('tags.update', $tag), $updatedData);
+
+        $response->assertRedirect(route('tags.index'));
+
+        // Verify that all criteria now have the same logic_type ('or')
+        $tag->refresh();
+        $this->assertEquals(2, $tag->criterias->count());
+
+        foreach ($tag->criterias as $criteria) {
+            $this->assertEquals('or', $criteria->logic_type);
+        }
     }
 }

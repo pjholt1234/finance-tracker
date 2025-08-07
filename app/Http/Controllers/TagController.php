@@ -69,7 +69,11 @@ class TagController extends Controller
             'archived' => false,
         ]);
 
-        if (isset($validated['criterias']) && is_array($validated['criterias'])) {
+        if (isset($validated['criterias']) && is_array($validated['criterias']) && !empty($validated['criterias'])) {
+            // Determine the logic type to use for all criteria
+            // Use the logic_type from the first criteria, or default to 'and'
+            $logicType = $validated['criterias'][0]['logic_type'] ?? 'and';
+
             foreach ($validated['criterias'] as $criteriaData) {
                 $tag->criterias()->create([
                     'type' => $criteriaData['type'],
@@ -78,7 +82,7 @@ class TagController extends Controller
                     'value_to' => $criteriaData['value_to'] ?? null,
                     'day_of_month' => $criteriaData['day_of_month'] ?? null,
                     'day_of_week' => $criteriaData['day_of_week'] ?? null,
-                    'logic_type' => $criteriaData['logic_type'] ?? 'and',
+                    'logic_type' => $logicType, // Use the same logic type for all criteria
                 ]);
             }
         }
@@ -156,7 +160,11 @@ class TagController extends Controller
             $tag->criterias()->delete();
 
             // Create new criteria
-            if (is_array($validated['criterias'])) {
+            if (is_array($validated['criterias']) && !empty($validated['criterias'])) {
+                // Determine the logic type to use for all criteria
+                // Use the logic_type from the first criteria, or default to 'and'
+                $logicType = $validated['criterias'][0]['logic_type'] ?? 'and';
+
                 foreach ($validated['criterias'] as $criteriaData) {
                     $tag->criterias()->create([
                         'type' => $criteriaData['type'],
@@ -165,7 +173,7 @@ class TagController extends Controller
                         'value_to' => $criteriaData['value_to'] ?? null,
                         'day_of_month' => $criteriaData['day_of_month'] ?? null,
                         'day_of_week' => $criteriaData['day_of_week'] ?? null,
-                        'logic_type' => $criteriaData['logic_type'] ?? 'and',
+                        'logic_type' => $logicType, // Use the same logic type for all criteria
                     ]);
                 }
             }
