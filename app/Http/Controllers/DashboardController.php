@@ -196,8 +196,11 @@ class DashboardController extends Controller
             $query->whereIn('account_id', $accountIds);
         }
 
-        $allTransactions = $query->where('date', '<=', $endDate->format('Y-m-d'))
-            ->orderBy('date')
+        // Apply date range filter
+        $query->where('date', '>=', $startDate->format('Y-m-d'))
+            ->where('date', '<=', $endDate->format('Y-m-d'));
+
+        $allTransactions = $query->orderBy('date')
             ->orderBy('id')
             ->get();
 
