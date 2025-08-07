@@ -95,6 +95,8 @@ class DashboardController extends Controller
 
         // Get tag breakdown
         $tagBreakdown = [];
+        $tagTransactionCounts = [];
+
         if (! empty($tagIds)) {
             // When tags are filtered, only show breakdown for the selected tags
             $selectedTags = Tag::whereIn('id', $tagIds)->pluck('name', 'id');
@@ -108,6 +110,7 @@ class DashboardController extends Controller
                     $outgoings = $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0;
                     return [
                         'tag' => $tag->name,
+                        'tag_id' => $tag->id,
                         'income' => $income,
                         'outgoings' => $outgoings,
                         'net' => $income - $outgoings,
@@ -121,6 +124,7 @@ class DashboardController extends Controller
                     'income' => $totalIncome,
                     'outgoings' => $totalOutgoings,
                     'net' => $totalIncome - $totalOutgoings,
+                    'transaction_count' => $items->count(),
                 ];
             })->values();
         } else {
@@ -131,6 +135,7 @@ class DashboardController extends Controller
                     $outgoings = $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0;
                     return [
                         'tag' => $tag->name,
+                        'tag_id' => $tag->id,
                         'income' => $income,
                         'outgoings' => $outgoings,
                         'net' => $income - $outgoings,
@@ -144,9 +149,18 @@ class DashboardController extends Controller
                     'income' => $totalIncome,
                     'outgoings' => $totalOutgoings,
                     'net' => $totalIncome - $totalOutgoings,
+                    'transaction_count' => $items->count(),
                 ];
             })->values();
         }
+
+        // Get transaction count breakdown for pie chart
+        $tagTransactionCounts = $tagStats->map(function ($tag) {
+            return [
+                'name' => $tag['tag'],
+                'value' => $tag['transaction_count'],
+            ];
+        })->toArray();
 
         // Get balance over time (daily balance for the filtered period)
         $balanceOverTime = $this->calculateBalanceOverTime($user, $accountIds, $dateFrom, $dateTo);
@@ -160,6 +174,7 @@ class DashboardController extends Controller
                 'totalBalance' => round($totalBalance, 2),
             ],
             'tagBreakdown' => $tagStats->toArray(),
+            'tagTransactionCounts' => $tagTransactionCounts,
             'balanceOverTime' => $balanceOverTime,
         ]);
     }

@@ -14,7 +14,7 @@ import { buildApiParams } from '@/utils/form-helpers';
 import { Head } from '@inertiajs/react';
 import { Calendar, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, PieChart, Pie } from 'recharts';
 
 interface DashboardData {
     accounts: Account[];
@@ -29,6 +29,10 @@ interface DashboardData {
         income: number;
         outgoings: number;
         net: number;
+    }>;
+    tagTransactionCounts: Array<{
+        name: string;
+        value: number;
     }>;
     balanceOverTime: Array<{
         date: string;
@@ -319,26 +323,69 @@ export default function Dashboard() {
                     </div>
 
                     {/* Balance Over Time Chart */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Balance Over Time</CardTitle>
-                            <CardDescription>Account balance trends</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <LineChart data={data.balanceOverTime}>
-                                    <CartesianGrid strokeDasharray="3 3" />
-                                    <XAxis dataKey="date" />
-                                    <YAxis />
-                                    <Tooltip
-                                        formatter={(value: number) => formatCurrency(value)}
-                                        labelFormatter={(label: string) => `Date: ${label}`}
-                                    />
-                                    <Line type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} name="Balance" />
-                                </LineChart>
-                            </ResponsiveContainer>
-                        </CardContent>
-                    </Card>
+                    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+                        {/* Balance Over Time Chart */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Balance Over Time</CardTitle>
+                                <CardDescription>Account balance trends</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={300}>
+                                    <LineChart data={data.balanceOverTime}>
+                                        <CartesianGrid strokeDasharray="3 3" />
+                                        <XAxis dataKey="date" />
+                                        <YAxis />
+                                        <Tooltip
+                                            formatter={(value: number) => formatCurrency(value)}
+                                            labelFormatter={(label: string) => `Date: ${label}`}
+                                        />
+                                        <Line type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} name="Balance" />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+
+                        {/* Transaction Count by Tag Pie Chart */}
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Transactions by Tag</CardTitle>
+                                <CardDescription>Total number of transactions for each tag</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <ResponsiveContainer width="100%" height={350}>
+                                    <PieChart>
+                                        <Pie
+                                            data={data.tagTransactionCounts}
+                                            cx="50%"
+                                            cy="50%"
+                                            labelLine={false}
+                                            label={({ name, value }) => `${name} (${value})`}
+                                            outerRadius={100}
+                                            fill="#8884d8"
+                                            dataKey="value"
+                                            stroke="none"
+                                            strokeWidth={0}
+                                        >
+                                            {data.tagTransactionCounts.map((entry, index) => (
+                                                <Cell
+                                                    key={`cell-${index}`}
+                                                    fill={[
+                                                        '#3b82f6', '#ef4444', '#22c55e', '#f59e0b',
+                                                        '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
+                                                    ][index % 8]}
+                                                />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip
+                                            formatter={(value: number) => [`${value} transactions`, 'Count']}
+                                            labelFormatter={(label: string) => `Tag: ${label}`}
+                                        />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </AppLayout>
             {loading && data && <LoadingOverlay message="Updating dashboard..." />}
