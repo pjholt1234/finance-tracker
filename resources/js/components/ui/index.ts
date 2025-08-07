@@ -6,6 +6,7 @@ export { ConfirmationDialog } from './confirmation-dialog';
 export { CardGrid } from './card-grid';
 export { FormLayout } from './form-layout';
 export { LoadingOverlay } from './loading-overlay';
+export { SortableTable } from './sortable-table';
 
 // Re-export existing UI components
 export * from './alert';

@@ -4,6 +4,7 @@ import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { Label } from '@/components/ui/label';
 import { LoadingOverlay } from '@/components/ui/loading-overlay';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SortableTable } from '@/components/ui/sortable-table';
 import { TagSelect } from '@/components/ui/tag-select';
 import AppLayout from '@/layouts/app-layout';
 import { api } from '@/lib/api';
@@ -221,7 +222,7 @@ export default function Dashboard() {
                         </Card>
                     </div>
 
-                    {/* Charts */}
+                    {/* Charts and Table Row */}
                     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
                         {/* Tag Breakdown Chart */}
                         <Card>
@@ -269,28 +270,75 @@ export default function Dashboard() {
                             </CardContent>
                         </Card>
 
-                        {/* Balance Over Time Chart */}
+                        {/* Tag Breakdown Table */}
                         <Card>
                             <CardHeader>
-                                <CardTitle>Balance Over Time</CardTitle>
-                                <CardDescription>Account balance trends</CardDescription>
+                                <CardTitle>Tag Breakdown Table</CardTitle>
+                                <CardDescription>Detailed breakdown of income, outgoings, and net amounts by tag</CardDescription>
                             </CardHeader>
                             <CardContent>
-                                <ResponsiveContainer width="100%" height={300}>
-                                    <LineChart data={data.balanceOverTime}>
-                                        <CartesianGrid strokeDasharray="3 3" />
-                                        <XAxis dataKey="date" />
-                                        <YAxis />
-                                        <Tooltip
-                                            formatter={(value: number) => formatCurrency(value)}
-                                            labelFormatter={(label: string) => `Date: ${label}`}
-                                        />
-                                        <Line type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} name="Balance" />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                                <SortableTable
+                                    data={data.tagBreakdown}
+                                    columns={[
+                                        {
+                                            key: 'tag',
+                                            label: 'Tag',
+                                            sortable: true,
+                                        },
+                                        {
+                                            key: 'income',
+                                            label: 'Income',
+                                            sortable: true,
+                                            render: (value: number) => (
+                                                <span className="text-green-600">{formatCurrency(value)}</span>
+                                            ),
+                                        },
+                                        {
+                                            key: 'outgoings',
+                                            label: 'Outgoings',
+                                            sortable: true,
+                                            render: (value: number) => (
+                                                <span className="text-red-600">{formatCurrency(value)}</span>
+                                            ),
+                                        },
+                                        {
+                                            key: 'net',
+                                            label: 'Net',
+                                            sortable: true,
+                                            render: (value: number) => (
+                                                <span className={value >= 0 ? 'text-green-600' : 'text-red-600'}>
+                                                    {formatCurrency(value)}
+                                                </span>
+                                            ),
+                                        },
+                                    ]}
+                                    defaultSort={{ key: 'net', direction: 'desc' }}
+                                />
                             </CardContent>
                         </Card>
                     </div>
+
+                    {/* Balance Over Time Chart */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Balance Over Time</CardTitle>
+                            <CardDescription>Account balance trends</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ResponsiveContainer width="100%" height={300}>
+                                <LineChart data={data.balanceOverTime}>
+                                    <CartesianGrid strokeDasharray="3 3" />
+                                    <XAxis dataKey="date" />
+                                    <YAxis />
+                                    <Tooltip
+                                        formatter={(value: number) => formatCurrency(value)}
+                                        labelFormatter={(label: string) => `Date: ${label}`}
+                                    />
+                                    <Line type="monotone" dataKey="balance" stroke="#3b82f6" strokeWidth={2} name="Balance" />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
                 </div>
             </AppLayout>
             {loading && data && <LoadingOverlay message="Updating dashboard..." />}
