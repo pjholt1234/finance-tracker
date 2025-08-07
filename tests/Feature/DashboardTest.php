@@ -155,7 +155,7 @@ class DashboardTest extends TestCase
         ]);
 
         // Filter by only account1
-        $response = $this->actingAs($user)->getJson('/dashboard/api?account_ids=' . $account1->id);
+        $response = $this->actingAs($user)->getJson('/dashboard/api?account_ids='.$account1->id);
 
         $data = $response->json();
 

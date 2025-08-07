@@ -54,7 +54,7 @@ class TransactionImportTest extends TestCase
         $response = $this->actingAs($this->user)->get(route('transaction-imports.create'));
 
         $response->assertStatus(200);
-        $response->assertInertia(fn($page) => $page->component('transactions/import'));
+        $response->assertInertia(fn ($page) => $page->component('transactions/import'));
     }
 
     public function test_import_create_loads_accounts_with_csv_schemas(): void
@@ -72,11 +72,11 @@ class TransactionImportTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) =>
-            $page->component('transactions/import')
+            fn ($page) => $page->component('transactions/import')
                 ->has('accounts')
                 ->where('accounts', function ($accounts) use ($account, $csvSchema) {
                     $accountData = $accounts->firstWhere('id', $account->id);
+
                     return $accountData &&
                         $accountData['csv_schema_id'] === $csvSchema->id &&
                         isset($accountData['csv_schema']) &&
@@ -99,7 +99,7 @@ class TransactionImportTest extends TestCase
         ]);
 
         $response->assertStatus(200); // Now returns the import-review page instead of redirecting
-        $response->assertInertia(fn($page) => $page->component('transactions/import-review'));
+        $response->assertInertia(fn ($page) => $page->component('transactions/import-review'));
     }
 
     public function test_csv_file_is_required_for_import()

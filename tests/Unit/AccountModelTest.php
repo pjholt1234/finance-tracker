@@ -3,10 +3,10 @@
 namespace Tests\Unit;
 
 use App\Models\Account;
+use App\Models\CsvSchema;
 use App\Models\Import;
 use App\Models\Transaction;
 use App\Models\User;
-use App\Models\CsvSchema;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

@@ -38,7 +38,7 @@ class TagCrudTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) => $page
+            fn ($page) => $page
                 ->component('tags/index')
                 ->has('activeTags', 3)
                 ->has('archivedTags', 1)
@@ -51,7 +51,7 @@ class TagCrudTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) => $page
+            fn ($page) => $page
                 ->component('tags/create')
         );
     }
@@ -87,7 +87,7 @@ class TagCrudTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(
-            fn($page) => $page
+            fn ($page) => $page
                 ->component('tags/edit')
                 ->has('tag')
                 ->where('tag.id', $tag->id)

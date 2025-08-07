@@ -14,7 +14,7 @@ import { buildApiParams } from '@/utils/form-helpers';
 import { Head } from '@inertiajs/react';
 import { Calendar, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Cell, PieChart, Pie } from 'recharts';
+import { Bar, BarChart, CartesianGrid, Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface DashboardData {
     accounts: Account[];
@@ -245,7 +245,7 @@ export default function Dashboard() {
                                                 if (active && payload && payload.length) {
                                                     const data = payload[0].payload;
                                                     return (
-                                                        <div className="bg-white p-3 border rounded-lg shadow-lg">
+                                                        <div className="rounded-lg border bg-white p-3 shadow-lg">
                                                             <p className="font-medium text-gray-900">{`Tag: ${label}`}</p>
                                                             <p className="text-green-600">{`Income: ${formatCurrency(data.income)}`}</p>
                                                             <p className="text-red-600">{`Outgoings: ${formatCurrency(data.outgoings)}`}</p>
@@ -258,15 +258,9 @@ export default function Dashboard() {
                                                 return null;
                                             }}
                                         />
-                                        <Bar
-                                            dataKey="net"
-                                            name="Net Amount"
-                                        >
+                                        <Bar dataKey="net" name="Net Amount">
                                             {data.tagBreakdown.map((entry, index) => (
-                                                <Cell
-                                                    key={`cell-${index}`}
-                                                    fill={entry.net >= 0 ? "#22c55e" : "#ef4444"}
-                                                />
+                                                <Cell key={`cell-${index}`} fill={entry.net >= 0 ? '#22c55e' : '#ef4444'} />
                                             ))}
                                         </Bar>
                                     </BarChart>
@@ -293,26 +287,20 @@ export default function Dashboard() {
                                             key: 'income',
                                             label: 'Income',
                                             sortable: true,
-                                            render: (value: number) => (
-                                                <span className="text-green-600">{formatCurrency(value)}</span>
-                                            ),
+                                            render: (value: number) => <span className="text-green-600">{formatCurrency(value)}</span>,
                                         },
                                         {
                                             key: 'outgoings',
                                             label: 'Outgoings',
                                             sortable: true,
-                                            render: (value: number) => (
-                                                <span className="text-red-600">{formatCurrency(value)}</span>
-                                            ),
+                                            render: (value: number) => <span className="text-red-600">{formatCurrency(value)}</span>,
                                         },
                                         {
                                             key: 'net',
                                             label: 'Net',
                                             sortable: true,
                                             render: (value: number) => (
-                                                <span className={value >= 0 ? 'text-green-600' : 'text-red-600'}>
-                                                    {formatCurrency(value)}
-                                                </span>
+                                                <span className={value >= 0 ? 'text-green-600' : 'text-red-600'}>{formatCurrency(value)}</span>
                                             ),
                                         },
                                     ]}
@@ -370,10 +358,11 @@ export default function Dashboard() {
                                             {data.tagTransactionCounts.map((entry, index) => (
                                                 <Cell
                                                     key={`cell-${index}`}
-                                                    fill={[
-                                                        '#3b82f6', '#ef4444', '#22c55e', '#f59e0b',
-                                                        '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
-                                                    ][index % 8]}
+                                                    fill={
+                                                        ['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'][
+                                                            index % 8
+                                                        ]
+                                                    }
                                                 />
                                             ))}
                                         </Pie>

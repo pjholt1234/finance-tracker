@@ -24,11 +24,11 @@ class StoreAccountRequest extends FormRequest
     {
         return [
             'name' => 'required|string|max:255',
-            'number' => 'required|integer|unique:accounts,number,NULL,id,user_id,' . Auth::id(),
+            'number' => 'required|integer|unique:accounts,number,NULL,id,user_id,'.Auth::id(),
             'sort_code' => 'nullable|string|max:20',
             'description' => 'nullable|string',
             'balance_at_start' => 'nullable|integer|min:0',
-            'csv_schema_id' => 'nullable|exists:csv_schemas,id,user_id,' . Auth::id(),
+            'csv_schema_id' => 'nullable|exists:csv_schemas,id,user_id,'.Auth::id(),
         ];
     }
 }

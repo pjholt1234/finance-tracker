@@ -108,6 +108,7 @@ class DashboardController extends Controller
                 })->map(function ($tag) use ($transaction) {
                     $income = $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0;
                     $outgoings = $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0;
+
                     return [
                         'tag' => $tag->name,
                         'tag_id' => $tag->id,
@@ -119,6 +120,7 @@ class DashboardController extends Controller
             })->groupBy('tag')->map(function ($items, $tagName) {
                 $totalIncome = $items->sum('income');
                 $totalOutgoings = $items->sum('outgoings');
+
                 return [
                     'tag' => $tagName,
                     'income' => $totalIncome,
@@ -133,6 +135,7 @@ class DashboardController extends Controller
                 return $transaction->tags->map(function ($tag) use ($transaction) {
                     $income = $transaction->paid_in > 0 ? $transaction->paid_in / 100 : 0;
                     $outgoings = $transaction->paid_out > 0 ? $transaction->paid_out / 100 : 0;
+
                     return [
                         'tag' => $tag->name,
                         'tag_id' => $tag->id,
@@ -144,6 +147,7 @@ class DashboardController extends Controller
             })->groupBy('tag')->map(function ($items, $tagName) {
                 $totalIncome = $items->sum('income');
                 $totalOutgoings = $items->sum('outgoings');
+
                 return [
                     'tag' => $tagName,
                     'income' => $totalIncome,

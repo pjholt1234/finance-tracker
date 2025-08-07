@@ -83,7 +83,7 @@ class TransactionImportController extends Controller
             }
 
             return back()->withErrors([
-                'csv_file' => 'Invalid CSV file format: ' . $e->getMessage(),
+                'csv_file' => 'Invalid CSV file format: '.$e->getMessage(),
             ])->withInput();
         } catch (\Exception $e) {
             Log::error('CSV Preview failed', [
